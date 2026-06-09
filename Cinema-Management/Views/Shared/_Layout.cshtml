@@ -1,0 +1,64 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Cinema_Management</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Cinema_Management.styles.css" asp-append-version="true" />
+</head>
+
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-dark" style="background-color: #121212;">
+            <div class="container-fluid px-4 py-2">
+
+                <a class="navbar-brand fw-bold m-0"
+                   style="color: #D4A373; font-size: 1.5rem; letter-spacing: 0.5px; font-family: JetBrains Mono, monospace;"
+                   asp-area="" asp-controller="Home" asp-action="Index">
+                    COSMOS
+                </a>
+
+                <div class="d-flex align-items-center">
+                    <a asp-controller="Account" asp-action="Login" class="nav-link p-1"
+                       style="color: #D4A373; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.7'"
+                       onmouseout="this.style.opacity='1'">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor"
+                             viewBox="0 0 16 16">
+                            <path
+                            d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0Zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4Zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10Z" />
+                        </svg>
+                    </a>
+                </div>
+
+            </div>
+        </nav>
+    </header>
+    <div class="container-fluid px-0">
+        <main role="main">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer>
+        <div class="container-fluid py-4" style="background-color: #121212; color: #888; font-size: 0.85rem;">
+            <div class="row">
+                <div class="col-md-6">
+                    <p>&copy; 2023 COSMOS CINEMA. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p>Contact us: info@cosmoscinema.com</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+
+</html>
