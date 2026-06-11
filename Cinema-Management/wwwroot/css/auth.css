@@ -1,0 +1,176 @@
+.auth-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 60px);
+    background-color: #121212;
+    font-family: Jebrains Mono, monospace;
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 400px;
+}
+.register-wide{
+    width: 100%;
+    max-width: 700px;
+}
+
+.auth-header-text {
+    color: #D4A373;
+    /* Màu Tertiary */
+    font-family: JetBrains Mono, monospace;
+    font-size: 2rem;
+    letter-spacing: 1px;
+}
+
+.auth-subtitle {
+    color: #888;
+    font-size: 0.85rem;
+    margin-bottom: 2rem;
+    letter-spacing: 0.5px;
+}
+
+.auth-card {
+    background-color: #1a1a1a;
+    border-radius: 8px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.auth-tabs {
+    display: flex;
+    border-bottom: 1px solid #333;
+    margin-bottom: 1.5rem;
+}
+
+.auth-tab {
+    flex: 1;
+    text-align: center;
+    padding-bottom: 12px;
+    color: #888;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: color 0.3s;
+}
+
+.auth-tab.active {
+    color: #D4A373;
+    border-bottom: 2px solid #D4A373;
+}
+
+.auth-tab:hover:not(.active) {
+    color: #bbb;
+}
+
+.form-label-custom {
+    color: #aaa;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+}
+
+.forgot-link {
+    float: right;
+    color: #A67B5B;
+    font-size: 0.7rem;
+    text-decoration: none;
+    letter-spacing: 0.5px;
+}
+
+.forgot-link:hover {
+    color: #D4A373;
+}
+
+.input-group-custom .input-group-text {
+    background-color: #2b2b2b;
+    border: 1px solid #2b2b2b;
+    color: #888;
+    border-right: none;
+}
+
+.input-group-custom .form-control {
+    background-color: #2b2b2b;
+    border: 1px solid #2b2b2b;
+    color: #ddd;
+    border-left: none;
+    font-size: 0.9rem;
+}
+
+.input-group-custom:focus-within .form-control {
+    background-color: #2b2b2b;
+    color: #fff;
+    box-shadow: none;
+    border-color: #444;
+}
+
+.input-group-custom:focus-within .input-group-text {
+    border-color: #444;
+    color: #D4A373;
+    /* Đổi màu icon sang màu nhấn (Vàng/Nâu) cho đẹp, hoặc bạn có thể dùng #fff */
+}
+
+
+.input-group-custom .input-group-text.end-icon {
+    border-left: none;
+    border-right: 1px solid #2b2b2b;
+    cursor: pointer;
+}
+
+
+.form-check-label {
+    color: #aaa;
+    font-size: 0.8rem;
+}
+
+.form-check-input {
+    background-color: #2b2b2b;
+    border-color: #444;
+}
+
+
+
+.form-check-input:checked {
+    background-color: #8B5E3C;
+    border-color: #8B5E3C;
+    border: none;
+}
+
+.form-check-input:focus {
+    box-shadow: 0 0 0 0.2rem rgba(139, 94, 60, 0.5);
+}
+
+.btn-submit {
+    padding: 17px 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 0;
+    background-color: #A67B5B;
+    box-shadow: rgb(0 0 0 / 5%) 0 0 8px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-size: 15px;
+    transition: all 0.5s ease;
+    font-weight: 800;
+    color: hsl(0, 0%, 100%);
+}
+
+
+.btn-submit:hover {
+    letter-spacing: 3px;
+    background-color:#D4A373 ;
+    color: hsl(0, 0%, 100%);
+    box-shadow: #A67B5B 0px 10px 50px 0px;
+}
+
+.btn-submit:active {
+    letter-spacing: 2px;
+    background-color: #D4A373;
+    color: hsl(0, 0%, 100%);
+    box-shadow: #D4A373 0px 0px 0px 0px;
+    transform: translateY(10px);
+    transition: 100ms;
+}

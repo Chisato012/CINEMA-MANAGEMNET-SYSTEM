@@ -6,6 +6,7 @@ using Cinema_Management.Models;
 
 public class AccountController : Controller
 {
+    [HttpGet]
     public IActionResult Login()
     {
         return View();
@@ -22,10 +23,11 @@ public class AccountController : Controller
         return RedirectToAction("Index", "Home");
     }
 
-    [HttpPost]
-    public IActionResult Register(AuthViewModel model)
+
+    [HttpGet]
+    public IActionResult Register()
     {
-        return View("Login");
+        return View();
     }
     
     //Logic xử lý lưu database tạo tài khoản

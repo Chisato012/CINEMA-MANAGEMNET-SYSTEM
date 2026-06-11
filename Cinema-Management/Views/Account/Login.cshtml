@@ -4,167 +4,9 @@
 
 @model Cinema_Management.Models.AuthViewModel
 
-<style>
-    .auth-wrapper {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: calc(100vh - 60px);
-        background-color: #121212;
-        /* Màu nền Neutral */
-        font-family: Jebrains Mono, monospace;
-    }
-
-    .auth-container {
-        width: 100%;
-        max-width: 400px;
-    }
-
-    .auth-header-text {
-        color: #D4A373;
-        /* Màu Tertiary */
-        font-family: JetBrains Mono, monospace;
-        font-size: 2rem;
-        letter-spacing: 1px;
-    }
-
-    .auth-subtitle {
-        color: #888;
-        font-size: 0.85rem;
-        margin-bottom: 2rem;
-        letter-spacing: 0.5px;
-    }
-
-    .auth-card {
-        background-color: #1a1a1a;
-        border-radius: 8px;
-        padding: 2rem;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    }
-
-    .auth-tabs {
-        display: flex;
-        border-bottom: 1px solid #333;
-        margin-bottom: 1.5rem;
-    }
-
-    .auth-tab {
-        flex: 1;
-        text-align: center;
-        padding-bottom: 12px;
-        color: #888;
-        text-decoration: none;
-        font-weight: 600;
-        font-size: 1rem;
-        transition: color 0.3s;
-    }
-
-    .auth-tab.active {
-        color: #D4A373;
-        border-bottom: 2px solid #D4A373;
-    }
-
-    .auth-tab:hover:not(.active) {
-        color: #bbb;
-    }
-
-    .form-label-custom {
-        color: #aaa;
-        font-size: 0.7rem;
-        font-weight: 700;
-        letter-spacing: 1.5px;
-        text-transform: uppercase;
-        margin-bottom: 0.5rem;
-    }
-
-    .forgot-link {
-        float: right;
-        color: #A67B5B;
-        font-size: 0.7rem;
-        text-decoration: none;
-        letter-spacing: 0.5px;
-    }
-
-    .forgot-link:hover {
-        color: #D4A373;
-    }
-
-    .input-group-custom .input-group-text {
-        background-color: #2b2b2b;
-        border: 1px solid #2b2b2b;
-        color: #888;
-        border-right: none;
-    }
-
-    .input-group-custom .form-control {
-        background-color: #2b2b2b;
-        border: 1px solid #2b2b2b;
-        color: #ddd;
-        border-left: none;
-        font-size: 0.9rem;
-    }
-
-    .input-group-custom:focus-within .form-control {
-        background-color: #2b2b2b;
-        color: #fff;
-        box-shadow: none;
-        border-color: #444;
-    }
-
-    .input-group-custom:focus-within .input-group-text {
-        border-color: #444;
-        color: #D4A373;
-        /* Đổi màu icon sang màu nhấn (Vàng/Nâu) cho đẹp, hoặc bạn có thể dùng #fff */
-    }
-
-    
-    .input-group-custom .input-group-text.end-icon {
-        border-left: none;
-        border-right: 1px solid #2b2b2b;
-        cursor: pointer;
-    }
-
-
-    .form-check-label {
-        color: #aaa;
-        font-size: 0.8rem;
-    }
-
-    .form-check-input {
-        background-color: #2b2b2b;
-        border-color: #444;
-    }
-
-
-
-    .form-check-input:checked {
-        background-color: #8B5E3C;
-        border-color: #8B5E3C;
-        border: none;
-    }
-
-    .form-check-input:focus {
-        box-shadow: 0 0 0 0.2rem rgba(139, 94, 60, 0.5);
-    }
-
-    .btn-submit {
-        background-color: #8B5E3C;
-        /* Màu Primary */
-        color: #fff;
-        font-weight: 600;
-        border: none;
-        padding: 0.8rem;
-        border-radius: 4px;
-        font-size: 0.95rem;
-        transition: background-color 0.3s;
-    }
-
-    .btn-submit:hover {
-        background-color: #A67B5B;
-        color: #fff;
-    }
-</style>
-
+<head>
+    <link rel="stylesheet" href="~/css/auth.css">
+</head>
 <div class="auth-wrapper">
     <div class="auth-container">
         <!-- Header -->
@@ -177,8 +19,8 @@
         <div class="auth-card">
             <!-- Tabs -->
             <div class="auth-tabs">
-                <a href="#" class="auth-tab active" id="login-tab">Đăng Nhập</a>
-                <a class="auth-tab" id="register-tab" href="#">Đăng Ký</a>
+                <a class="auth-tab active" id="login-tab" asp-controller="Account" asp-action="Login">Đăng Nhập</a>
+                @* <a class="auth-tab" id="register-tab" asp-controller="Account" asp-action="Register">Đăng Ký</a> *@
             </div>
             <!-- Login Form -->
             <div id="login-container">
@@ -195,9 +37,10 @@
                                     d="M.05 3.555A2 2 0 0 1 2 2h12a2 2 0 0 1 1.95 1.555L8 8.414.05 3.555ZM0 4.697v7.104l5.803-3.558L0 4.697ZM6.761 8.83l-6.57 4.027A2 2 0 0 0 2 14h12a2 2 0 0 0 1.808-1.144l-6.57-4.027L8 9.586l-1.239-.757Zm3.436-.586L16 11.801V4.697l-5.803 3.546Z" />
                                 </svg>
                             </span>
-                            <input type="email" class="form-control" asp-for="Username"
-                                   placeholder="cinephile@example.com" required>
+                            <input type="email" id="email-input" class="form-control" asp-for="Username" />
+
                         </div>
+                        <small id="email-error" class="text-danger mt-4"></small>
                     </div>
 
                     <!-- Password Input -->
@@ -206,19 +49,18 @@
                             <label class="form-label form-label-custom mb-0">MẬT KHẨU</label>
                             <a asp-controller="Account" asp-action="ForgotPassword" class="forgot-link">Quên mật
                                 khẩu?</a>
-                            </div>
-                            <div class="input-group input-group-custom">
-                                <span class="input-group-text">
+                        </div>
+                        <div class="input-group input-group-custom">
+                            <span class="input-group-text">
                                     <!-- Lock Icon -->
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                                          viewBox="0 0 16 16">
                                         <path
                                         d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" />
-                                    </svg>
-                                </span>
-                                <input type="password" class="form-control " asp-for="Password" placeholder="••••••••"
-                                       required>
-                                <span class="input-group-text end-icon">
+                                </svg>
+                            </span>
+                            <input type="password" id="passwordInput" class="form-control " asp-for="Password" required>
+                            <span class="input-group-text end-icon" id="togglePassword">
                                     <!-- Eye Slash Icon -->
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                                          viewBox="0 0 16 16">
@@ -229,106 +71,34 @@
                                         <path
                                         d="M3.35 5.47c-.18.16-.353.322-.518.487A13.134 13.134 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7.029 7.029 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709zm10.296 8.884-12-12 .708-.708 12 12-.708.708z" />
                                     </svg>
-                                </span>
-                            </div>
-
+                            </span>
                         </div>
+
+                    </div>
 
                         <!-- Remember Me -->
-                        <div class="mb-4 form-check">
-                            <input type="checkbox" class="form-check-input" id="rememberMe" name="rememberMe">
-                            <label class="form-check-label" for="rememberMe">Ghi nhớ thiết bị này</label>
-                        </div>
+                    <div class="mb-4 form-check">
+                        <input type="checkbox" class="form-check-input" id="rememberMe" name="rememberMe">
+                        <label class="form-check-label" for="rememberMe">Ghi nhớ thiết bị này</label>
+                    </div>
 
+                    <div class="mb-4" style="font-size: 13px; color:#ccc">
+                        <p> <a style="color:#A67B5B" asp-controller="Account" asp-action="Register">Tạo tài khoản</a></p>
+                    </div>
                         <!-- Submit Button -->
-                        <div class="d-grid mt-2">
-                            <button type="submit" class="btn btn-submit">Đăng nhập</button>
-                        </div>
-                    </form>
-                </div>
-            <!-- Register Form -->
-            <div id="register-container" class="d-none">
-                <form asp-controller="Account" asp-action="Register" method="post">
-                    <div class="row mb-3">
-                        <div class="col-6">
-                            <label class="form-label form-label-custom">HỌ TÊN</label>
-                            <div class="input-group input-group-custom">
-                                <input type="text" class="form-control" name="FullName" placeholder="Nguyen Van A" required>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label form-label-custom">SỐ ĐIỆN THOẠI</label>
-                            <div class="input-group input-group-custom">
-                                <input type="tel" class="form-control" name="PhoneNumber" placeholder="0987654321" required>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label form-label-custom">EMAIL</label>
-                        <div class="input-group input-group-custom">
-                            <input type="email" class="form-control" name="Email" placeholder="user@email.com" required>
-                        </div>
-                    </div>
-                    <div class="row mb-4">
-                        <div class="col-6">
-                            <label class="form-label form-label-custom">MẬT KHẨU</label>
-                            <div class="input-group input-group-custom">
-                                <input type="password" class="form-control" name="Password" placeholder="••••••••" required>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label form-label-custom">NGÀY SINH</label>
-                            <div class="input-group input-group-custom">
-                                <input type="date" class="form-control" name="DateOfBirth" required>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-submit">Tạo Tài Khoản</button>
+                    <div class="d-grid mt-2">
+                        <button type="submit" class="btn btn-submit">Đăng nhập</button>
                     </div>
                 </form>
-            </div> 
-        </div>
+                </div>
 
-        
+            </div>
         </div>
     </div>
+</div>
 
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+<script src="~/js/auth.js" asp-append-version="true"> </script>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function(){
-            const tabLogin = document.getElementById('login-tab'); // Tab Đăng Nhập
-            const tabRegister = document.getElementById('register-tab'); // Tab Đăng Ký
-            const loginContainer = document.getElementById('login-container'); // Container Đăng Nhập
-            const registerContainer = document.getElementById('register-container'); // Container Đăng Ký
-
-            // Hàm chuyển tab
-            tabLogin.addEventListener('click', function(e){
-                e.preventDefault();
-
-                //Đổi active tab
-                tabLogin.classList.add('active');
-                tabRegister.classList.remove('active');
-
-                //Hiển thị form đăng nhập, ẩn form đăng ký
-                loginContainer.classList.remove('d-none');
-                registerContainer.classList.add('d-none');
-            })
-
-            tabRegister.addEventListener('click', function(e){
-                e.preventDefault();
-
-                //Đổi active tab
-                tabRegister.classList.add('active');
-                tabLogin.classList.remove('active');
-
-                //Hiển thị form đăng ký, ẩn form đăng nhập
-                registerContainer.classList.remove('d-none');
-                loginContainer.classList.add('d-none');
-            })
-        })
-    </script>
-}
+    
+    
+        
