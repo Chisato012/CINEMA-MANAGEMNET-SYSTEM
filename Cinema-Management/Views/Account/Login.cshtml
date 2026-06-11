@@ -76,6 +76,18 @@
 
                     </div>
 
+                    <div class="mb-3">
+                        <div class="cf-turnstile"
+                             data-sitekey="@ViewBag.TurnstileSiteKey"
+                             data-theme="dark">
+                        </div>
+
+                        @if (ViewBag.CaptchaError != null)
+                        {
+                            <span class="text-danger">@ViewBag.CaptchaError</span>
+                        }
+                    </div>
+
                         <!-- Remember Me -->
                     <div class="mb-4 form-check">
                         <input type="checkbox" class="form-check-input" id="rememberMe" name="rememberMe">
@@ -98,7 +110,9 @@
 </div>
 
 <script src="~/js/auth.js" asp-append-version="true"> </script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
     
     
         
+
