@@ -1,0 +1,98 @@
+@{
+    ViewData["Title"] = "Đăng Ký";
+}
+
+@model Cinema_Management.Models.AuthViewModel
+
+<head>
+    <link rel="stylesheet" href="~/css/auth.css">
+</head>
+<div class="auth-wrapper">
+    <div class="register-wide">
+        <!-- Header -->
+        <div class="text-center">
+            <h1 class="auth-header-text fw-bold mb-1">COSMOS CINEMA</h1>
+            <p class="auth-subtitle">Truy cập vũ trụ điện ảnh của bạn</p>
+        </div>
+        <!-- Form -->
+        <div class="auth-card">
+            <!-- Tabs -->
+            <div class="auth-tabs">
+                <a class="auth-tab active" id="register-tab" asp-controller="Account" asp-action="Register">Đăng Ký</a>
+            </div>
+            <div id="register-container">
+                <form asp-controller="Account" asp-action="Register" method="post">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label form-label-custom">HỌ TÊN</label>
+                            <div class="input-group input-group-custom">
+                                <input type="text" class="form-control" id="name-input" name="FullName" required>
+                            </div>
+                            <small id="name-error" class="text-danger" style="font-size: 10px;"></small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label form-label-custom">SỐ ĐIỆN THOẠI</label>
+                            <div class="input-group input-group-custom">
+                                <input type="tel" class="form-control" name="PhoneNumber" id="phone-input">
+                            </div>
+                            <small id="phone-error" class="text-danger" style="font-size: 10px;"></small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label form-label-custom">EMAIL</label>
+                            <div class="input-group input-group-custom">
+                                <input type="email" class="form-control" id="email-input" name="Email" required>
+                            </div>
+                            <small id="email-error" class="text-danger mt-1" style="font-size: 10px;"></small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label form-label-custom">NGÀY SINH</label>
+                            <div class="input-group input-group-custom">
+                                <input type="date" class="form-control" name="DateOfBirth" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label form-label-custom">MẬT KHẨU</label>
+                        <div class="input-group input-group-custom">
+                            <input type="password" id="passwordInput" class="form-control" name="Password" required />
+                            <span class="input-group-text end-icon" id="togglePassword">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7.028 7.028 0 0 0-2.79.588l.77.771A5.944 5.944 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.134 13.134 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755l.192.195z" />
+                                    <path d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829l.822.822zm-2.943 1.299.822.822a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 0 2.829 2.829z" />
+                                    <path d="M3.35 5.47c-.18.16-.353.322-.518.487A13.134 13.134 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7.029 7.029 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709zm10.296 8.884-12-12 .708-.708 12 12-.708.708z" />
+                                </svg>
+                            </span>
+                            
+                        </div>
+                        <small id="password-error" class="text-danger mt-1" style="font-size: 10px;"></small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label form-label-custom">NHẬP LẠI MẬT KHẨU</label>
+                        <div class="input-group input-group-custom">
+                            <input type="password" class="form-control" id="confirmPasswordInput" name="ConfirmPassword" required/>                                  
+                        </div>    
+                        <small id="confirmPasswordError" class="text-danger mt-1" style="font-size:10px"></small>                        
+                    </div>
+
+                    <div class="mb-3">
+                        <p style="font-size: 13px; color: #ccc">Nếu đã có tài khoản <a asp-controller="Account" asp-action="Login" style="color: #A67B5B">Đăng nhập</a></p>
+                    </div>
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-submit">Tạo Tài Khoản</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/auth.js" asp-append-version="true"> </script>
+
+    
+    
