@@ -1,9 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Cinema_Management.Models.Validation;
 
 namespace Cinema_Management.Models;
 
+[Table("Users")]
 public class User
 {
     [Key]
@@ -27,7 +27,6 @@ public class User
     public string? PhoneNumber { get; set; }
 
     [DataType(DataType.Date)]
-    [BirthYearNotBefore(2010, ErrorMessage = "Năm sinh không được nhỏ hơn năm 2010")]
     public DateTime? DOB { get; set; }
 
     public bool Status { get; set; } = true;

@@ -26,7 +26,7 @@ public class AuthViewModel
 
     [Required(ErrorMessage = "Vui lòng chọn ngày sinh")]
     [DataType(DataType.Date)]
-    [BirthYearNotBefore(2010, ErrorMessage = "Năm sinh không được nhỏ hơn năm 2010")]
+    [MinimumAge(16, ErrorMessage = "Bạn phải đủ 16 tuổi để đăng ký")]
     public DateTime? DateOfBirth { get; set; }
 
     [Required(ErrorMessage = "Vui lòng nhập lại mật khẩu")]
