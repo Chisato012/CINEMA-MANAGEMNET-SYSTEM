@@ -24,19 +24,18 @@ public class AccountController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Login(AuthViewModel model)
+    public async Task<IActionResult> Login(LoginRequest model)
     {
         SetTurnstileSiteKey();
-        RemoveRegisterOnlyModelStateEntries();
+
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
 
         if (!await IsTurnstileValidAsync())
         {
             ViewBag.CaptchaError = "Vui long xac minh captcha.";
-            return View(model);
-        }
-
-        if (!ModelState.IsValid)
-        {
             return View(model);
         }
 
@@ -49,19 +48,23 @@ public class AccountController : Controller
         return View();
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult Register(AuthViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        return RedirectToAction("Login");
+    }
+
     // Logic xu ly luu database tao tai khoan
 
     private void SetTurnstileSiteKey()
     {
         ViewBag.TurnstileSiteKey = _configuration["CloudflareTurnstile:SiteKey"];
-    }
-
-    private void RemoveRegisterOnlyModelStateEntries()
-    {
-        ModelState.Remove(nameof(AuthViewModel.FullName));
-        ModelState.Remove(nameof(AuthViewModel.PhoneNumber));
-        ModelState.Remove(nameof(AuthViewModel.Email));
-        ModelState.Remove(nameof(AuthViewModel.DateOfBirth));
     }
 
     private async Task<bool> IsTurnstileValidAsync()

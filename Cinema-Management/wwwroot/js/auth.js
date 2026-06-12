@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const atCount = (value.match(/@/g) || []).length; //Hàm đếm @
 
         if (value === "") {
-            emailError.textContent = "";
+            emailError.textContent = "Email không được để trống";
             return false;
         }
 
