@@ -10,19 +10,30 @@
     <link rel="stylesheet" href="~/Cinema_Management.styles.css" asp-append-version="true" />
 </head>
 
+<style>
+    
+</style>
+
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-dark" style="background-color: #121212;">
+        <nav class="navbar navbar-expand-sm navbar-dark custom-navbar">
             <div class="container-fluid px-4 py-2">
 
-                <a class="navbar-brand fw-bold m-0"
+                <a class="navbar-brand fw-bold m-0 cosmos-logo"
                    style="color: #D4A373; font-size: 1.5rem; letter-spacing: 0.5px; font-family: JetBrains Mono, monospace;"
                    asp-area="" asp-controller="Home" asp-action="Index">
                     COSMOS
                 </a>
 
+                <div class="d-none d-lg-flex gap-4 ms-5 me-auto">
+                    <a href="#" class="cosmos-nav-link">Phim</a>
+                    <a href="#" class="cosmos-nav-link">Giá vé</a>
+                    <a href="#" class="cosmos-nav-link">Ưu đãi</a>
+                    <a href="#" class="cosmos-nav-link">Tài khoản</a>
+                </div>
+
                 <div class="d-flex align-items-center">
-                    <a asp-controller="Account" asp-action="Login" class="nav-link p-1"
+                    <a asp-controller="Account" asp-action="Login" class="cosmos-nav-link p-1"
                        style="color: #D4A373; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.7'"
                        onmouseout="this.style.opacity='1'">
                         <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor"
