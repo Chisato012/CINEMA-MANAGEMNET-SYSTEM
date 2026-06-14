@@ -2,6 +2,7 @@ namespace Cinema_Management.Controllers;
 
 using Cinema_Management.Data;
 using Cinema_Management.Models;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Json;
@@ -174,7 +175,7 @@ public class AccountController : Controller
         }
 
         // Chuẩn hóa email
-        var email = model.Email.Trim().ToLower();
+        var email = model.Email.Trim().ToLowerInvariant();
 
         // Kiểm tra email đã tồn tại
         var emailExists = await _context.Users
@@ -182,7 +183,7 @@ public class AccountController : Controller
 
         if (emailExists)
         {
-            ModelState.AddModelError(nameof(model.Email), "Email này đã được sử dụng");
+            AddDuplicateAccountError();
             return View(model);
         }
 
@@ -198,7 +199,16 @@ public class AccountController : Controller
         };
 
         _context.Users.Add(user);
-        await _context.SaveChangesAsync();
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException exception) when (IsDuplicateAccountError(exception))
+        {
+            AddDuplicateAccountError();
+            return View(model);
+        }
 
         TempData["SuccessMessage"] = "Đăng ký thành công. Hãy đăng nhập.";
 
@@ -206,6 +216,19 @@ public class AccountController : Controller
     }
 
     // Logic xu ly luu database tao tai khoan
+
+    private void AddDuplicateAccountError()
+    {
+        ModelState.AddModelError(nameof(AuthViewModel.Email), "Tài khoản đã có");
+    }
+
+    private static bool IsDuplicateAccountError(DbUpdateException exception)
+    {
+        return exception.InnerException is SqlException sqlException
+               && sqlException.Errors
+                   .Cast<SqlError>()
+                   .Any(error => error.Number is 2601 or 2627);
+    }
 
     private void SetTurnstileSiteKey()
     {

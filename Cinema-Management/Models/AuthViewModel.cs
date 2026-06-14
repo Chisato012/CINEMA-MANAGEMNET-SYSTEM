@@ -13,7 +13,7 @@ public class AuthViewModel
     public string Password { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Vui lòng nhập đầy đủ họ tên")]
-    [RegularExpression(@"^[\p{L}\s]+$", ErrorMessage = "Tên không được có số hoặc ký tự đặc biệt")]
+    [RegularExpression(@"^[A-Za-zÀ-ÖØ-öø-ÿĀ-ſƀ-ɏḀ-ỹ\s]+$", ErrorMessage = "Tên không được có số hoặc ký tự đặc biệt")]
     public string FullName { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Vui lòng nhập số điện thoại")]

@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function(){
     const nameError = document.getElementById("name-error");
     const nameInput = document.getElementById("name-input")
     function validateName(){
-        const value = nameInput.value;
+        const value = nameInput.value.trim();
 
         if(value === "" ){
             nameError.textContent = "";
@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', function(){
         }
 
         //Regex
-        const regex = /^[\p{L}\s]+$/u;
+        const regex = /^[A-Za-zÀ-ÖØ-öø-ÿĀ-ſƀ-ɏḀ-ỹ\s]+$/;
         if(!regex.test(value)){
             nameError.textContent = "Tên không được có số"
             return false

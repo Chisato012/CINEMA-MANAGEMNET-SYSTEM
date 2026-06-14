@@ -27,16 +27,18 @@
                         <div class="col-md-6 mb-3">
                             <label class="form-label form-label-custom">HỌ TÊN</label>
                             <div class="input-group input-group-custom">
-                                <input type="text" class="form-control" id="name-input" name="FullName" required>
+                                <input asp-for="FullName" type="text" class="form-control" id="name-input" required>
                             </div>
                             <small id="name-error" class="text-danger" style="font-size: 10px;"></small>
+                            <span asp-validation-for="FullName" class="text-danger" style="font-size: 10px;"></span>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label form-label-custom">SỐ ĐIỆN THOẠI</label>
                             <div class="input-group input-group-custom">
-                                <input type="tel" class="form-control" name="PhoneNumber" id="phone-input">
+                                <input asp-for="PhoneNumber" type="tel" class="form-control" id="phone-input">
                             </div>
                             <small id="phone-error" class="text-danger" style="font-size: 10px;"></small>
+                            <span asp-validation-for="PhoneNumber" class="text-danger" style="font-size: 10px;"></span>
                         </div>
                     </div>
 
@@ -44,9 +46,10 @@
                         <div class="col-md-6 mb-3">
                             <label class="form-label form-label-custom">EMAIL</label>
                             <div class="input-group input-group-custom">
-                                <input type="email" class="form-control" id="email-input" name="Email" required>
+                                <input asp-for="Email" type="email" class="form-control" id="email-input" required>
                             </div>
                             <small id="email-error" class="text-danger mt-1" style="font-size: 10px;"></small>
+                            <span asp-validation-for="Email" class="text-danger mt-1" style="font-size: 10px;"></span>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label form-label-custom">NGÀY SINH</label>
@@ -60,7 +63,7 @@
                     <div class="mb-3">
                         <label class="form-label form-label-custom">MẬT KHẨU</label>
                         <div class="input-group input-group-custom">
-                            <input type="password" id="passwordInput" class="form-control" name="Password" required />
+                            <input asp-for="Password" type="password" id="passwordInput" class="form-control" required />
                             <span class="input-group-text end-icon" id="togglePassword">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                     <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7.028 7.028 0 0 0-2.79.588l.77.771A5.944 5.944 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.134 13.134 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755l.192.195z" />
@@ -71,14 +74,16 @@
                             
                         </div>
                         <small id="password-error" class="text-danger mt-1" style="font-size: 10px;"></small>
+                        <span asp-validation-for="Password" class="text-danger mt-1" style="font-size: 10px;"></span>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label form-label-custom">NHẬP LẠI MẬT KHẨU</label>
                         <div class="input-group input-group-custom">
-                            <input type="password" class="form-control" id="confirmPasswordInput" name="ConfirmPassword" required/>                                  
+                            <input asp-for="ConfirmPassword" type="password" class="form-control" id="confirmPasswordInput" required/>                                  
                         </div>    
                         <small id="confirmPasswordError" class="text-danger mt-1" style="font-size:10px"></small>                        
+                        <span asp-validation-for="ConfirmPassword" class="text-danger mt-1" style="font-size: 10px;"></span>
                     </div>
 
                     <div class="mb-3">
@@ -94,6 +99,10 @@
 </div>
 
 <script src="~/js/auth.js" asp-append-version="true"> </script>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
 
     
     
