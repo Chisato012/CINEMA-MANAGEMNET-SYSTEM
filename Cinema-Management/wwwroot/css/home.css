@@ -131,7 +131,7 @@
 
 .movie-gallery__row {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     /* Quan trọng: Chia chính xác 4 cột đều nhau */
     gap: 30px;
     /* Khoảng cách giữa các phim (trên/dưới/trái/phải) */
@@ -151,23 +151,25 @@
 }
 
 
-
-
 .movie-poster {
     width: 100%;
-
     /* QUAN TRỌNG NHẤT: Ép ảnh không được tràn ra ngoài khi phóng to */
     overflow: hidden;
-
+    aspect-ratio: 2/3;
     border-radius: 8px 8px 0 0;
     /* Bo góc trên cho khung ảnh */
+    position: relative; 
+    flex-shrink: 0;
 }
 
 .movie-poster img {
+    top: 0;
+    left: 0;
     width: 100%;
+    position: absolute;
     /* height: 100px; */
     object-fit: cover;
-    aspect-ratio: 2/3;
+    height: 100%;
     display: block;
     /* Đảm bảo ảnh không bị méo */
     border-top-right-radius: 8px;
@@ -175,7 +177,7 @@
     /* Bo góc ảnh nhẹ nhàng */
     background-color: #333;
     /* Màu nền chờ nếu ảnh chưa load */
-    transition: transform 0.3s ease,;
+    transition: transform 0.3s ease;
     transform: scale(1);
 }
 
@@ -311,9 +313,4 @@ button.buy-button__content:active {
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
     transform: translateY(1px);
     /* Đẩy nút rớt xuống 1px */
-}
-
-.buy-button__container {
-    margin-top: 20px;
-    margin-bottom: 20px;
 }
