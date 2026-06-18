@@ -66,6 +66,31 @@
         </div>
     </footer>
 
+    <div class="cosmos-chat" data-chat-api="http://localhost:5218/api/chat">
+        <button class="cosmos-chat-toggle" type="button" aria-label="Mở chatbot tư vấn phim">
+            Chat
+        </button>
+        <section class="cosmos-chat-panel" aria-label="Chatbot tư vấn phim" hidden>
+            <header class="cosmos-chat-header">
+                <div>
+                    <strong>COSMOS Bot</strong>
+                    <span>Tư vấn phim cá nhân hóa</span>
+                </div>
+                <button class="cosmos-chat-close" type="button" aria-label="Đóng chatbot">×</button>
+            </header>
+            <div class="cosmos-chat-messages" role="log" aria-live="polite">
+                <div class="cosmos-chat-message bot">
+                    Xin chào, mình có thể gợi ý phim theo tâm trạng hoặc lịch sử đặt vé của bạn. Hôm nay bạn muốn xem phim kiểu gì?
+                </div>
+            </div>
+            <form class="cosmos-chat-form">
+                <input class="cosmos-chat-input" type="text" autocomplete="off"
+                       placeholder="Ví dụ: Tôi muốn xem phim vui vẻ cuối tuần" />
+                <button class="cosmos-chat-send" type="submit">Gửi</button>
+            </form>
+        </section>
+    </div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
