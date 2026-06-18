@@ -2,7 +2,144 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    
+@model List<Cinema_Management.Models.MovieViewModel>
+
+
+<head>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css">
+    <link rel="stylesheet" href="~/css/home.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400;700&family=JetBrains+Mono:wght@400;700&family=Manrope:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="slider-container">
+        <div class="slider-wrapper" id="sliderWrapper">
+            <div class="slider-slide"><img src="" alt="Slide 1"></div>
+            <div class="slider-slide"><img src="" alt="Slide 2"></div>
+            <div class="slider-slide"><img src="" alt="Slide 3"></div>
+            <div class="slider-slide"><img src="" alt="Slide 4"></div>
+            <div class="slider-slide"><img src="" alt="Slide 5"></div>
+            <div class="slider-slide"><img src="" alt="Slide 6"></div>
+        </div>
+
+        <button class="slider-btn prev" onclick="moveSlide(-1)">&#10094;</button>
+        <button class="slider-btn next" onclick="moveSlide(1)">&#10095;</button>
+    </div>
+
+<div class="content">
+    <div class="movie-navbar-container">
+        <div class="movie-navbar-content" id="movieTabs">
+            <a href="javascript:void(0)" class="tab-item" onclick="activateTab(this)">PHIM SẮP CHIẾU</a>
+            <a href="javascript:void(0)" class="tab-item active" onclick="activateTab(this)">PHIM ĐANG CHIẾU</a>
+            <a href="javascript:void(0)" class="tab-item" onclick="activateTab(this)">SUẤT CHIẾU ĐẶC BIỆT</a>
+        </div>
+    </div>
+
+    <div class="movie-gallery ms-100 mt-5 ml-5 mr-5" >
+        <div class="row movie-gallery__row g-0">
+            @* Lặp qua danh sách phim từ Controller trả về *@
+            @if (Model != null && Model.Any())
+            {
+                foreach (var movie in Model)
+                {
+                    <div class="col-sm movie-gallery__col">
+                        <div class="movie-poster">
+                            <img src="@movie.PosterURL" alt="@movie.Title"> 
+                        </div>
+                        <div class="movie-details">
+                            <div class="movie-details__content">
+                                <div class="movie-title">@movie.Title</div>
+                                <div class="movie-genre-duration">
+                                    <div class="movie-genre">@movie.Genre</div>
+                                    <div class="movie-duration">@(movie.Duration)m</div>
+                                </div>
+                                <div class="buy-button__container">
+                                    <button class="buy-button__content"> Đặt vé</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <p>Hiện chưa có phim nào.</p>
+            }
+            
+            
+            
+            
+        </div>
+        
+        
+        
+
+        
+        
+    </div>
+
 </div>
+
+
+    
+</body>
+
+
+@* Hiệu ứng chuyển slide *@
+<script>
+    let currentIndex = 0;
+    const slides = document.querySelectorAll('.slider-slide');
+    const totalSlides = slides.length;
+    const wrapper = document.getElementById('sliderWrapper');
+    let autoSlideInterval;
+
+    //Hàm hiển thi ảnh
+    function showSlide(index){
+        if(index >= totalSlides){
+            currentIndex = 0; //Quay lại ảnh đầu nếu đã đến ảnh cuối
+        }else if(index < 0){
+            currentIndex = totalSlides - 1; //Về ảnh cuối nếu bấm lùi ảnh đầu
+        }else{
+            currentIndex = index;
+        }
+
+        //Dịch chuyển khung giưuã các ảnh
+        wrapper.style.transform = `translateX(-${currentIndex * 100}%)`
+    }
+
+    // Hàm gọi khi người dùng bấm nút
+    function moveSlide(step){
+        showSlide(currentIndex + step);
+        resetInterval(); // Reset lại bộ đếm
+    }
+
+    function startAutoSlide(){
+        autoSlideInterval = setInterval(() =>{
+            showSlide(currentIndex+1);
+        },4000);
+    }
+
+    //Hàm làm mới lại tg đếm ngược
+    function resetInterval(){
+        clearInterval(autoSlideInterval);
+        startAutoSlide();
+    }
+
+    startAutoSlide();
+
+    function activateTab(element) {
+        // Lấy tất cả các thẻ a bên trong movie-navbar-content
+        const tabs = document.querySelectorAll('.movie-navbar-content a');
+        
+        // Bỏ class 'active' khỏi toàn bộ các tab
+        tabs.forEach(tab => {
+            tab.classList.remove('active');
+        });
+
+        // Thêm class 'active' vào chính tab vừa được click
+        element.classList.add('active');
+    }
+</script>

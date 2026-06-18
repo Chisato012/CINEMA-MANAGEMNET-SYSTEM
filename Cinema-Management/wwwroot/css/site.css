@@ -8,7 +8,11 @@ html {
   }
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+.btn:focus,
+.btn:active:focus,
+.btn-link.nav-link:focus,
+.form-control:focus,
+.form-check-input:focus {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
@@ -19,7 +23,54 @@ html {
 
 body {
 
-    background-color: #121212; /* Áp dụng nền tối cho toàn trang */
-    color: #fff; /* Chữ mặc định màu trắng */
+  background-color: #121212;
+  /* Áp dụng nền tối cho toàn trang */
+  color: #fff;
+  /* Chữ mặc định màu trắng */
 }
 
+
+.custom-navbar {
+  background-color: #151515;
+  height: 80px;
+
+  /* Hiệu ứng đổ bóng giúp navbar nổi lên */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+
+  /* Bạn có thể kết hợp thêm viền dưới cực mờ để tạo độ sắc nét cho cạnh */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.004);
+
+  /* Đảm bảo navbar luôn đè lên các nội dung khác khi cuộn trang */
+  z-index: 1030;
+}
+
+.cosmos-logo {
+  color: #E1C194 !important;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 900;
+  font-size: 2.2rem;
+  letter-spacing: -0.5px;
+  text-decoration: none;
+}
+
+.cosmos-nav-link {
+  color: #E1C194 !important;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 1.5px;
+  transition: opacity 0.2s ease-in-out;
+  padding: 0.5rem 1rem;
+  text-decoration: none;
+}
+
+.cosmos-nav-link:hover {
+  opacity: 0.7;
+}
+
+/* Căn giữa tuyệt đối cho cụm menu */
+.center-menu {
+  position: absolute;
+  left: 250;
+  transform: translateX(-50%);
+}

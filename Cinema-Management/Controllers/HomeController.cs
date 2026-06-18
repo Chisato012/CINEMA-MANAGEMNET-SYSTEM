@@ -1,31 +1,37 @@
+
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Cinema_Management.Models;
+using Cinema_Management.Data;
+using System.Linq;
 
 namespace Cinema_Management.Controllers;
 
 public class HomeController : Controller
 {
-    private readonly ILogger<HomeController> _logger;
+    private readonly ApplicationDbContext _context;
 
-    public HomeController(ILogger<HomeController> logger)
+    public HomeController(ApplicationDbContext context)
     {
-        _logger = logger;
+        _context = context;
     }
 
     public IActionResult Index()
     {
-        return View();
-    }
+        // Truy vấn dữ liệu và map sang View Model
+        var movies = _context.Movies
+            .Select(m => new MovieViewModel
+            {
+                MovieId = m.MovieId,
+                Title = m.Title,
+                Duration = m.Duration,
+                PosterURL = m.PosterURL,
+                // Gom tên các thể loại nối với nhau bằng dấu phẩy
+                Genre = string.Join(", ", m.MovieGenres.Select(mg => mg.Genre.Name)) 
+            })
+            .ToList();
 
-    public IActionResult Privacy()
-    {
-        return View();
-    }
-
-    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error()
-    {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        // Gửi danh sách này sang View
+        return View(movies);
     }
 }
