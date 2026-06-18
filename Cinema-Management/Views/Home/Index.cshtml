@@ -39,13 +39,13 @@
     </div>
 
     <div class="movie-gallery ms-100 mt-5 ml-5 mr-5" >
-        <div class="row movie-gallery__row g-0">
+        <div class="movie-gallery__row g-0">
             @* Lặp qua danh sách phim từ Controller trả về *@
             @if (Model != null && Model.Any())
             {
                 foreach (var movie in Model)
                 {
-                    <div class="col-sm movie-gallery__col">
+                    <div class="movie-gallery__col">
                         <div class="movie-poster">
                             <img src="@movie.PosterURL" alt="@movie.Title"> 
                         </div>
