@@ -126,6 +126,7 @@ create table Showtimes (
   ShowtimeID int          PRIMARY KEY IDENTITY(1, 1),
   MovieID    int          NOT NULL,
   RoomID     int          NOT NULL,
+  [Date]     date         NOT NULL,
   StartTime  datetime     NOT NULL,
   EndTime    datetime     NOT NULL,
   BasePrice  decimal(10,2) NOT NULL,
@@ -145,7 +146,10 @@ create table Users (
   PasswordHash varchar(512)  NOT NULL,
   PhoneNumber  varchar(15),
   DOB          date,
-  Status       bit           DEFAULT (1)
+  Status       bit           DEFAULT (1),
+  [Role]       nvarchar(20)  NOT NULL DEFAULT N'KhachHang',
+
+CONSTRAINT CK_Users_Role CHECK ([Role] IN ('Admin', 'Staff', 'KhachHang'))
 )
 GO
 
@@ -277,6 +281,14 @@ GO
 
 EXEC sp_addextendedproperty
   @name      = N'Column_Description',
+  @value     = N'Ngày chiếu, dùng để lọc lịch chiếu theo ngày',
+  @level0type = N'Schema', @level0name = N'dbo',
+  @level1type = N'Table',  @level1name = N'Showtimes',
+  @level2type = N'Column', @level2name = N'Date'
+GO
+
+EXEC sp_addextendedproperty
+  @name      = N'Column_Description',
   @value     = N'Ngày giờ bắt đầu suất chiếu (bao gồm cả ngày)',
   @level0type = N'Schema', @level0name = N'dbo',
   @level1type = N'Table',  @level1name = N'Showtimes',
@@ -291,12 +303,28 @@ EXEC sp_addextendedproperty
   @level2type = N'Column', @level2name = N'DOB'
 GO
 
+EXEC sp_updateextendedproperty 
+    @name = N'Column_Description', 
+    @value = N'Kiểm tra điều kiện người dùng > 16 tuổi mới được phép tạo tài khoản / đặt vé', 
+    @level0type = N'SCHEMA', @level0name = N'dbo', 
+    @level1type = N'TABLE',  @level1name = N'Users', 
+    @level2type = N'COLUMN', @level2name = N'DOB';
+GO
+
 EXEC sp_addextendedproperty
   @name      = N'Column_Description',
   @value     = N'1 = hoạt động, 0 = bị khoá',
   @level0type = N'Schema', @level0name = N'dbo',
   @level1type = N'Table',  @level1name = N'Users',
   @level2type = N'Column', @level2name = N'Status'
+GO
+
+EXEC sp_addextendedproperty
+  @name      = N'Column_Description',
+  @value     = N'Vai trò tài khoản: Admin, Staff hoặc KhachHang',
+  @level0type = N'Schema', @level0name = N'dbo',
+  @level1type = N'Table',  @level1name = N'Users',
+  @level2type = N'Column', @level2name = N'Role'
 GO
 
 EXEC sp_addextendedproperty
