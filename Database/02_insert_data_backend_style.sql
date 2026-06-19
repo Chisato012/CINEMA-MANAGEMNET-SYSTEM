@@ -168,42 +168,42 @@ VALUES
 -- 1. Doraemon
 (N'Doraemon', '2025-05-31', N'P', 105, 
  N'Cuộc phiêu lưu mới đầy thú vị của Doraemon, Nobita và những người bạn quen thuộc.', 
- 'poster_doraemon.jpg', 'trailer_doraemon.mp4', 3, 3),
+ '/img/poster/doraemon.jpg', 'trailer_doraemon.mp4', 3, 3),
 
 -- 2. Toy Story
 (N'Toy Story', '2025-06-20', N'P', 100, 
  N'Hành trình kỳ thú của thế giới đồ chơi khi đối mặt với những thử thách mới ngoài thế giới thực.', 
- 'poster_toy_story.jpg', 'trailer_toy_story.mp4', 2, 1),
+ '/img/poster/toystory.png', 'trailer_toy_story.mp4', 2, 1),
 
 -- 3. Your Name
 (N'Your Name', '2016-08-26', N'T13', 106, 
  N'Câu chuyện hoán đổi thân xác kỳ diệu giữa một cô gái vùng quê và một chàng trai Tokyo.', 
- 'poster_your_name.jpg', 'trailer_your_name.mp4', 3, 3),
+ '/img/poster/yourname400x600.png', 'trailer_your_name.mp4', 3, 3),
 
 -- 4. Ma Xó
 (N'Ma Xó', '2026-02-13', N'T18', 110, 
  N'Bộ phim kinh dị tâm linh Việt Nam xoay quanh những bí ẩn cổ xưa đầy rùng rợn tại một ngôi làng nhỏ.', 
- 'poster_ma_xo.jpg', 'trailer_ma_xo.mp4', 5, 5),
+ '/img/poster/maxo.jpg', 'trailer_ma_xo.mp4', 5, 5),
 
 -- 5. Colony
 (N'Colony', '2026-04-15', N'T16', 125, 
  N'Bối cảnh tương lai nơi con người phải chiến đấu sinh tồn trong một trật tự xã hội khắc nghiệt mới.', 
- 'poster_colony.jpg', 'trailer_colony.mp4', 4, 4),
+ '/img/poster/colony.jpg', 'trailer_colony.mp4', 4, 4),
 
 -- 6. Super Girls
 (N'Super Girls', '2026-06-05', N'T13', 130, 
  N'Hành trình của các nữ siêu anh hùng thế hệ mới trong việc bảo vệ công lý thế giới.', 
- 'poster_super_girls.jpg', 'trailer_super_girls.mp4', 2, 1),
+ '/img/poster/supergirl.png', 'trailer_super_girls.mp4', 2, 1),
 
 -- 7. Cô bé Ponyo
 (N'Cô bé Ponyo', '2008-07-19', N'P', 101, 
  N'Câu chuyện đáng yêu về tình bạn giữa một cậu bé loài người và cô bé cá vàng Ponyo muốn trở thành người.', 
- 'poster_co_be_ponyo.jpg', 'trailer_co_be_ponyo.mp4', 3, 3),
+ '/img/poster/ponyo.jpg', 'trailer_co_be_ponyo.mp4', 3, 3),
 
 -- 8. HE-MAN VÀ NHỮNG CHIẾN BINH VŨ TRỤ
 (N'HE-MAN VÀ NHỮNG CHIẾN BINH VŨ TRỤ', '2026-03-20', N'T13', 135, 
  N'Trận chiến sử thi bảo vệ vũ trụ của chiến binh He-Man chống lại thế lực đen tối Skeletor.', 
- 'poster_he_man.jpg', 'trailer_he_man.mp4', 2, 1);
+ '/img/poster/heman.jpg', 'trailer_he_man.mp4', 2, 1);
 GO
 
 -- ==========================================
