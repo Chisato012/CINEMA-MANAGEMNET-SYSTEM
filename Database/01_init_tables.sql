@@ -113,7 +113,9 @@ create table Seats (
   RoomID   int          NOT NULL,
   SeatCode nvarchar(10) NOT NULL,
   SeatType varchar(10)  NOT NULL,
+  SeatStatus varchar(50) NOT NULL,
 CONSTRAINT CK_Seats_SeatType CHECK (SeatType IN ('Regular', 'VIP', 'Couple')),
+CONSTRAINT CK_Seats_SeatType CHECK (SeatStatus IN ('Order', 'Not Order', 'Orderring')),
 CONSTRAINT FK_Seats_Rooms FOREIGN KEY (RoomID) REFERENCES Rooms (RoomID),
 CONSTRAINT FK_Seats_SeatTypePricing FOREIGN KEY (SeatType) REFERENCES SeatTypePricing (SeatType)
 )
