@@ -7,8 +7,8 @@ finetune-phobert/                 # intent/movie model
 phobert-mood/checkpoint-1680/     # mood model
 ```
 
-Các folder model đã được `.gitignore`, vì vậy **không push weights lên GitHub**. Sau khi clone repo, mỗi máy dev/server cần tự đặt model vào đúng path hoặc sửa đường dẫn trong API config.
-
+Các folder model đã được `.gitignore`, vì vậy **không push weights lên GitHub**. Sau khi clone repo, mỗi máy dev/server cần tự đặt model vào đúng path hoặc sửa đường dẫn trong API config.  
+Link cho 2 model phobert: [phobert](https://cmcuni-my.sharepoint.com/:u:/g/personal/bit242520_st_cmcu_edu_vn/IQA-nClQ5Os0SIRBv3SFW-YNAYpbMMsH6NSIpb5XrLHVLoQ?e=CuDEaK)  
 ## Vai Trò 2 Model
 
 `finetune-phobert`
