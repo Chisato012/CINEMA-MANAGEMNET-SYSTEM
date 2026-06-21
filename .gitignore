@@ -333,6 +333,22 @@ paket-files/
 __pycache__/
 *.pyc
 
+# Local PhoBERT model/training artifacts.
+# Keep trained weights on local disk or release storage, not in Git.
+Chatbot/Train/phobert/finetune-phobert/
+Chatbot/Train/phobert/phobert-mood/
+Chatbot/Train/phobert/phobert-mood-api/
+Chatbot/Train/phobert/**/checkpoint-*/
+Chatbot/Train/phobert/**/*.safetensors
+Chatbot/Train/phobert/**/pytorch_model.bin
+Chatbot/Train/phobert/**/optimizer.pt
+Chatbot/Train/phobert/**/scheduler.pt
+Chatbot/Train/phobert/**/scaler.pt
+Chatbot/Train/phobert/**/rng_state.pth
+Chatbot/Train/phobert/**/training_args.bin
+Chatbot/Train/phobert/hf-cache/
+Chatbot/Train/phobert/.cache/
+
 # Cake - Uncomment if you are using it
 # tools/**
 # !tools/packages.config
