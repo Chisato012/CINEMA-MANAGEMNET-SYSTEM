@@ -1,3 +1,16 @@
 ﻿@{
-    Layout = "_Layout";
+// Lấy tên Controller mà người dùng đang truy cập
+    var controllerName = ViewContext.RouteData.Values["controller"]?.ToString();
+
+    // Nếu người dùng đang vào các Controller của hệ thống quản trị
+    if (controllerName == "Staff")
+    {
+        // Sử dụng Layout của Admin
+        Layout = "_StaffLayout";
+    }
+    else
+    {
+        // Ngược lại, dùng Layout của Khách hàng mặc định
+        Layout = "_Layout";
+    }
 }

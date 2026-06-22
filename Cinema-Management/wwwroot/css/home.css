@@ -206,6 +206,12 @@
     flex-direction: column;
     flex-grow: 1;
 }
+.movie-details__content a{
+    text-decoration: none;
+}
+.movie-details__content a:hover{
+    color: #956948;
+}
 
 .movie-title {
     font-size: 22px;

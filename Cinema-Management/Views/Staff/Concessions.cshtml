@@ -1,0 +1,134 @@
+@{ ViewData["Title"] = "POS Concessions Register"; }
+
+<header class="staff-header">
+    <div style="display:flex;align-items:center;gap:16px;">
+        <h2>QUẢN LÝ BẮP NƯỚC</h2>
+        <span class="badge badge-outline">ĐANG KẾT NỐI</span>
+    </div>
+    <div style="display:flex;gap:12px;">
+        <button class="btn-secondary" style="border:none;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+            LƯU
+        </button>
+    </div>
+</header>
+
+<div class="concessions-layout">
+    <div class="concessions-main">
+        <div class="pos-stats">
+            <div class="stat-card">
+                <p class="stat-label">LỢI NHUẬN DOANH THU HÀNG NGÀY</p>
+                <h3>0 VND</h3>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+            </div>
+            <div class="stat-card">
+                <p class="stat-label">TỔNG SỐ GIAO DỊCH</p>
+                <h3>0 GIAO DỊCH</h3>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            </div>
+            <div class="stat-card">
+                <p class="stat-label">GIÁ TRỊ TRUNG BÌNH MỖI ĐƠN</p>
+                <h3>0 VND</h3>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            </div>
+        </div>
+
+        <div class="category-tabs">
+            <button class="tab-btn active">TẤT CẢ</button>
+            <button class="tab-btn">DRINKS</button>
+            <button class="tab-btn">POPCORN</button>
+            <button class="tab-btn">COMBOS</button>
+        </div>
+
+        <div class="concessions-grid">
+            <!-- Item -->
+            <div class="concession-item">
+                <div class="item-img-wrap">
+                    <span class="item-tag">BEST SELLER</span>
+                    <img src="~/image/popcorn.png" alt="Popcorn" />
+                </div>
+                <div class="item-info">
+                    <div class="item-header">
+                        <h4> Popcorn (XL)</h4>
+                        <span class="item-price">99.000</span>
+                    </div>
+                    <p>...THEM MO TA MON AN...</p>
+                    <button class="btn-add">THÊM VÀO GIỎ</button>
+                </div>
+            </div>
+            
+            <div class="concession-item">
+                <div class="item-img-wrap">
+                    <span class="item-tag tag-blue">ICE COLD</span>
+                    <img src="https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=200&q=80" alt="Soda" />
+                </div>
+                <div class="item-info">
+                    <div class="item-header">
+                        <h4>Coca Cola</h4>
+                        <span class="item-price">29.000</span>
+                    </div>
+                    <p>mo ta</p>
+                    <button class="btn-add">THÊM VÀO GIỎ</button>
+                </div>
+            </div>
+
+
+            <div class="concession-item">
+                <div class="item-img-wrap">
+                    <span class="item-tag tag-red">COMBO</span>
+                    <img src="~/image/comboL.png" alt="Combo" />
+                </div>
+                <div class="item-info">
+                    <div class="item-header">
+                        <h4>Combo Bắp nước (L)</h4>
+                        <span class="item-price">99.000</span>
+                    </div>
+                    <p>mo ta</p>
+                    <button class="btn-add">THÊM VÀO GIỎ</button>
+                </div>
+            </div>
+
+            <!-- Item 4 -->
+            <div class="concession-item">
+                <div class="item-img-wrap">
+                    <span class="item-tag tag-red">Combo</span>
+                    <img src="~/image/comboXL.png" alt="BAP NUOC" />
+                </div>
+                <div class="item-info">
+                    <div class="item-header">
+                        <h4>Combo Bắp Nước (XL)</h4>
+                        <span class="item-price">199.000</span>
+                    </div>
+                    <p>1 bắp 2 nước</p>
+                    <button class="btn-add">THÊM VÀO GIỎ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="receipt-sidebar">
+        <div class="receipt-header">
+            <h4>GIỎ HÀNG</h4>
+            <span class="badge badge-primary">POS READY</span>
+        </div>
+        
+        <div class="receipt-empty">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--color-neutral-400)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:16px"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
+            <p>Giỏ hàng đang trống..</p>
+        </div>
+
+        <div class="receipt-footer">
+            <div class="receipt-total">
+                <span>Tổng giá trị (Đã tính thuế)</span>
+                <strong>$0.00</strong>
+            </div>
+            <div class="receipt-actions">
+                <button class="btn-secondary" style="flex:1">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
+                    LÀM MỚI
+                </button>
+                <button class="btn-primary" style="flex:2;justify-content:center">THANH TOÁN</button>
+            </div>
+        </div>
+    </div>
+</div>

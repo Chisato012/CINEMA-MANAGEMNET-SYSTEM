@@ -1,0 +1,262 @@
+@model Cinema_Management.Models.MovieViewModel
+
+@{
+    ViewData["Title"] = Model.Title + " - Movie Details";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/details.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+}
+
+<!-- Breadcrumb Navigation -->
+
+<!-- Hero Section -->
+<div class="details-breadcrumb">
+    <a asp-controller="Home" asp-action="Index">Trang chủ</a>
+    <i class="fa-solid fa-angle-right"></i>
+    <span class="breadcrumb-current">@Model.Title</span>
+</div>
+<section class="details-hero">
+    <!-- Hero Content -->
+    <div class="details-hero__content">
+        <!-- Movie Poster -->
+        <div class="details-poster">
+            <div class="details-poster__frame">
+                <img src="@Model.PosterURL" alt="@Model.Title poster" />
+            </div>
+        </div>
+        <!-- Movie thông tin -->
+        <div class="details-info">
+            <!-- Tags: các tag từ thể loại, rating-->
+            <div class="details-tags">
+                @if (!string.IsNullOrEmpty(Model.Genre))
+                {
+                    <span class="details-tag">@Model.Genre</span>
+                }
+                <span class="details-tag details-tag--duration">@Model.Duration phút</span>
+                @if (!string.IsNullOrEmpty(Model.AgeRating))
+                {
+                    <span class="details-tag details-tag--age">@Model.AgeRating</span>
+                }
+            </div>
+
+            <!-- Title -->
+            <h1 class="details-title">@Model.Title</h1>
+
+            <!-- Synopsis -->
+            @if (!string.IsNullOrEmpty(Model.Synopsis))
+            {
+                <p class="details-synopsis">@Model.Synopsis</p>
+            }
+        </div>
+    </div>
+
+    <!-- 2 nút -->
+    <div class="details-actions">
+        <a href="#" class="details-btn--book" id="btn-book-tickets">
+            <i class="fa-solid fa-ticket"></i>
+            Book Tickets
+        </a>
+        <button type="button" class="details-btn--trailer" id="btn-watch-trailer"
+        @* Truyền link trailer *@
+                onclick="openTrailer('@Model.Trailer')">
+            <span class="play-icon">▶</span>
+            Watch Trailer
+        </button>
+    </div>
+</section>
+
+<!-- Divider -->
+<hr class="details-divider" />
+
+<!--Section thông tin-->
+<section class="details-extra">
+    <div class="details-extra__grid">
+        @if (!string.IsNullOrEmpty(Model.MovieDirector))
+        {
+            <div class="details-extra__item">
+                <span class="details-extra__label">Đạo diễn</span>
+                <span class="details-extra__value">@Model.MovieDirector</span>
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.MovieCast))
+        {
+            <div class="details-extra__item">
+                <span class="details-extra__label">Diễn viên</span>
+                <span class="details-extra__value">@Model.MovieCast</span>
+            </div>
+        }
+
+        @if (Model.Language != null)
+        {
+            <div class="details-extra__item">
+                <span class="details-extra__label">Ngôn ngữ</span>
+                <span class="details-extra__value">@Model.Language.LanguageName</span>
+            </div>
+        }
+
+        @if (Model.Country != null)
+        {
+            <div class="details-extra__item">
+                <span class="details-extra__label">Quốc gia</span>
+                <span class="details-extra__value">@Model.Country.CountryName</span>
+            </div>
+        }
+
+        <div class="details-extra__item">
+            <span class="details-extra__label">Ngày khởi chiếu</span>
+            <span class="details-extra__value">@Model.ReleaseDate.ToString("dd/MM/yyyy")</span>
+        </div>
+
+        <div class="details-extra__item">
+            <span class="details-extra__label">Thời lượng</span>
+            <span class="details-extra__value">@Model.Duration phút</span>
+        </div>
+    </div>
+</section>
+
+<!-- Trailer Modal -->
+<div class="trailer-modal" id="trailerModal">
+    <div class="trailer-modal__content">
+        <button class="trailer-modal__close" onclick="closeTrailer()" aria-label="Close trailer">
+            <i class="fa-solid fa-xmark"></i
+        </button>
+        <iframe id="trailerIframe" src="" allowfullscreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+        </iframe>
+    </div>
+</div>
+
+@* section lịch chiếu *@
+@if (Model.Showtimes != null && Model.Showtimes.Any())
+{
+    var today = DateTime.Today;
+    var endDate = today.AddDays(6);
+
+    var groupedByDate = Model.Showtimes
+        .Where(s => s.Date.Date >= today && s.Date.Date <= endDate)
+        .OrderBy(s => s.Date)
+        .GroupBy(s => s.Date.Date)
+        .ToList();
+
+    var vietnameseDays = new Dictionary<DayOfWeek, string>
+    {
+        { DayOfWeek.Monday, "T2" },
+        { DayOfWeek.Tuesday, "T3" },
+        { DayOfWeek.Wednesday, "T4" },
+        { DayOfWeek.Thursday, "T5" },
+        { DayOfWeek.Friday, "T6" },
+        { DayOfWeek.Saturday, "T7" },
+        { DayOfWeek.Sunday, "CN" }
+    };
+
+    <section class="showtimes-section">
+        <div class="showtimes-header">
+            <h2 class="showtimes-header__title">LỊCH CHIẾU</h2>
+        </div>
+
+        <!-- Date Tabs -->
+        <div class="showtimes-dates">
+            @for (int i = 0; i < groupedByDate.Count; i++)
+            {
+                var dateGroup = groupedByDate[i];
+                var date = dateGroup.Key;
+                var dayLabel = vietnameseDays[date.DayOfWeek];
+                var isActive = i == 0 ? "active" : "";
+
+                <button class="showtimes-date-tab @isActive"
+                        data-date="@date.ToString("yyyy-MM-dd")"
+                        onclick="switchDateTab(this)">
+                    <span class="showtimes-date-tab__day">@date.Day</span>
+                    <span class="showtimes-date-tab__month">/@date.ToString("MM") - @dayLabel</span>
+                </button>
+            }
+        </div>
+
+        <!-- Time Slots mỗi ngày -->
+        @for (int i = 0; i < groupedByDate.Count; i++)
+        {
+            var dateGroup = groupedByDate[i];
+            var date = dateGroup.Key;
+            var displayStyle = i == 0 ? "flex" : "none";
+
+            <div class="showtimes-times" data-date="@date.ToString("yyyy-MM-dd")" style="display: @displayStyle;">
+                <div class="showtimes-times__grid">
+                    @foreach (var showtime in dateGroup.OrderBy(s => s.StartTime))
+                    {
+                        <a href="#" class="showtimes-time-card">
+                            <span class="showtimes-time-card__time">@showtime.StartTime.ToString("HH:mm")</span>
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+    </section>
+}
+
+@section Scripts {
+    <script>
+        // Convert YouTube URL to embed URL
+        function getEmbedUrl(url) {
+            if (!url) return '';
+            // Handle youtu.be short links
+            let match = url.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
+            if (match) return 'https://www.youtube.com/embed/' + match[1] + '?autoplay=1';
+            // Handle youtube.com/watch?v= links
+            match = url.match(/[?&]v=([a-zA-Z0-9_-]+)/);
+            if (match) return 'https://www.youtube.com/embed/' + match[1] + '?autoplay=1';
+            return url;
+        }
+
+        function openTrailer(trailerUrl) {
+            if (!trailerUrl) {
+                alert('Trailer chưa có sẵn.');
+                return;
+            }
+            const modal = document.getElementById('trailerModal');
+            const iframe = document.getElementById('trailerIframe');
+            iframe.src = getEmbedUrl(trailerUrl);
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeTrailer() {
+            const modal = document.getElementById('trailerModal');
+            const iframe = document.getElementById('trailerIframe');
+            iframe.src = '';
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Close modal on ESC key
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeTrailer();
+        });
+
+        // Close modal on backdrop click
+        document.getElementById('trailerModal').addEventListener('click', function (e) {
+            if (e.target === this) closeTrailer();
+        });
+
+        // Showtimes date tab switching
+        function switchDateTab(clickedTab) {
+            // Remove active from all tabs
+            document.querySelectorAll('.showtimes-date-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            // Activate clicked tab
+            clickedTab.classList.add('active');
+
+            // Hide all time panels
+            const selectedDate = clickedTab.getAttribute('data-date');
+            document.querySelectorAll('.showtimes-times').forEach(panel => {
+                panel.style.display = 'none';
+            });
+            // Show matching panel
+            const target = document.querySelector('.showtimes-times[data-date="' + selectedDate + '"]');
+            if (target) target.style.display = 'flex';
+        }
+    </script>
+}

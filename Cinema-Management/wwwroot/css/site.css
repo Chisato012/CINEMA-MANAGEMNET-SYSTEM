@@ -74,3 +74,43 @@ body {
   left: 250;
   transform: translateX(-50%);
 }
+
+
+
+/* Thiết lập vị trí gốc cho thẻ chứa toàn bộ dropdown */
+.user-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+/* Ẩn menu đi ở trạng thái bình thường */
+.user-dropdown-content {
+    display: none; /* Ẩn thẻ này đi */
+    position: absolute;
+    right: 0; /* Căn lề phải so với logo */
+    background-color: #fff; /* Màu nền menu */
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); /* Tạo bóng đổ cho đẹp */
+    z-index: 1000; /* Đảm bảo menu luôn nổi lên trên các thành phần khác */
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+/* Trang trí cho các đường link bên trong menu */
+.user-dropdown-content a {
+    color: #333;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    font-size: 14px;
+}
+
+/* Đổi màu nền khi di chuột vào từng dòng chữ trong menu */
+.user-dropdown-content a:hover {
+    background-color: #f1f1f1;
+}
+
+/* QUAN TRỌNG NHẤT: Hiển thị menu ra khi di chuột vào khối user-dropdown */
+.user-dropdown:hover .user-dropdown-content {
+    display: block;
+}

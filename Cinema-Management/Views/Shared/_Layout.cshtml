@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -8,10 +8,11 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Cinema_Management.styles.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 
 <style>
-    
+
 </style>
 
 <body>
@@ -29,19 +30,45 @@
                     <a href="#" class="cosmos-nav-link">Phim</a>
                     <a href="#" class="cosmos-nav-link">Giá vé</a>
                     <a href="#" class="cosmos-nav-link">Ưu đãi</a>
-                    <a href="#" class="cosmos-nav-link">Tài khoản</a>
+                    <a href="#" class="cosmos-nav-link">Đặt vé</a>
                 </div>
 
-                <div class="d-flex align-items-center">
-                    <a asp-controller="Account" asp-action="Login" class="cosmos-nav-link p-1"
-                       style="color: #D4A373; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.7'"
-                       onmouseout="this.style.opacity='1'">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor"
-                             viewBox="0 0 16 16">
-                            <path
-                            d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0Zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4Zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10Z" />
-                        </svg>
-                    </a>
+                <div class="d-flex align-items-center gap-2">
+                    @if (Context.Session.GetString("UserEmail") != null)
+                    {
+                        <span style="color: #D4A373; font-size: 0.85rem; font-family: 'Manrope', sans-serif;">
+                            Welcome @Context.Session.GetString("UserEmail")
+                            @* hiện chào mừng *@
+                        </span>
+                        <div class="user-dropdown">
+                            <a asp-controller="Account" asp-action="Login" class="cosmos-nav-link p-1"
+                               style="color: #D4A373; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.7'"
+                               onmouseout="this.style.opacity='1'">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor"
+                                     viewBox="0 0 16 16">
+                                    <path
+                                    d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0Zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4Zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10Z" />
+                                </svg>
+                            </a>
+
+                            <div class="user-dropdown-content">
+                                <a asp-controller="Account" asp-action="Profile">Trang cá nhân</a>
+                                <a asp-controller="Account" asp-action="Logout" class="text-danger">Đăng xuất</a>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="Login" class="cosmos-nav-link p-1"
+                           style="color: #D4A373; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.7'"
+                           onmouseout="this.style.opacity='1'">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor"
+                                 viewBox="0 0 16 16">
+                                <path
+                                d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0Zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4Zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10Z" />
+                            </svg>
+                        </a>
+                    }
                 </div>
 
             </div>
@@ -70,6 +97,49 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
+
+    @* ====== TOAST NOTIFICATION SYSTEM ====== *@
+    <div aria-live="polite" aria-atomic="true" style="position: fixed; top: 20px; right: 20px; z-index: 99999;">
+        @if (TempData["AlertSuccess"] != null)
+        {
+            <div class="toast align-items-center text-white border-0 show" role="alert"
+                 style="background: linear-gradient(135deg, #28a745, #218838); min-width: 350px; border-radius: 12px; box-shadow: 0 8px 32px rgba(40,167,69,0.3);">
+                <div class="d-flex">
+                    <div class="toast-body" style="font-size: 0.95rem; padding: 16px 20px;">
+                        ✅ @TempData["AlertSuccess"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        }
+        @if (TempData["AlertError"] != null)
+        {
+            <div class="toast align-items-center text-white border-0 show" role="alert"
+                 style="background: linear-gradient(135deg, #dc3545, #c82333); min-width: 350px; border-radius: 12px; box-shadow: 0 8px 32px rgba(220,53,69,0.3);">
+                <div class="d-flex">
+                    <div class="toast-body" style="font-size: 0.95rem; padding: 16px 20px;">
+                        ❌ @TempData["AlertError"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        }
+    </div>
+
+    <script>
+            // Auto-hide toasts after 5 seconds
+            document.addEventListener('DOMContentLoaded', function () {
+                var toasts = document.querySelectorAll('.toast.show');
+                toasts.forEach(function (toast) {
+                    setTimeout(function () {
+                        toast.classList.remove('show');
+                        toast.style.transition = 'opacity 0.5s ease';
+                        toast.style.opacity = '0';
+                        setTimeout(function () { toast.remove(); }, 500);
+                    }, 5000);
+                });
+            });
+    </script>
 </body>
 
 </html>

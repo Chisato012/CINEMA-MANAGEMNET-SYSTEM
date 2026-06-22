@@ -13,14 +13,14 @@ public class AccountController : Controller
     // Đọc cấu hình từ appsettings.json
     // Ví dụ: Cloudflare Turnstile SiteKey và SecretKey
     private readonly IConfiguration _configuration;
-    
+
     // Dùng để tạo HttpClient gửi request tới Cloudflare
     private readonly IHttpClientFactory _httpClientFactory;
-    
+
     // DbContext dùng để truy vấn và lưu dữ liệu trong database
     private readonly ApplicationDbContext _context;
-    
-    
+
+
     // Dependency Injection:
     // ASP.NET Core tự động truyền các service cần thiết vào Controller
     public AccountController(
@@ -32,7 +32,7 @@ public class AccountController : Controller
         _httpClientFactory = httpClientFactory;
         _context = context;
     }
-    
+
     // =====================================================
     // HIỂN THỊ TRANG ĐĂNG NHẬP
     // GET: /Account/Login
@@ -56,39 +56,41 @@ public class AccountController : Controller
         // Khi trả lại View do có lỗi, View vẫn cần SiteKey
         // để hiển thị lại CAPTCHA        
         SetTurnstileSiteKey();
-        
+
         // Lấy token CAPTCHA do Cloudflare Turnstile gửi từ form
         model.CaptchaToken = Request.Form["cf-turnstile-response"].ToString();
-        
+
         // CaptchaToken không được gửi bằng asp-for,
         // nên loại thuộc tính này khỏi ModelState
         // và kiểm tra CAPTCHA riêng ở phía dưới
         ModelState.Remove(nameof(LoginRequest.CaptchaToken));
 
-        
+
         // Kiểm tra các validation của Email và Password
         // trong LoginRequest
         if (!ModelState.IsValid)
         {
             return View(model);
         }
-        
+
         // Gửi token CAPTCHA tới Cloudflare để xác thực
         if (!await IsTurnstileValidAsync())
         {
             ViewBag.CaptchaError = "Vui long xac minh captcha.";
+            TempData["AlertError"] = "Xác minh CAPTCHA thất bại. Vui lòng thử lại.";
             return View(model);
         }
 
         // Chuẩn hóa email trước khi tìm kiếm
         var user = await _context.Users.FirstOrDefaultAsync(x => x.Email == model.Email);
 
-        
+
         // Nếu không tìm thấy tài khoản hoặc mật khẩu không đúng
         // thì trả về cùng một thông báo để tránh lộ email tồn tại
         if (user == null || !IsPasswordValid(model.Password, user.PasswordHash))
         {
             ModelState.AddModelError(string.Empty, "Sai email hoặc mật khẩu");
+            TempData["AlertError"] = "Sai email hoặc mật khẩu. Vui lòng thử lại.";
             return View(model);
         }
 
@@ -97,26 +99,43 @@ public class AccountController : Controller
         if (!user.Status)
         {
             ModelState.AddModelError(string.Empty, "Tài khoản đã bị khóa");
+            TempData["AlertError"] = "Tài khoản của bạn đã bị khóa.";
             return View(model);
         }
 
-        
-        // Đăng nhập thành công thì chuyển sang trang Home
-        // Hiện tại chưa tạo Cookie, Session hoặc JWT
-        return RedirectToAction("Index", "Home");
+
+        // Đăng nhập thành công — Lưu thông tin user vào Session
+        var role = user.Role; // Xử lý null Role cho user cũ trong DB
+
+        HttpContext.Session.SetString("UserEmail", user.Email);
+        HttpContext.Session.SetString("UserRole", role);
+        HttpContext.Session.SetInt32("UserID", user.UserID);
+
+        // Thiết lập thông báo thành công
+        TempData["AlertSuccess"] = $"Đăng nhập thành công! Xin chào {user.FullName} (Role: {role})";
+
+        // Phân quyền chuyển hướng theo Role
+        return role switch
+        {
+            "Admin" => RedirectToAction("Index", "Admin"),
+            "Staff" => RedirectToAction("Index", "Staff"),
+            _ => RedirectToAction("Index", "Home")  // KhachHang hoặc mặc định
+        };
+
+
     }
 
-    
-     // =====================================================
-        // API ĐĂNG NHẬP
-        // POST: /login
-        //
-        // Request body:
-        // {
-        //     "email": "example@gmail.com",
-        //     "password": "Test@123"
-        // }
-        // =====================================================
+
+    // =====================================================
+    // API ĐĂNG NHẬP
+    // POST: /login
+    //
+    // Request body:
+    // {
+    //     "email": "example@gmail.com",
+    //     "password": "Test@123"
+    // }
+    // =====================================================
     [HttpPost("login")]
     public async Task<IActionResult> LoginApi([FromBody] LoginRequest request)
     {
@@ -153,6 +172,23 @@ public class AccountController : Controller
                 user.Email
             }
         });
+    }
+
+    // =====================================================
+    // XỬ LÝ ĐĂNG XUẤT
+    // GET: /Account/Logout
+    // =====================================================
+    [HttpGet]
+    public IActionResult Logout()
+    {
+        // Xóa toàn bộ thông tin trong Session
+        HttpContext.Session.Clear();
+
+        // Xóa thông báo (nếu có)
+        TempData["AlertSuccess"] = "Bạn đã đăng xuất thành công.";
+
+        // Đẩy về trang chủ
+        return RedirectToAction("Index", "Home");
     }
 
     // =====================================================

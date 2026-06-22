@@ -6,6 +6,14 @@ var builder = WebApplication.CreateBuilder(args);
 // Đăng ký MVC
 builder.Services.AddControllersWithViews();
 
+//Đăng ký session
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
 // Dùng để gọi API Cloudflare Turnstile
 builder.Services.AddHttpClient();
 
@@ -56,6 +64,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+app.UseSession();
 
 app.UseAuthorization();
 
