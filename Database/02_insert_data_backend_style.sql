@@ -4080,7 +4080,8 @@ INSERT INTO Users (FullName, Email, PasswordHash, PhoneNumber, DOB, Status, Role
 VALUES 
 -- Nhóm Quản trị & Nhân viên
 (N'Nguyễn Thành An (Admin)', 'admin@movieticket.com', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', '0912345678', '2004-05-10', 1, 'Admin'),
-(N'Trần Thị Bình (Staff)', 'binhtt@movieticket.com', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', '0923456789', '1998-05-15', 1, 'Staff'),
+(N'Nguyễn An (Staff)', 'thanhan1552006@gmail.com', '$2a$11$ql8hFSeayrx09EFzWczD7u0.cxBmkwk4dpNIFGag.zgjICAm75pd6', '0923456789', '1998-05-15', 1, 'Staff'),
+                                                      --PasswordHash có nghĩa: An1552006@
 (N'Lê Văn Cường (Staff)', 'cuonglv@movieticket.com', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', '0934567890', '2000-08-20', 1, 'Staff'),
 
 -- Nhóm Khách hàng hợp lệ (Sinh năm 2009 trở về trước -> Đều > 16 tuổi tính tới 2026)
