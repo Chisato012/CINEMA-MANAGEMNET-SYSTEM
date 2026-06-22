@@ -1,0 +1,402 @@
+@model IEnumerable<Cinema_Management.Models.MovieViewModel>
+@{ ViewData["Title"] = "Movie Scheduling"; }
+
+<header class="staff-header">
+    <div style="display:flex;align-items:center;gap:16px;">
+        <h2>LỊCH CHIẾU PHIM</h2>
+        <span class="badge badge-outline">ĐANG KẾT NỐI</span>
+    </div>
+    
+    <div style="display:flex;align-items:center;gap:16px;">
+        <div class="date-picker">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            <span>10/23/2025</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        </div>
+        <button class="btn-secondary" style="border:none;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+            LƯU
+        </button>
+        <button class="btn-secondary" style="border:none;padding:8px">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </button>
+    </div>
+</header>
+
+<div class="scheduling-layout">
+    <div class="sidebar-movies">
+        <div class="sidebar-movies-header">
+            <div>
+                <h4>DANH SÁCH PHIM KHẢ DỤNG</h4>
+                <p>KÉO THẺ HOẶC CHỌN VỊ TRÍ</p>
+            </div>
+            <button class="btn-icon" id="btnAddMovie" title="Thêm phim mới">+</button>
+        </div>
+        <div class="search-box">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" placeholder="Tìm kiếm theo tiêu đề, thể loại,..." />
+        </div>
+        
+        <div class="movies-list">
+            @foreach (var movie in Model)
+            {
+                var genreText = movie.MovieGenres != null ? string.Join(", ", movie.MovieGenres.Select(mg => mg.Genre?.Name).Where(n => n != null)) : "";
+                <div class="movie-list-item" data-movie-id="@movie.MovieId" data-title="@movie.Title" data-duration="@movie.Duration" data-rating="@movie.AgeRating" data-genre="@genreText" data-poster="@movie.PosterURL" data-synopsis="@movie.Synopsis" data-trailer="@movie.Trailer">
+                    <img src="@movie.PosterURL" alt="@movie.Title" />
+                    <div class="ml-info">
+                        <h5>@movie.Title</h5>
+                        <p class="ml-genre">@genreText, @movie.Duration min</p>
+                        <div class="ml-badges">
+                            <span class="ml-badge badge-primary">@movie.AgeRating</span>
+                            <span class="ml-badge">2D</span>
+                        </div>
+                    </div>
+                    <div class="ml-actions">
+                        <button type="button" class="btn-icon edit-movie-btn" title="Edit movie registry">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                        </button>
+                        <form method="post" action="/Staff/DeactivateMovie" style="display:inline;margin:0;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@movie.MovieId" />
+                            <button type="submit" class="btn-icon delete-movie-btn" title="Delete movie" onclick="return confirm('Are you sure you want to deactivate this movie?');">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="matrix-main">
+        <div class="matrix-header">
+            <div class="mh-halls">RẠP CHIẾU</div>
+            <div class="mh-times">
+                <span>08:00 AM</span>
+                <span>09:00 AM</span>
+                <span>10:00 AM</span>
+                <span>11:00 AM</span>
+                <span>12:00 PM</span>
+                <span>01:00 PM</span>
+                <span>02:00 PM</span>
+                <span>03:00 PM</span>
+                <span>04:00 PM</span>
+            </div>
+        </div>
+        <div class="matrix-body">
+            <!-- Hall 01 -->
+            <div class="matrix-row">
+                <div class="mr-hall-info">
+                    <h4>PHÒNG CHIẾU 01</h4>
+                    <span class="hall-tag tag-imax">IMAX</span> <span>120 GHẾ</span>
+                </div>
+                <div class="mr-timeline">
+                    <!-- blocks go here -->
+                </div>
+            </div>
+            <!-- Hall 02 -->
+            <div class="matrix-row">
+                <div class="mr-hall-info">
+                    <h4>PHÒNG CHIẾU 02</h4>
+                    <span class="hall-tag tag-deluxe">DELUXE</span> <span>80 GHẾ</span>
+                </div>
+                <div class="mr-timeline"></div>
+            </div>
+            <!-- Hall 03 -->
+            <div class="matrix-row">
+                <div class="mr-hall-info">
+                    <h4>PHÒNG CHIẾU 03</h4>
+                    <span class="hall-tag tag-vip">VIP</span> <span>40 GHẾ</span>
+                </div>
+                <div class="mr-timeline"></div>
+            </div>
+            <!-- Hall 04 -->
+            <div class="matrix-row">
+                <div class="mr-hall-info">
+                    <h4>PHÒNG CHIẾU 04</h4>
+                    <span class="hall-tag tag-standard">STANDARD</span> <span>150 GHẾ</span>
+                </div>
+                <div class="mr-timeline"></div>
+            </div>
+        </div>
+
+        <div class="matrix-footer">
+            <div class="telemetry">
+                <p>TELEMETRY LOGS:</p>
+            </div>
+            <div class="legend-info">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <span>Kéo phim từ danh sách bên lề hoặc kích hoạt chế độ sắp xếp để lên lịch chiếu phim một cách linh hoạt.</span>
+                <div style="flex:1"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Background: Add Movie -->
+<div id="movieCreateModal" class="modal-backdrop">
+    <form class="modal-dialog modal-lg" method="post" action="/Staff/CreateMovie">
+        @Html.AntiForgeryToken()
+        <div class="modal-header">
+            <div>
+                <p class="modal-pretitle">THÊM MỚI PHIM</p>
+                <h3>THÊM DỮ LIỆU PHIM</h3>
+            </div>
+            <button type="button" class="btn-close-modal">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        <div class="modal-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; overflow-y: visible;">
+            <!-- Left Column -->
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="form-group">
+                    <label>TIÊU ĐỀ PHIM</label>
+                    <input type="text" name="Title" placeholder="vd: Conan,..." required />
+                </div>
+                <div class="form-group" style="flex: 1; display: flex; flex-direction: column;">
+                    <label>MÔ TẢ NGẮN / TÓM TẮT</label>
+                    <textarea name="Synopsis" style="flex: 1; min-height: 80px; resize: none;" placeholder="Nhập tóm tắt nội dung phim..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>TRAILER URL</label>
+                    <input type="text" name="TrailerURL" placeholder="https://..." />
+                </div>
+                <div class="form-group">
+                    <label>POSTER PHIM URL</label>
+                    <input type="text" name="PosterURL" id="createPosterInput" placeholder="Vui lòng dán link ảnh poster phim..." />
+                </div>
+                <div class="form-group">
+                    <label>ĐỊNH DẠNG CHIẾU KHẢ DỤNG</label>
+                    <div class="format-tags">
+                        <span class="format-tag">IMAX</span>
+                        <span class="format-tag active">2D</span>
+                        <span class="format-tag">3D</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>NGÀY KHỞI CHIẾU</label>
+                        <input type="date" name="ReleaseDate" />
+                    </div>
+                    <div class="form-group">
+                        <label>THỜI LƯỢNG (PHÚT)</label>
+                        <input type="number" name="Duration" value="120" required />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>XẾP HẠNG</label>
+                        <select name="AgeRating">
+                            <option value="P">P - Mọi độ tuổi</option>
+                            <option value="K">K - Dưới 13 tuổi</option>
+                            <option value="T13" selected>T13 - 13 tuổi trở lên</option>
+                            <option value="T16">T16 - 16 tuổi trở lên</option>
+                            <option value="T18">T18 - 18 tuổi trở lên</option>
+                            <option value="C">C - Không phổ biến</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>THỂ LOẠI</label>
+                        <input type="text" placeholder="vd: Hành động, Hài,..." />
+                    </div>
+                </div>
+                <div class="form-group" style="flex: 1; display: flex; flex-direction: column;">
+                    <div style="flex: 1; border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px; color: var(--color-neutral-500); position: relative; overflow: hidden; min-height: 180px;">
+                        <img id="createPosterPreview" src="" style="width: 100%; height: 100%; object-fit: contain; position: absolute; inset: 0; display: none;" />
+                        <div id="createPosterPlaceholder" style="text-align: center; z-index: 1;">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom: 8px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                            <p style="font-family: var(--font-label); font-size: 0.65rem; margin: 0; text-transform: uppercase; letter-spacing: 0.1em;">XEM TRƯỚC POSTER</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary btn-close-modal" style="border:none">HUỶ</button>
+            <button type="submit" class="btn-primary" style="background:var(--color-primary-300);color:var(--color-neutral-950);font-weight:800;">THÊM PHIM</button>
+        </div>
+    </form>
+</div>
+
+<!-- Edit movie -->
+<div id="movieEditorModal" class="modal-backdrop">
+    <form class="modal-dialog modal-lg" method="post" action="/Staff/EditMovie">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="MovieId" id="editMovieID" />
+        <div class="modal-header">
+            <div>
+                <p class="modal-pretitle">CẬP NHẬT THÔNG TIN PHIM</p>
+                <h3>Cinema Database Editor</h3>
+            </div>
+            <button type="button" class="btn-close-modal">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        <div class="modal-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; overflow-y: visible;">
+            <!-- Left Column -->
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="form-group">
+                    <label>TIÊU ĐỀ PHIM</label>
+                    <input type="text" id="editTitle" name="Title" required />
+                </div>
+                <div class="form-group" style="flex: 1; display: flex; flex-direction: column;">
+                    <label>MÔ TẢ NGẮN / TÓM TẮT</label>
+                    <textarea id="editSynopsis" name="Synopsis" style="flex: 1; min-height: 80px; resize: none;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>TRAILER URL</label>
+                    <input type="text" id="editTrailer" name="Trailer" />
+                </div>
+                <div class="form-group">
+                    <label>POSTER PHIM URL</label>
+                    <input type="text" id="editPoster" name="PosterURL" />
+                </div>
+                <div class="form-group">
+                    <label>ĐỊNH DẠNG CHIẾU KHẢ DỤNG</label>
+                    <div class="format-tags">
+                        <span class="format-tag">IMAX</span>
+                        <span class="format-tag active">2D</span>
+                        <span class="format-tag">3D</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>NGÀY KHỞI CHIẾU</label>
+                        <input type="date" id="editReleaseDate" name="ReleaseDate" />
+                    </div>
+                    <div class="form-group">
+                        <label>THỜI LƯỢNG (PHÚT)</label>
+                        <input type="number" id="editDuration" name="Duration" required />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>XẾP HẠNG</label>
+                        <select id="editRating" name="AgeRating">
+                            <option value="P">P - Mọi độ tuổi</option>
+                            <option value="K">K - Dưới 13 tuổi</option>
+                            <option value="T13">T13 - 13 tuổi trở lên</option>
+                            <option value="T16">T16 - 16 tuổi trở lên</option>
+                            <option value="T18">T18 - 18 tuổi trở lên</option>
+                            <option value="C">C - Không phổ biến</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>THỂ LOẠI</label>
+                        <input type="text" id="editGenre" />
+                    </div>
+                </div>
+                <div class="form-group" style="flex: 1; display: flex; flex-direction: column;">
+                    <div style="flex: 1; border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px; color: var(--color-neutral-500); position: relative; overflow: hidden; min-height: 180px;">
+                        <img id="editPosterPreview" src="" style="width: 100%; height: 100%; object-fit: contain; position: absolute; inset: 0; display: none;" />
+                        <div id="editPosterPlaceholder" style="text-align: center; z-index: 1;">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom: 8px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                            <p style="font-family: var(--font-label); font-size: 0.65rem; margin: 0; text-transform: uppercase; letter-spacing: 0.1em;">XEM TRƯỚC POSTER</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary btn-close-modal" style="border:none">HUỶ</button>
+            <button type="submit" class="btn-primary" style="background:var(--color-primary-300);color:var(--color-neutral-950);font-weight:800;">LƯU THAY ĐỔI</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        const editorModal = document.getElementById('movieEditorModal');
+        const createModal = document.getElementById('movieCreateModal');
+        const btnAddMovie = document.getElementById('btnAddMovie');
+        
+        const closeBtns = document.querySelectorAll('.btn-close-modal');
+        const editBtns = document.querySelectorAll('.edit-movie-btn');
+
+        btnAddMovie.addEventListener('click', () => {
+            createModal.classList.add('show');
+        });
+
+        // Live Poster Preview logic
+        document.getElementById('createPosterInput').addEventListener('input', function() {
+            const preview = document.getElementById('createPosterPreview');
+            const placeholder = document.getElementById('createPosterPlaceholder');
+            if (this.value) {
+                preview.src = this.value;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+            } else {
+                preview.src = '';
+                preview.style.display = 'none';
+                placeholder.style.display = 'block';
+            }
+        });
+
+        document.getElementById('editPoster').addEventListener('input', function() {
+            const preview = document.getElementById('editPosterPreview');
+            const placeholder = document.getElementById('editPosterPlaceholder');
+            if (this.value) {
+                preview.src = this.value;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+            } else {
+                preview.src = '';
+                preview.style.display = 'none';
+                placeholder.style.display = 'block';
+            }
+        });
+        
+        // Event delegation — bắt click trên toàn bộ movies-list
+        const moviesList = document.querySelector('.movies-list');
+        editBtns.forEach(btn =>{
+            btn.addEventListener('click', (e) => {
+                const editBtn = e.target.closest('.edit-movie-btn');
+                
+                const item = editBtn.closest('.movie-list-item');
+                if (item) {
+                    document.getElementById('editMovieID').value = item.dataset.movieId || '';
+                    document.getElementById('editTitle').value = item.dataset.title || '';
+                    document.getElementById('editDuration').value = item.dataset.duration || '';
+                    document.getElementById('editSynopsis').value = item.dataset.synopsis || '';
+                    document.getElementById('editTrailer').value = item.dataset.trailer || '';
+                    document.getElementById('editPoster').value = item.dataset.poster || '';
+                    document.getElementById('editGenre').value = item.dataset.genre || '';
+                    // trigger input event to show image
+                    document.getElementById('editPoster').dispatchEvent(new Event('input'));
+                    
+                    const rating = item.dataset.rating || '';
+                    const select = document.getElementById('editRating');
+                    for (let i = 0; i < select.options.length; i++) {
+                        if (select.options[i].value === rating) {
+                            select.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+                editorModal.classList.add('show');
+            });
+        });
+
+        closeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                editorModal.classList.remove('show');
+                createModal.classList.remove('show');
+            });
+        });
+        
+        // Format tag toggle
+        document.querySelectorAll('.format-tag').forEach(tag => {
+            tag.addEventListener('click', function() {
+                this.classList.toggle('active');
+            });
+        });
+    </script>
+}

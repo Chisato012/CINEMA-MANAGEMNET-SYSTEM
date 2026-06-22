@@ -30,4 +30,8 @@ public class User
     public DateTime? DOB { get; set; }
 
     public bool Status { get; set; } = true;
+
+    [Required]
+    [StringLength(20)]
+    public string Role {get; set;}
 }
