@@ -19,17 +19,16 @@ public class SmtpEmailService : IEmailService
         _logger = logger;
     }
 
-    public async Task SendEmailAsync(
+    public async Task<bool> SendEmailAsync(
         string toEmail,
         string subject,
         string htmlBody,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(_settings.Host)
-            || string.IsNullOrWhiteSpace(_settings.FromEmail))
+        if (!IsConfigured())
         {
-            _logger.LogWarning("SMTP is not configured. Confirmation email was not sent.");
-            return;
+            _logger.LogWarning("SMTP is not configured correctly. Email was not sent.");
+            return false;
         }
 
         try
@@ -59,6 +58,7 @@ public class SmtpEmailService : IEmailService
             }
 
             await client.SendMailAsync(message, cancellationToken);
+            return true;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -67,6 +67,18 @@ public class SmtpEmailService : IEmailService
         catch (Exception exception)
         {
             _logger.LogError(exception, "Could not send email to {Email}.", toEmail);
+            return false;
         }
+    }
+
+    private bool IsConfigured()
+    {
+        return !string.IsNullOrWhiteSpace(_settings.Host)
+               && !string.IsNullOrWhiteSpace(_settings.FromEmail)
+               && !string.IsNullOrWhiteSpace(_settings.Username)
+               && !string.IsNullOrWhiteSpace(_settings.Password)
+               && !_settings.Username.Contains("email_cua_ban", StringComparison.OrdinalIgnoreCase)
+               && !_settings.FromEmail.Contains("email_cua_ban", StringComparison.OrdinalIgnoreCase)
+               && !_settings.Password.Contains("ma_mat_khau", StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -1,0 +1,45 @@
+﻿@model Cinema_Management.Models.AuthViewModel
+@{
+Layout = "_Layout";
+ViewData["Title"] = "Hoàn tất đăng ký tài khoản";
+}
+
+<div class="auth-container" style="background:#121212; color:#fff; max-width:500px; margin: 80px auto; padding: 30px; border-radius:8px;">
+    <h3 style="color:#D4A373; text-align:center; margin-bottom:10px;">BƯỚC CUỐI CÙNG</h3>
+    <p style="color:#aaa; font-size:13px; text-align:center; margin-bottom:24px;">Vui lòng bổ sung một số thông tin để hoàn tất tài khoản COSMOS Cinema của bạn.</p>
+
+    <form asp-action="GoogleRegister" asp-controller="Account" method="post">
+        @Html.AntiForgeryToken()
+
+        <div style="margin-bottom: 15px;">
+            <label style="display:block; font-size:12px; color:#aaa; margin-bottom:6px; font-weight:bold;">ĐỊA CHỈ EMAIL (Từ Google)</label>
+            <input asp-for="Email" type="email" readonly style="width:100%; padding:12px; background:#2a2a2a; border:1px solid #444; color:#888; border-radius:4px; cursor:not-allowed;" />
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label style="display:block; font-size:12px; color:#aaa; margin-bottom:6px; font-weight:bold;">HỌ VÀ TÊN</label>
+            <input asp-for="FullName" type="text" style="width:100%; padding:12px; background:#222; border:1px solid #444; color:#fff; border-radius:4px;" />
+            <span asp-validation-for="FullName" style="color:#ff4d4d; font-size:12px; display:block; margin-top:5px;"></span>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label style="display:block; font-size:12px; color:#aaa; margin-bottom:6px; font-weight:bold;">SỐ ĐIỆN THOẠI</label>
+            <input asp-for="PhoneNumber" type="text" placeholder="Ví dụ: 0987654321" style="width:100%; padding:12px; background:#222; border:1px solid #444; color:#fff; border-radius:4px;" />
+            <span asp-validation-for="PhoneNumber" style="color:#ff4d4d; font-size:12px; display:block; margin-top:5px;"></span>
+        </div>
+
+        <div style="margin-bottom: 24px;">
+            <label style="display:block; font-size:12px; color:#aaa; margin-bottom:6px; font-weight:bold;">NGÀY SINH</label>
+            <input asp-for="DateOfBirth" type="date" style="width:100%; padding:12px; background:#222; border:1px solid #444; color:#fff; border-radius:4px;" />
+            <span asp-validation-for="DateOfBirth" style="color:#ff4d4d; font-size:12px; display:block; margin-top:5px;"></span>
+        </div>
+
+        <button type="submit" style="width:100%; padding:14px; background:#A67B5B; color:#fff; border:none; border-radius:6px; font-weight:bold; cursor:pointer; text-transform: uppercase;">
+            HOÀN TẤT ĐĂNG KÝ & ĐĂNG NHẬP
+        </button>
+    </form>
+</div>
+
+@section Scripts {
+<partial name="_ValidationScriptsPartial" />
+}

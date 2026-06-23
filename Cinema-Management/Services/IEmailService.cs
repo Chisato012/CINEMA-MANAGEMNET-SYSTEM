@@ -2,7 +2,7 @@ namespace Cinema_Management.Services;
 
 public interface IEmailService
 {
-    Task SendEmailAsync(
+    Task<bool> SendEmailAsync(
         string toEmail,
         string subject,
         string htmlBody,
