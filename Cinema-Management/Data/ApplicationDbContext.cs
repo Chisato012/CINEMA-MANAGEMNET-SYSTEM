@@ -37,5 +37,35 @@ public class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<MovieDirectors>()
             .HasKey(md => new { md.MovieID, md.PersonId });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasIndex(u => u.Email)
+                .IsUnique();
+
+            entity.HasIndex(u => new { u.ExternalProvider, u.ExternalProviderKey })
+                .IsUnique()
+                .HasFilter("[ExternalProvider] IS NOT NULL AND [ExternalProviderKey] IS NOT NULL");
+
+            entity.Property(u => u.Email)
+                .HasMaxLength(200);
+
+            entity.Property(u => u.PasswordHash)
+                .HasMaxLength(512)
+                .IsRequired(false);
+
+            entity.Property(u => u.Role)
+                .HasMaxLength(20)
+                .HasDefaultValue("KhachHang");
+
+            entity.Property(u => u.ExternalProvider)
+                .HasMaxLength(50);
+
+            entity.Property(u => u.ExternalProviderKey)
+                .HasMaxLength(200);
+
+            entity.Property(u => u.EmailVerificationTokenHash)
+                .HasMaxLength(64);
+        });
     }
 }
