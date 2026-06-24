@@ -12,6 +12,12 @@ public class Showtimes
 
     public DateTime Date{get; set;}
 
+    public int RoomID { get; set; }
+
+    public int HallNumber { get; set; }
+
+    public decimal BasePrice { get; set; }
+
     public int MovieId{get; set;}
 
     [ForeignKey("MovieId")]

@@ -21,6 +21,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<MovieCasts> MovieCasts { get; set; }
     public DbSet<MovieDirectors> MovieDirectors { get; set; }
     public DbSet<Person> Persons { get; set; }
+    public DbSet<Showtimes> Showtimes { get; set; }
 
     
 
@@ -37,5 +38,44 @@ public class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<MovieDirectors>()
             .HasKey(md => new { md.MovieID, md.PersonId });
+
+        modelBuilder.Entity<Showtimes>(entity =>
+        {
+            entity.Property(s => s.Date)
+                .HasColumnType("date");
+
+            entity.Property(s => s.BasePrice)
+                .HasColumnType("decimal(10,2)");
+        });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasIndex(u => u.Email)
+                .IsUnique();
+
+            entity.HasIndex(u => new { u.ExternalProvider, u.ExternalProviderKey })
+                .IsUnique()
+                .HasFilter("[ExternalProvider] IS NOT NULL AND [ExternalProviderKey] IS NOT NULL");
+
+            entity.Property(u => u.Email)
+                .HasMaxLength(200);
+
+            entity.Property(u => u.PasswordHash)
+                .HasMaxLength(512)
+                .IsRequired(false);
+
+            entity.Property(u => u.Role)
+                .HasMaxLength(20)
+                .HasDefaultValue("KhachHang");
+
+            entity.Property(u => u.ExternalProvider)
+                .HasMaxLength(50);
+
+            entity.Property(u => u.ExternalProviderKey)
+                .HasMaxLength(200);
+
+            entity.Property(u => u.EmailVerificationTokenHash)
+                .HasMaxLength(64);
+        });
     }
 }
