@@ -21,6 +21,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<MovieCasts> MovieCasts { get; set; }
     public DbSet<MovieDirectors> MovieDirectors { get; set; }
     public DbSet<Person> Persons { get; set; }
+    public DbSet<Showtimes> Showtimes { get; set; }
 
     
 
@@ -37,6 +38,15 @@ public class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<MovieDirectors>()
             .HasKey(md => new { md.MovieID, md.PersonId });
+
+        modelBuilder.Entity<Showtimes>(entity =>
+        {
+            entity.Property(s => s.Date)
+                .HasColumnType("date");
+
+            entity.Property(s => s.BasePrice)
+                .HasColumnType("decimal(10,2)");
+        });
 
         modelBuilder.Entity<User>(entity =>
         {

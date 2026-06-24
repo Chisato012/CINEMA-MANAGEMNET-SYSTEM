@@ -192,13 +192,22 @@ namespace Cinema_Management.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ShowtimeID"));
 
+                    b.Property<decimal>("BasePrice")
+                        .HasColumnType("decimal(10,2)");
+
                     b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("date");
 
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("HallNumber")
+                        .HasColumnType("int");
+
                     b.Property<int>("MovieId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RoomID")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("StartTime")
@@ -266,7 +275,7 @@ namespace Cinema_Management.Migrations
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)")
-                        .HasDefaultValue("Customer");
+                        .HasDefaultValue("KhachHang");
 
                     b.Property<bool>("Status")
                         .HasColumnType("bit");
