@@ -6,6 +6,7 @@ public class Showtimes
 {
     [Key]
     public int ShowtimeID{get ; set;}
+
     public DateTime StartTime{get; set;}
 
     public DateTime EndTime{get; set;}
@@ -14,14 +15,21 @@ public class Showtimes
 
     public int RoomID { get; set; }
 
+    [NotMapped]
     public int HallNumber { get; set; }
 
     public decimal BasePrice { get; set; }
 
-    public int MovieId{get; set;}
+    [Column("MovieID")]
+    public int MovieID{get; set;}
 
-    [ForeignKey("MovieId")]
+    [NotMapped]
+    public int MovieId
+    {
+        get => MovieID;
+        set => MovieID = value;
+    }
+
+    [ForeignKey(nameof(MovieID))]
     public MovieViewModel movie{get;set;}
-
-
 }

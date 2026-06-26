@@ -5,6 +5,7 @@ using Microsoft.Data.SqlClient;
 using Cinema_Management.Data;
 using Cinema_Management.Models;
 using Cinema_Management.ViewModels;
+using System.Text.Json.Serialization;
 
 namespace Cinema_Management.Controllers;
 
@@ -43,6 +44,7 @@ public class StaffController : Controller
     {
         var scheduleDate = date.Date;
         var showtimes = await _context.Showtimes
+            .AsNoTracking()
             .Include(s => s.movie)
             .Where(s => s.Date == scheduleDate)
             .OrderBy(s => s.RoomID)
@@ -50,12 +52,14 @@ public class StaffController : Controller
             .Select(s => new
             {
                 s.ShowtimeID,
-                s.MovieId,
+                s.MovieID,
                 MovieTitle = s.movie.Title,
-                HallNumber = s.HallNumber == 0 ? s.RoomID : s.HallNumber,
+                s.RoomID,
+                HallNumber = s.RoomID,
                 StartTime = s.StartTime.ToString("HH:mm"),
                 EndTime = s.EndTime.ToString("HH:mm"),
-                Duration = EF.Functions.DateDiffMinute(s.StartTime, s.EndTime)
+                Duration = EF.Functions.DateDiffMinute(s.StartTime, s.EndTime),
+                s.BasePrice
             })
             .ToListAsync();
 
@@ -108,10 +112,21 @@ public class StaffController : Controller
             Regular = seats.Count(seat => seat.SeatType == "Regular"),
             Vip = seats.Count(seat => seat.SeatType == "VIP"),
             Couple = seats.Count(seat => seat.SeatType == "Couple"),
-            Reserved = seats.Count(seat => seat.ReservationState == "reserved"),
-            Pending = seats.Count(seat => seat.ReservationState == "pending")
+            Reserved = seats
+                .Where(seat => seat.ReservationState == "reserved")
+                .Select(seat => seat.SeatID)
+                .Distinct()
+                .Count(),
+            Pending = seats
+                .Where(seat => seat.ReservationState == "pending")
+                .Select(seat => seat.SeatID)
+                .Distinct()
+                .Count()
         };
         counts.Available = Math.Max(0, counts.Total - counts.Reserved - counts.Pending);
+        var reservations = selectedShowtimeId.HasValue
+            ? await LoadScreeningReservationsAsync(roomId, selectedShowtimeId.Value)
+            : new List<ScreeningRoomReservationViewModel>();
 
         return Ok(new ScreeningRoomStateViewModel
         {
@@ -119,21 +134,69 @@ public class StaffController : Controller
             SelectedShowtimeID = selectedShowtimeId,
             Showtimes = showtimes,
             Rows = BuildScreeningSeatRows(seats),
-            Counts = counts
+            Counts = counts,
+            Reservations = reservations
         });
     }
 
     [HttpPost]
     public async Task<IActionResult> SaveSchedule([FromBody] SaveScheduleRequest request)
     {
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState
+                .Where(x => x.Value != null && x.Value.Errors.Count > 0)
+                .ToDictionary(
+                    x => x.Key,
+                    x => x.Value!.Errors
+                        .Select(e => string.IsNullOrWhiteSpace(e.ErrorMessage)
+                            ? e.Exception?.Message ?? "Invalid value"
+                            : e.ErrorMessage)
+                        .ToArray()
+                );
+
+            return BadRequest(new
+            {
+                message = "Dữ liệu không hợp lệ",
+                errors
+            });
+        }
+
         if (request == null)
         {
-            return BadRequest(new { message = "Du lieu lich chieu khong hop le." });
+            return BadRequest(new
+            {
+                message = "Dữ liệu không hợp lệ",
+                errors = new Dictionary<string, string[]>
+                {
+                    ["request"] = new[] { "Request body is empty or invalid JSON." }
+                }
+            });
         }
 
         var scheduleDate = request.Date.Date;
         var roomIds = await LoadRoomIdsAsync();
-        var movieIds = request.Items.Select(i => i.MovieId).Distinct().ToList();
+        var invalidItems = request.Items
+            .Select((item, index) => new { Item = item, Index = index })
+            .Where(x => x.Item.MovieID <= 0 || x.Item.RoomID <= 0)
+            .ToList();
+
+        if (invalidItems.Any())
+        {
+            return BadRequest(new
+            {
+                message = "Dữ liệu không hợp lệ",
+                errors = invalidItems.ToDictionary(
+                    x => $"items[{x.Index}]",
+                    x => new[]
+                    {
+                        x.Item.MovieID <= 0 ? "MovieID must be a valid integer." : "",
+                        x.Item.RoomID <= 0 ? "RoomID must be a valid integer." : ""
+                    }.Where(error => !string.IsNullOrWhiteSpace(error)).ToArray())
+            });
+        }
+
+        var movieIds = request.Items.Select(i => i.MovieID).Distinct().ToList();
         var movies = await _context.Movies
             .Where(m => movieIds.Contains(m.MovieId))
             .Select(m => new { m.MovieId, m.Duration })
@@ -144,37 +207,121 @@ public class StaffController : Controller
             return BadRequest(new { message = "Mot hoac nhieu phim khong ton tai trong database." });
         }
 
-        var newShowtimes = new List<Showtimes>();
+        var parsedEntries = new List<SaveScheduleEntry>();
         foreach (var item in request.Items)
         {
-            if (!roomIds.Contains(item.HallNumber))
+            var roomId = item.RoomID;
+            if (!roomIds.Contains(roomId))
             {
                 return BadRequest(new { message = "Phong chieu khong hop le." });
             }
 
-            if (!TimeSpan.TryParse(item.StartTime, out var startTimeOfDay))
+            if (!TryParseScheduleDateTime(request.Date, item.StartTime, out var startTime))
             {
                 return BadRequest(new { message = "Gio bat dau khong hop le." });
             }
 
-            var movie = movies[item.MovieId];
-            var startTime = scheduleDate.Add(startTimeOfDay);
-            var endTime = startTime.AddMinutes(movie.Duration);
+            var movie = movies[item.MovieID];
+            var endTime = TryParseScheduleDateTime(request.Date, item.EndTime, out var parsedEndTime)
+                ? parsedEndTime
+                : startTime.AddMinutes(movie.Duration);
 
-            newShowtimes.Add(new Showtimes
+            if (endTime <= startTime)
             {
-                MovieId = item.MovieId,
-                RoomID = item.HallNumber,
-                HallNumber = item.HallNumber,
+                return BadRequest(new { message = "Gio ket thuc phai lon hon gio bat dau." });
+            }
+
+            parsedEntries.Add(new SaveScheduleEntry
+            {
+                ShowtimeID = item.ShowtimeID,
+                MovieID = item.MovieID,
+                RoomID = roomId,
                 Date = scheduleDate,
                 StartTime = startTime,
                 EndTime = endTime,
-                BasePrice = DefaultBasePrice
+                BasePrice = item.BasePrice > 0 ? item.BasePrice : DefaultBasePrice
             });
         }
 
-        var hasOverlap = newShowtimes
-            .GroupBy(s => s.HallNumber)
+        var oldShowtimes = await _context.Showtimes
+            .Where(s => s.Date == scheduleDate)
+            .ToListAsync();
+
+        var incomingIds = parsedEntries
+            .Where(item => item.ShowtimeID > 0)
+            .Select(item => item.ShowtimeID)
+            .ToList();
+        var duplicateIncomingIds = incomingIds
+            .GroupBy(id => id)
+            .Where(group => group.Count() > 1)
+            .Select(group => group.Key)
+            .ToList();
+
+        if (duplicateIncomingIds.Any())
+        {
+            return BadRequest(new { message = $"Trung ShowtimeID trong payload: {string.Join(", ", duplicateIncomingIds)}." });
+        }
+
+        var oldShowtimesById = oldShowtimes.ToDictionary(showtime => showtime.ShowtimeID);
+        var missingShowtimeIds = incomingIds
+            .Where(id => !oldShowtimesById.ContainsKey(id))
+            .ToList();
+
+        if (missingShowtimeIds.Any())
+        {
+            return BadRequest(new { message = $"ShowtimeID khong ton tai trong ngay dang chon: {string.Join(", ", missingShowtimeIds)}." });
+        }
+
+        var ticketedShowtimeIds = (await _context.Database
+            .SqlQueryRaw<int>(
+                """
+                SELECT DISTINCT t.ShowtimeID AS [Value]
+                FROM Tickets t
+                INNER JOIN Showtimes s ON s.ShowtimeID = t.ShowtimeID
+                WHERE s.[Date] = @scheduleDate
+                """,
+                new SqlParameter("@scheduleDate", scheduleDate))
+            .ToListAsync())
+            .ToHashSet();
+
+        foreach (var entry in parsedEntries.Where(entry => entry.ShowtimeID > 0))
+        {
+            var existing = oldShowtimesById[entry.ShowtimeID];
+            if (ticketedShowtimeIds.Contains(existing.ShowtimeID)
+                && (existing.MovieID != entry.MovieID
+                    || existing.RoomID != entry.RoomID
+                    || existing.StartTime != entry.StartTime
+                    || existing.EndTime != entry.EndTime))
+            {
+                return BadRequest(new { message = $"Suat chieu {existing.ShowtimeID} da co ve, khong the doi phim/phong/gio chieu." });
+            }
+
+            existing.MovieID = entry.MovieID;
+            existing.RoomID = entry.RoomID;
+            existing.HallNumber = entry.RoomID;
+            existing.Date = entry.Date;
+            existing.StartTime = entry.StartTime;
+            existing.EndTime = entry.EndTime;
+            existing.BasePrice = entry.BasePrice;
+        }
+
+        var finalEntries = oldShowtimes
+            .Where(showtime => ticketedShowtimeIds.Contains(showtime.ShowtimeID) && !incomingIds.Contains(showtime.ShowtimeID))
+            .Select(showtime => new SaveScheduleEntry
+            {
+                ShowtimeID = showtime.ShowtimeID,
+                MovieID = showtime.MovieID,
+                RoomID = showtime.RoomID,
+                Date = showtime.Date,
+                StartTime = showtime.StartTime,
+                EndTime = showtime.EndTime,
+                BasePrice = showtime.BasePrice
+            })
+            .Concat(parsedEntries)
+            .ToList();
+
+        var hasOverlap = finalEntries
+            .GroupBy(s => s.RoomID)
             .Any(group =>
             {
                 var ordered = group.OrderBy(s => s.StartTime).ToList();
@@ -186,15 +333,47 @@ public class StaffController : Controller
             return BadRequest(new { message = "Lich chieu bi trung gio trong cung phong chieu." });
         }
 
-        var oldShowtimes = await _context.Showtimes
-            .Where(s => s.Date == scheduleDate)
-            .ToListAsync();
+        var removableShowtimes = oldShowtimes
+            .Where(showtime => !ticketedShowtimeIds.Contains(showtime.ShowtimeID) && !incomingIds.Contains(showtime.ShowtimeID))
+            .ToList();
+        var showtimesToAdd = parsedEntries
+            .Where(item => item.ShowtimeID <= 0)
+            .Select(item => new Showtimes
+            {
+                MovieID = item.MovieID,
+                RoomID = item.RoomID,
+                HallNumber = item.RoomID,
+                Date = item.Date,
+                StartTime = item.StartTime,
+                EndTime = item.EndTime,
+                BasePrice = item.BasePrice
+            })
+            .ToList();
 
-        _context.Showtimes.RemoveRange(oldShowtimes);
-        _context.Showtimes.AddRange(newShowtimes);
-        await _context.SaveChangesAsync();
+        _context.Showtimes.RemoveRange(removableShowtimes);
+        _context.Showtimes.AddRange(showtimesToAdd);
 
-        return Ok(new { message = "Da luu lich chieu.", count = newShowtimes.Count });
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                message = "Khong luu duoc lich chieu vao database.",
+                detail = ex.GetBaseException().Message
+            });
+        }
+
+        return Ok(new
+        {
+            message = "Da luu lich chieu vao database.",
+            count = finalEntries.Count,
+            created = showtimesToAdd.Count,
+            updated = parsedEntries.Count(item => item.ShowtimeID > 0),
+            deleted = removableShowtimes.Count
+        });
     }
 
     public async Task<IActionResult> Halls()
@@ -294,7 +473,7 @@ public class StaffController : Controller
         }
 
         var showtimes = await _context.Showtimes
-            .Where(s => s.MovieId == id)
+            .Where(s => s.MovieID == id)
             .ToListAsync();
         var genres = await _context.MovieGenres
             .Where(mg => mg.MovieID == id)
@@ -333,11 +512,55 @@ public class StaffController : Controller
 
     public sealed class SaveScheduleItem
     {
-        public int MovieId { get; set; }
+        public int ShowtimeID { get; set; }
 
-        public int HallNumber { get; set; }
+        public int MovieID { get; set; }
+
+        public int RoomID { get; set; }
+
+        [JsonIgnore]
+        public int MovieId
+        {
+            get => MovieID;
+            set => MovieID = value;
+        }
+
+        [JsonIgnore]
+        public int RoomId
+        {
+            get => RoomID;
+            set => RoomID = value;
+        }
+
+        [JsonIgnore]
+        public int HallNumber
+        {
+            get => RoomID;
+            set => RoomID = value;
+        }
 
         public string StartTime { get; set; } = string.Empty;
+
+        public string EndTime { get; set; } = string.Empty;
+
+        public decimal BasePrice { get; set; }
+    }
+
+    private sealed class SaveScheduleEntry
+    {
+        public int ShowtimeID { get; set; }
+
+        public int MovieID { get; set; }
+
+        public int RoomID { get; set; }
+
+        public DateTime Date { get; set; }
+
+        public DateTime StartTime { get; set; }
+
+        public DateTime EndTime { get; set; }
+
+        public decimal BasePrice { get; set; }
     }
 
     public sealed class StaffMovieForm
@@ -368,6 +591,29 @@ public class StaffController : Controller
         return form != null
                && !string.IsNullOrWhiteSpace(form.Title)
                && form.Duration > 0;
+    }
+
+    private static bool TryParseScheduleDateTime(DateTime scheduleDate, string value, out DateTime result)
+    {
+        if (TimeSpan.TryParse(value, out var timeOfDay) && !value.Contains('-') && !value.Contains('/') && !value.Contains('T'))
+        {
+            result = scheduleDate.Date.Add(timeOfDay);
+            return true;
+        }
+
+        if (DateTime.TryParse(value, out result))
+        {
+            return true;
+        }
+
+        if (TimeSpan.TryParse(value, out timeOfDay))
+        {
+            result = scheduleDate.Date.Add(timeOfDay);
+            return true;
+        }
+
+        result = default;
+        return false;
     }
 
     private static string GetPosterUrl(StaffMovieForm form)
@@ -754,6 +1000,69 @@ public class StaffController : Controller
             .ToListAsync();
     }
 
+    private async Task<List<ScreeningRoomReservationViewModel>> LoadScreeningReservationsAsync(int roomId, int showtimeId)
+    {
+        var roomParam = new SqlParameter("@roomId", roomId);
+        var showtimeParam = new SqlParameter("@showtimeId", showtimeId);
+
+        var rows = await _context.Database
+            .SqlQueryRaw<ScreeningReservationTicketRow>(
+                """
+                SELECT
+                    b.BookingID,
+                    u.FullName AS CustomerName,
+                    u.Email AS CustomerEmail,
+                    b.BookingDate,
+                    b.Status,
+                    se.SeatCode,
+                    b.TotalAmount
+                FROM Tickets t
+                INNER JOIN Bookings b ON b.BookingID = t.BookingID
+                INNER JOIN Users u ON u.UserID = b.UserID
+                INNER JOIN Showtimes st ON st.ShowtimeID = t.ShowtimeID
+                INNER JOIN Seats se ON se.SeatID = t.SeatID
+                WHERE st.RoomID = @roomId
+                    AND t.ShowtimeID = @showtimeId
+                ORDER BY b.BookingDate DESC, b.BookingID DESC, se.SeatCode
+                """,
+                roomParam,
+                showtimeParam)
+            .ToListAsync();
+
+        return rows
+            .GroupBy(row => new
+            {
+                row.BookingID,
+                row.CustomerName,
+                row.CustomerEmail,
+                row.BookingDate,
+                row.Status,
+                row.TotalAmount
+            })
+            .Select(group => new ScreeningRoomReservationViewModel
+            {
+                BookingID = group.Key.BookingID,
+                CustomerName = group.Key.CustomerName,
+                CustomerEmail = group.Key.CustomerEmail,
+                BookingDate = group.Key.BookingDate,
+                Status = group.Key.Status,
+                SeatCodes = group
+                    .Select(row => row.SeatCode)
+                    .Distinct()
+                    .OrderBy(GetSeatRowLabel)
+                    .ThenBy(GetSeatNumberSort)
+                    .ToList(),
+                TicketCount = group
+                    .Select(row => row.SeatCode)
+                    .Distinct()
+                    .Count(),
+                TotalAmount = group.Key.TotalAmount
+            })
+            .OrderByDescending(reservation => reservation.BookingDate)
+            .ThenByDescending(reservation => reservation.BookingID)
+            .ToList();
+    }
+
     private static List<ScreeningRoomSeatRowViewModel> BuildScreeningSeatRows(List<ScreeningRoomSeatViewModel> seats)
     {
         var columnCount = GetScreeningSeatColumnCount(seats);
@@ -870,6 +1179,23 @@ public class StaffController : Controller
         public string SeatType { get; set; } = string.Empty;
 
         public string ReservationState { get; set; } = "available";
+    }
+
+    public sealed class ScreeningReservationTicketRow
+    {
+        public int BookingID { get; set; }
+
+        public string CustomerName { get; set; } = string.Empty;
+
+        public string CustomerEmail { get; set; } = string.Empty;
+
+        public DateTime BookingDate { get; set; }
+
+        public string Status { get; set; } = string.Empty;
+
+        public string SeatCode { get; set; } = string.Empty;
+
+        public decimal TotalAmount { get; set; }
     }
 
     private sealed class ReservationRow

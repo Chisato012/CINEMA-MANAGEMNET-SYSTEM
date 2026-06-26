@@ -9,7 +9,8 @@
     const labelsLeft = document.getElementById('screeningRowLabelsLeft');
     const labelsRight = document.getElementById('screeningRowLabelsRight');
     const statValues = document.querySelectorAll('[data-seat-count]');
-    const reservationPanels = Array.from(document.querySelectorAll('[data-room-reservations]'));
+    const reservationList = document.getElementById('screeningReservationList');
+    const reservationTicketCount = document.getElementById('screeningReservationTicketCount');
 
     if ((!roomSelect && roomButtons.length === 0) || !showtimeSelect || !message || !map || !grid || !labelsLeft || !labelsRight) {
         return;
@@ -48,10 +49,6 @@
             button.classList.toggle('active', button.dataset.roomId === roomId);
         });
 
-        reservationPanels.forEach(panel => {
-            panel.classList.toggle('active', panel.dataset.roomReservations === roomId);
-        });
-
         if (roomTitle) {
             roomTitle.textContent = getRoomName(roomId) || 'Screening room';
         }
@@ -80,6 +77,51 @@
         labelsLeft.innerHTML = '';
         labelsRight.innerHTML = '';
         map.hidden = true;
+    }
+
+    function formatDate(value) {
+        if (!value) {
+            return '';
+        }
+
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+            return value;
+        }
+
+        return date.toLocaleString('vi-VN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    function formatMoney(value) {
+        return Number(value || 0).toLocaleString('vi-VN');
+    }
+
+    function getReservationStatusClass(status) {
+        const normalized = (status || '').toLowerCase();
+        if (normalized === 'confirmed') {
+            return 'reservation-status confirmed';
+        }
+
+        if (normalized === 'cancelled') {
+            return 'reservation-status cancelled';
+        }
+
+        return 'reservation-status pending';
+    }
+
+    function createTextElement(tagName, text, className) {
+        const element = document.createElement(tagName);
+        if (className) {
+            element.className = className;
+        }
+        element.textContent = text;
+        return element;
     }
 
     function populateShowtimes(showtimes, selectedShowtimeId) {
@@ -176,6 +218,65 @@
         setMessage('', false);
     }
 
+    function renderReservations(reservations, selectedShowtimeId) {
+        if (!reservationList || !reservationTicketCount) {
+            return;
+        }
+
+        reservationList.innerHTML = '';
+
+        if (!selectedShowtimeId) {
+            reservationTicketCount.textContent = '0 tickets';
+            reservationList.appendChild(createTextElement('div', 'No showtimes available for this room.', 'reservation-empty'));
+            return;
+        }
+
+        if (!reservations || reservations.length === 0) {
+            reservationTicketCount.textContent = '0 tickets';
+            reservationList.appendChild(createTextElement('div', 'No reservations for this showtime.', 'reservation-empty'));
+            return;
+        }
+
+        const totalTickets = reservations.reduce((sum, reservation) => sum + Number(reservation.ticketCount || 0), 0);
+        reservationTicketCount.textContent = `${totalTickets} tickets`;
+
+        const list = document.createElement('div');
+        list.className = 'reservation-list';
+
+        reservations.forEach(reservation => {
+            const card = document.createElement('article');
+            const top = document.createElement('div');
+            const customer = document.createElement('div');
+            const status = createTextElement('span', reservation.status || 'Pending', getReservationStatusClass(reservation.status));
+            const details = document.createElement('div');
+            const footer = document.createElement('div');
+
+            card.className = 'reservation-card';
+            top.className = 'reservation-card-top';
+            details.className = 'reservation-details';
+            footer.className = 'reservation-footer';
+
+            customer.appendChild(createTextElement('strong', reservation.customerName || 'Unknown customer'));
+            customer.appendChild(createTextElement('span', reservation.customerEmail || ''));
+            top.appendChild(customer);
+            top.appendChild(status);
+
+            details.appendChild(createTextElement('span', `Booking date ${formatDate(reservation.bookingDate)}`));
+            details.appendChild(createTextElement('span', `Seats ${(reservation.seatCodes || []).join(', ')}`));
+            details.appendChild(createTextElement('span', `${reservation.ticketCount || 0} tickets`));
+
+            footer.appendChild(createTextElement('span', `Booking #${reservation.bookingID}`));
+            footer.appendChild(createTextElement('strong', `${formatMoney(reservation.totalAmount)} VND`));
+
+            card.appendChild(top);
+            card.appendChild(details);
+            card.appendChild(footer);
+            list.appendChild(card);
+        });
+
+        reservationList.appendChild(list);
+    }
+
     async function loadScreeningRoomState(showtimeId) {
         const roomId = activeRoomId;
 
@@ -183,6 +284,7 @@
             clearSeatMap();
             resetCounts();
             populateShowtimes([], null);
+            renderReservations([], null);
             setMessage('No rooms found in the database.');
             return;
         }
@@ -211,13 +313,17 @@
             populateShowtimes(state.showtimes, state.selectedShowtimeID);
             updateCounts(state.counts);
             renderSeatMap(state.rows);
+            renderReservations(state.reservations, state.selectedShowtimeID);
 
-            if (!state.showtimes || state.showtimes.length === 0) {
-                setMessage('This room has no showtimes. Showing base seats only.');
+            if (!state.counts || state.counts.total === 0) {
+                setMessage('No seats configured for this room.');
+            } else if (!state.showtimes || state.showtimes.length === 0) {
+                setMessage('No showtimes available for this room.');
             }
         } catch (error) {
             clearSeatMap();
             resetCounts();
+            renderReservations([], null);
             setMessage('Could not load room seats from the database.');
         }
     }

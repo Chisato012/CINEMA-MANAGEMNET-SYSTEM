@@ -4,18 +4,6 @@
     var firstRoom = Model.Rooms.FirstOrDefault();
 }
 
-@functions {
-    private static string ReservationStatusCss(string status)
-    {
-        return status switch
-        {
-            "Confirmed" => "reservation-status confirmed",
-            "Cancelled" => "reservation-status cancelled",
-            _ => "reservation-status pending"
-        };
-    }
-}
-
 <header class="staff-header">
     <div style="display:flex;align-items:center;gap:16px;">
         <h2>SCREENING ROOMS</h2>
@@ -100,50 +88,15 @@ else
                     </div>
                 </section>
 
-                <div class="hall-reservations-stack">
-                    @for (var i = 0; i < Model.Rooms.Count; i++)
-                    {
-                        var room = Model.Rooms[i];
-                        <aside class="reservations-panel @(i == 0 ? "active" : "")" data-room-reservations="@room.RoomID">
-                            <div class="reservations-header">
-                                <span>RESERVATIONS</span>
-                                <strong>@room.Reservations.Sum(reservation => reservation.TicketCount) tickets</strong>
-                            </div>
-
-                            @if (!room.Reservations.Any())
-                            {
-                                <div class="reservation-empty">No reservations for this room.</div>
-                            }
-                            else
-                            {
-                                <div class="reservation-list">
-                                    @foreach (var reservation in room.Reservations)
-                                    {
-                                        <article class="reservation-card">
-                                            <div class="reservation-card-top">
-                                                <div>
-                                                    <strong>@reservation.CustomerName</strong>
-                                                    <span>@reservation.CustomerEmail</span>
-                                                </div>
-                                                <span class="@ReservationStatusCss(reservation.Status)">@reservation.Status</span>
-                                            </div>
-                                            <div class="reservation-movie">@reservation.MovieTitle</div>
-                                            <div class="reservation-details">
-                                                <span>@reservation.ShowtimeStart.ToString("dd/MM/yyyy HH:mm")</span>
-                                                <span>Seats @reservation.SeatCodes</span>
-                                                <span>@reservation.TicketCount tickets</span>
-                                            </div>
-                                            <div class="reservation-footer">
-                                                <span>Booking #@reservation.BookingID</span>
-                                                <strong>@reservation.TotalAmount.ToString("N0") VND</strong>
-                                            </div>
-                                        </article>
-                                    }
-                                </div>
-                            }
-                        </aside>
-                    }
-                </div>
+                <aside class="reservations-panel">
+                    <div class="reservations-header">
+                        <span>RESERVATIONS</span>
+                        <strong id="screeningReservationTicketCount">0 tickets</strong>
+                    </div>
+                    <div id="screeningReservationList">
+                        <div class="reservation-empty">No reservations for this showtime.</div>
+                    </div>
+                </aside>
             </div>
         </main>
     </div>

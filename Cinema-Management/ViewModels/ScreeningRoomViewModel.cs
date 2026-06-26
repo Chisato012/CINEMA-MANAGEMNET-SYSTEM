@@ -11,6 +11,8 @@ public sealed class ScreeningRoomStateViewModel
     public List<ScreeningRoomSeatRowViewModel> Rows { get; set; } = new();
 
     public ScreeningRoomSeatCountsViewModel Counts { get; set; } = new();
+
+    public List<ScreeningRoomReservationViewModel> Reservations { get; set; } = new();
 }
 
 public sealed class ScreeningRoomShowtimeViewModel
@@ -65,4 +67,23 @@ public sealed class ScreeningRoomSeatCountsViewModel
     public int Pending { get; set; }
 
     public int Available { get; set; }
+}
+
+public sealed class ScreeningRoomReservationViewModel
+{
+    public int BookingID { get; set; }
+
+    public string CustomerName { get; set; } = string.Empty;
+
+    public string CustomerEmail { get; set; } = string.Empty;
+
+    public DateTime BookingDate { get; set; }
+
+    public string Status { get; set; } = string.Empty;
+
+    public List<string> SeatCodes { get; set; } = new();
+
+    public int TicketCount { get; set; }
+
+    public decimal TotalAmount { get; set; }
 }

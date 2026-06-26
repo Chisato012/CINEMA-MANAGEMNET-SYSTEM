@@ -86,15 +86,10 @@
         <div class="matrix-header">
             <div class="mh-halls">RẠP CHIẾU</div>
             <div class="mh-times">
-                <span>08:00 AM</span>
-                <span>09:00 AM</span>
-                <span>10:00 AM</span>
-                <span>11:00 AM</span>
-                <span>12:00 PM</span>
-                <span>01:00 PM</span>
-                <span>02:00 PM</span>
-                <span>03:00 PM</span>
-                <span>04:00 PM</span>
+                @for (var hour = 8; hour <= 23; hour++)
+                {
+                    <span>@($"{hour:00}:00")</span>
+                }
             </div>
         </div>
         <div class="matrix-body">
@@ -106,7 +101,7 @@
                         <span class="hall-tag @room.TagCssClass">@room.DisplayType</span>
                         <span>@room.SeatCount GHE</span>
                     </div>
-                    <div class="mr-timeline" data-hall-number="@room.RoomID"></div>
+                    <div class="mr-timeline" data-room-id="@room.RoomID" data-hall-number="@room.RoomID"></div>
                 </div>
             }
             @if (renderStaticRooms)
@@ -349,9 +344,10 @@
         const scheduleDateInput = document.getElementById('scheduleDate');
         const btnSaveSchedule = document.getElementById('btnSaveSchedule');
         const scheduleStartHour = 8;
-        const scheduleEndHour = 17;
+        const scheduleEndHour = 23;
         const scheduleTotalMinutes = (scheduleEndHour - scheduleStartHour) * 60;
         const scheduleSnapMinutes = 15;
+        const scheduleDefaultBasePrice = 90000;
         
         const closeBtns = document.querySelectorAll('.btn-close-modal');
         const editBtns = document.querySelectorAll('.edit-movie-btn');
@@ -383,19 +379,27 @@
             return ((parts[0] * 60) + parts[1]) - (scheduleStartHour * 60);
         }
 
+        function clockTimeToMinutes(time) {
+            const parts = time.split(':').map(Number);
+            return (parts[0] * 60) + parts[1];
+        }
+
         function clampStart(startMinutes, duration) {
             return Math.max(0, Math.min(startMinutes, scheduleTotalMinutes - duration));
         }
 
-        function createScheduleBlock({ movieId, title, duration, startMinutes }) {
+        function createScheduleBlock({ showtimeId, movieId, title, duration, startMinutes, basePrice }) {
             const block = document.createElement('div');
             const safeDuration = Math.max(duration || scheduleSnapMinutes, scheduleSnapMinutes);
             const safeStart = clampStart(startMinutes, safeDuration);
 
             block.className = 'schedule-block';
+            block.dataset.showtimeId = showtimeId || '';
             block.dataset.movieId = movieId;
             block.dataset.duration = safeDuration;
             block.dataset.startTime = minutesToTime(safeStart);
+            block.dataset.endTime = minutesToTime(safeStart + safeDuration);
+            block.dataset.basePrice = basePrice || scheduleDefaultBasePrice;
             block.style.left = `${(safeStart / scheduleTotalMinutes) * 100}%`;
             block.style.width = `${(safeDuration / scheduleTotalMinutes) * 100}%`;
             block.innerHTML = `
@@ -404,16 +408,19 @@
                 <span class="schedule-block-time"></span>
             `;
             block.querySelector('.schedule-block-title').textContent = title;
-            block.querySelector('.schedule-block-time').textContent = `${block.dataset.startTime} - ${minutesToTime(safeStart + safeDuration)}`;
+            block.querySelector('.schedule-block-time').textContent = `${block.dataset.startTime} - ${block.dataset.endTime}`;
             block.querySelector('.schedule-block-remove').addEventListener('click', () => block.remove());
             return block;
         }
 
         function addScheduleBlock(timeline, movie, startMinutes) {
+            const resolvedMovieId = movie.movieId ?? movie.movieID ?? movie.MovieID;
             const block = createScheduleBlock({
-                movieId: movie.movieId,
+                showtimeId: movie.showtimeId ?? movie.showtimeID ?? movie.ShowtimeID,
+                movieId: resolvedMovieId,
                 title: movie.title,
                 duration: movie.duration,
+                basePrice: movie.basePrice,
                 startMinutes
             });
             timeline.appendChild(block);
@@ -425,6 +432,64 @@
             const rawMinutes = ratio * scheduleTotalMinutes;
             const snapped = Math.round(rawMinutes / scheduleSnapMinutes) * scheduleSnapMinutes;
             return clampStart(snapped, duration);
+        }
+
+        function timelineHasOverlap(timeline, startMinutes, endMinutes, ignoredBlock = null) {
+            return Array.from(timeline.querySelectorAll('.schedule-block')).some(block => {
+                if (block === ignoredBlock) {
+                    return false;
+                }
+
+                const blockStart = timeToMinutes(block.dataset.startTime);
+                const blockEnd = timeToMinutes(block.dataset.endTime);
+                return startMinutes < blockEnd && endMinutes > blockStart;
+            });
+        }
+
+        function getSchedulePayloadItems() {
+            return Array.from(document.querySelectorAll('.mr-timeline')).flatMap(timeline =>
+                Array.from(timeline.querySelectorAll('.schedule-block')).map(block => ({
+                    ShowtimeID: Number(block.dataset.showtimeId || 0),
+                    MovieID: Number(block.dataset.movieId),
+                    RoomID: Number(timeline.dataset.roomId || timeline.dataset.hallNumber),
+                    Date: scheduleDateInput.value,
+                    StartTime: buildScheduleDateTime(block.dataset.startTime),
+                    EndTime: buildScheduleDateTime(block.dataset.endTime),
+                    BasePrice: Number(block.dataset.basePrice || scheduleDefaultBasePrice),
+                    _startMinutes: timeToMinutes(block.dataset.startTime),
+                    _endMinutes: timeToMinutes(block.dataset.endTime)
+                }))
+            );
+        }
+
+        function findInvalidScheduleItem(items) {
+            return items.find(item =>
+                !Number.isInteger(item.MovieID) || item.MovieID <= 0 ||
+                !Number.isInteger(item.RoomID) || item.RoomID <= 0 ||
+                !Number.isFinite(item.BasePrice) || item.BasePrice <= 0 ||
+                item._endMinutes <= item._startMinutes
+            );
+        }
+
+        function findOverlappingScheduleItem(items) {
+            const grouped = items.reduce((map, item) => {
+                if (!map.has(item.RoomID)) {
+                    map.set(item.RoomID, []);
+                }
+                map.get(item.RoomID).push(item);
+                return map;
+            }, new Map());
+
+            for (const roomItems of grouped.values()) {
+                const ordered = roomItems.slice().sort((a, b) => a._startMinutes - b._startMinutes);
+                for (let i = 1; i < ordered.length; i++) {
+                    if (ordered[i - 1]._endMinutes > ordered[i]._startMinutes) {
+                        return ordered[i];
+                    }
+                }
+            }
+
+            return null;
         }
 
         document.querySelectorAll('.movie-list-item').forEach(item => {
@@ -457,8 +522,15 @@
                 }
 
                 const movie = JSON.parse(payload);
-                addScheduleBlock(timeline, movie, getDropStartMinutes(timeline, event, movie.duration));
-                setTelemetry(`Da them "${movie.title}" vao phong chieu ${timeline.dataset.hallNumber}.`);
+                const startMinutes = getDropStartMinutes(timeline, event, movie.duration);
+                const endMinutes = startMinutes + Math.max(movie.duration || scheduleSnapMinutes, scheduleSnapMinutes);
+                if (timelineHasOverlap(timeline, startMinutes, endMinutes)) {
+                    setTelemetry('Lich chieu bi trung gio trong cung phong chieu.');
+                    return;
+                }
+
+                addScheduleBlock(timeline, movie, startMinutes);
+                setTelemetry(`Da them "${movie.title}" vao phong chieu ${timeline.dataset.roomId || timeline.dataset.hallNumber}.`);
             });
         });
 
@@ -473,46 +545,82 @@
 
             const showtimes = await response.json();
             showtimes.forEach(showtime => {
-                const timeline = document.querySelector(`.mr-timeline[data-hall-number="${showtime.hallNumber}"]`);
+                const roomId = showtime.roomId || showtime.roomID || showtime.hallNumber;
+                const timeline = document.querySelector(`.mr-timeline[data-room-id="${roomId}"], .mr-timeline[data-hall-number="${roomId}"]`);
                 if (!timeline) {
                     return;
                 }
 
                 addScheduleBlock(timeline, {
-                    movieId: showtime.movieId,
+                    showtimeId: showtime.showtimeId ?? showtime.showtimeID ?? showtime.ShowtimeID,
+                    movieId: showtime.movieId ?? showtime.movieID ?? showtime.MovieID,
                     title: showtime.movieTitle,
-                    duration: showtime.duration
+                    duration: showtime.duration,
+                    basePrice: showtime.basePrice
                 }, timeToMinutes(showtime.startTime));
             });
 
             setTelemetry(`Da tai ${showtimes.length} suat chieu.`);
         }
 
+        function buildScheduleDateTime(time) {
+            return `${scheduleDateInput.value}T${time}:00`;
+        }
+
+        async function readScheduleResponse(response) {
+            const text = await response.text();
+            if (!text) {
+                return {};
+            }
+
+            try {
+                return JSON.parse(text);
+            } catch {
+                return {
+                    message: `Server tra ve phan hoi khong phai JSON (${response.status}).`,
+                    detail: text.slice(0, 300)
+                };
+            }
+        }
+
         async function saveSchedule() {
-            const items = Array.from(document.querySelectorAll('.mr-timeline')).flatMap(timeline =>
-                Array.from(timeline.querySelectorAll('.schedule-block')).map(block => ({
-                    movieId: Number(block.dataset.movieId),
-                    hallNumber: Number(timeline.dataset.hallNumber),
-                    startTime: block.dataset.startTime
-                }))
-            );
+            const payloadItems = getSchedulePayloadItems();
+            const invalidItem = findInvalidScheduleItem(payloadItems);
+            if (invalidItem) {
+                setTelemetry(`Du lieu lich chieu khong hop le: MovieID=${invalidItem.MovieID}, RoomID=${invalidItem.RoomID}, BasePrice=${invalidItem.BasePrice}.`);
+                return;
+            }
+
+            const overlapItem = findOverlappingScheduleItem(payloadItems);
+            if (overlapItem) {
+                setTelemetry(`Lich chieu bi trung gio trong phong ${overlapItem.RoomID}.`);
+                return;
+            }
+
+            const items = payloadItems.map(({ _startMinutes, _endMinutes, ...item }) => item);
 
             const response = await fetch('/Staff/SaveSchedule', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    date: scheduleDateInput.value,
-                    items
+                    Date: scheduleDateInput.value,
+                    Items: items
                 })
             });
 
-            const result = await response.json().catch(() => ({ message: 'Khong doc duoc phan hoi tu server.' }));
+            const result = await readScheduleResponse(response);
             if (!response.ok) {
-                setTelemetry(result.message || 'Luu lich that bai.');
+                const details = result.errors
+                    ? Object.entries(result.errors)
+                        .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+                        .join(' | ')
+                    : result.detail || '';
+                setTelemetry(details ? `${result.message}: ${details}` : result.message || 'Luu lich that bai.');
                 return;
             }
 
-            setTelemetry(`${result.message} (${result.count} suat chieu)`);
+            setTelemetry(`${result.message} (${result.count} suat chieu, them ${result.created || 0}, cap nhat ${result.updated || 0}, xoa ${result.deleted || 0})`);
+            await loadSchedule();
         }
 
         btnSaveSchedule.addEventListener('click', saveSchedule);

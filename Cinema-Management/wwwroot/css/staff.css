@@ -86,7 +86,7 @@ body { background-color: var(--color-neutral-950); color: var(--color-neutral-50
 .tag-deluxe { background: var(--color-neutral-800); color: var(--color-neutral-300); }
 .tag-vip { background: var(--color-primary-600); color: #fff; }
 .tag-standard { background: var(--color-primary-400); color: var(--color-neutral-900); }
-.mr-timeline { flex: 1; position: relative; background-image: linear-gradient(to right, var(--color-neutral-800) 1px, transparent 1px); background-size: 11.11% 100%; }
+.mr-timeline { flex: 1; position: relative; background-image: linear-gradient(to right, var(--color-neutral-800) 1px, transparent 1px); background-size: 6.6667% 100%; }
 .mr-timeline.drag-over { background-color: rgba(212, 163, 115, 0.08); }
 .schedule-block { position: absolute; top: 10px; height: calc(100% - 20px); min-width: 72px; border: 1px solid rgba(244, 187, 146, 0.8); border-radius: 6px; background: linear-gradient(135deg, rgba(166, 123, 91, 0.95), rgba(55, 38, 28, 0.95)); color: #fff; padding: 8px 28px 8px 10px; box-sizing: border-box; overflow: hidden; cursor: grab; box-shadow: 0 8px 18px rgba(0,0,0,0.25); }
 .schedule-block-title { display: block; font-family: var(--font-headline); font-size: 0.72rem; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
