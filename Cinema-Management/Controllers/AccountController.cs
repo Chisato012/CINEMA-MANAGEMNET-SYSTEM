@@ -20,6 +20,8 @@ namespace Cinema_Management.Controllers;
 public class AccountController : Controller
 {
     private const string GoogleProvider = "Google";
+    private const string GoogleRememberMeSessionKey = "Google_RememberMe";
+    private const string RememberMeAuthItemKey = "rememberMe";
     private static readonly TimeSpan EmailVerificationLifetime = TimeSpan.FromMinutes(30);
     private static readonly TimeSpan ResendConfirmationCooldown = TimeSpan.FromMinutes(2);
 
@@ -96,7 +98,7 @@ public class AccountController : Controller
             return View(model);
         }
 
-        SignInWithSession(user);
+        SignInWithSession(user, model.RememberMe);
 
         var role = GetUserRole(user);
         TempData["AlertSuccess"] = $"Đăng nhập thành công! Xin chào {user.FullName} (Role: {role})";
@@ -162,9 +164,7 @@ public class AccountController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Register(
-        AuthViewModel model,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> Register(AuthViewModel model, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
         {
@@ -180,6 +180,7 @@ public class AccountController : Controller
             return View(model);
         }
 
+        // 1. Tạo đối tượng User mới (Mặc định EmailConfirmed = false)
         var user = new User
         {
             FullName = model.FullName.Trim(),
@@ -189,9 +190,10 @@ public class AccountController : Controller
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password),
             Role = "KhachHang",
             Status = true,
-            EmailConfirmed = false
+            EmailConfirmed = false 
         };
 
+        // 2. Sinh mã Token ngẫu nhiên và lưu Hash vào DB
         var verificationToken = CreateEmailVerificationToken(user);
         _context.Users.Add(user);
 
@@ -205,8 +207,20 @@ public class AccountController : Controller
             return View(model);
         }
 
-        await SendConfirmationEmailAsync(user, verificationToken, cancellationToken);
+        // 🚀 3. TỰ ĐỘNG GỬI MAIL XÁC NHẬN NGAY TẠI ĐÂY
+        var confirmationEmailSent = await SendConfirmationEmailAsync(user, verificationToken, cancellationToken);
+        if (!confirmationEmailSent)
+        {
+            TempData["AlertError"] = "Dang ky thanh cong nhung chua gui duoc email xac nhan. Vui long kiem tra cau hinh SMTP.";
+        }
 
+        var welcomeEmailSent = await SendRegistrationWelcomeEmailAsync(user, cancellationToken);
+        if (!welcomeEmailSent)
+        {
+            TempData["AlertError"] = "Dang ky thanh cong nhung chua gui duoc email chao mung. Vui long kiem tra cau hinh SMTP.";
+        }
+
+        // 4. Chuyển hướng sang trang thông báo chờ xác nhận (RegisterPending)
         return RedirectToAction(nameof(RegisterPending), new { email = user.Email });
     }
 
@@ -277,6 +291,115 @@ public class AccountController : Controller
 
         return View("ConfirmEmailSuccess");
     }
+    
+    [HttpGet]
+public IActionResult GoogleRegister()
+{
+    var email = HttpContext.Session.GetString("Google_Email");
+    var fullName = HttpContext.Session.GetString("Google_FullName");
+
+    if (string.IsNullOrEmpty(email))
+    {
+        return RedirectToAction(nameof(Login));
+    }
+
+    // Đổ dữ liệu có sẵn từ Google ra View thông qua AuthViewModel
+    var model = new AuthViewModel
+    {
+        Email = email,
+        FullName = fullName
+    };
+
+    return View(model);
+}
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GoogleRegister(AuthViewModel model, CancellationToken cancellationToken)
+    {
+        var googleId = HttpContext.Session.GetString("Google_Id");
+        var email = HttpContext.Session.GetString("Google_Email");
+
+        if (string.IsNullOrEmpty(googleId) || string.IsNullOrEmpty(email))
+        {
+            return RedirectToAction(nameof(Login));
+        }
+
+        // 🔥 1. Xóa bỏ kiểm tra Password và Username (nếu không dùng) để ModelState.IsValid không bị fail vô lý
+        ModelState.Remove(nameof(AuthViewModel.Password));
+        ModelState.Remove(nameof(AuthViewModel.ConfirmPassword));
+        ModelState.Remove(nameof(AuthViewModel.Username));
+
+        // 2. Nếu dữ liệu nhập thêm (Họ tên, SĐT, Ngày sinh) bị sai định dạng Regex
+        if (!ModelState.IsValid)
+        {
+            // Trả lại View kèm dữ liệu đã nhập để hiển thị lỗi đỏ thông báo cho khách hàng
+            return View(model);
+        }
+
+        // 3. Nếu dữ liệu hợp lệ hoàn toàn, tiến hành lưu vào DB
+        var user = new User
+        {
+            FullName = model.FullName.Trim(),
+            Email = NormalizeEmail(email),
+            PhoneNumber = model.PhoneNumber?.Trim(),
+            DOB = model.DateOfBirth,
+            PasswordHash = null,
+            Role = "KhachHang",
+            Status = true,
+            EmailConfirmed = true,
+            ExternalProvider = GoogleProvider,
+            ExternalProviderKey = googleId
+        };
+
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        HttpContext.Session.Remove("Google_Email");
+        HttpContext.Session.Remove("Google_FullName");
+        var rememberMe = HttpContext.Session.GetString(GoogleRememberMeSessionKey) == bool.TrueString;
+        HttpContext.Session.Remove("Google_Id");
+        HttpContext.Session.Remove(GoogleRememberMeSessionKey);
+
+        SignInWithSession(user, rememberMe);
+
+        var welcomeEmailSent = await SendWelcomeEmailAsync(user, cancellationToken);
+        if (!welcomeEmailSent)
+        {
+            TempData["AlertError"] = "Dang ky Google thanh cong nhung chua gui duoc email chao mung. Vui long kiem tra cau hinh SMTP.";
+        }
+
+        TempData["AlertSuccess"] = $"Chào mừng {user.FullName} gia nhập COSMOS Cinema!";
+        return RedirectToAction("Index", "Home");
+    }
+
+// Hàm phụ trợ thực hiện gửi email chào mừng
+private async Task<bool> SendWelcomeEmailAsync(User user, CancellationToken cancellationToken)
+{
+    var safeFullName = System.Net.WebUtility.HtmlEncode(user.FullName);
+    var htmlBody = $"""
+        <div style="background:#121212; color:#f5f5f5; padding:32px; font-family:Arial,sans-serif; text-align:center;">
+            <h1 style="color:#D4A373; margin-bottom:16px;">COSMOS CINEMA</h1>
+            <h2 style="color:#ffffff;">Chào mừng {safeFullName}!</h2>
+            <p style="color:#aaa; font-size:16px; line-height:1.6;">
+                Tài khoản của bạn đã được khởi tạo thành công thông qua kết nối Google. <br/>
+                Từ bây giờ, bạn đã có thể trải nghiệm dịch vụ đặt vé phim trực tuyến cực nhanh tại hệ thống của chúng tôi.
+            </p>
+            <div style="margin-top:32px;">
+                <a href="{Url.Action("Index", "Home", null, Request.Scheme)}" style="background:#A67B5B; color:#ffffff; padding:12px 24px; text-decoration:none; border-radius:6px; font-weight:bold;">
+                    Trải Nghiệm Ngay
+                </a>
+            </div>
+        </div>
+        """;
+
+    return await _emailService.SendEmailAsync(
+        user.Email,
+        "Chào mừng bạn đến với COSMOS Cinema!",
+        htmlBody,
+        cancellationToken
+    );
+}
 
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -319,13 +442,16 @@ public class AccountController : Controller
             return RedirectToAction(nameof(RegisterPending), new { email = normalizedEmail });
         }
 
-        await SendConfirmationEmailAsync(user, verificationToken, cancellationToken);
+        var confirmationEmailSent = await SendConfirmationEmailAsync(user, verificationToken, cancellationToken);
+        TempData[confirmationEmailSent ? "AlertSuccess" : "AlertError"] = confirmationEmailSent
+            ? "Neu email hop le va chua xac nhan, chung toi se gui lien ket xac nhan moi."
+            : "Chua gui duoc email xac nhan. Vui long kiem tra cau hinh SMTP.";
 
         return RedirectToAction(nameof(RegisterPending), new { email = normalizedEmail });
     }
 
     [HttpGet]
-    public IActionResult GoogleLogin()
+    public IActionResult GoogleLogin(bool rememberMe = false)
     {
         if (string.IsNullOrWhiteSpace(_configuration["Authentication:Google:ClientId"])
             || string.IsNullOrWhiteSpace(_configuration["Authentication:Google:ClientSecret"]))
@@ -337,141 +463,146 @@ public class AccountController : Controller
         var redirectUrl = Url.Action(nameof(GoogleCallback), "Account");
         var properties = new AuthenticationProperties
         {
-            RedirectUri = redirectUrl
+            RedirectUri = redirectUrl,
+            IsPersistent = rememberMe,
+            ExpiresUtc = rememberMe
+                ? DateTimeOffset.UtcNow.AddDays(30)
+                : DateTimeOffset.UtcNow.AddMinutes(10)
         };
+        properties.Items[RememberMeAuthItemKey] = rememberMe.ToString();
 
         return Challenge(properties, GoogleDefaults.AuthenticationScheme);
     }
 
     [HttpGet]
-    public async Task<IActionResult> GoogleCallback(CancellationToken cancellationToken)
+public async Task<IActionResult> GoogleCallback(CancellationToken cancellationToken)
+{
+    var authenticateResult = await HttpContext.AuthenticateAsync(
+        CookieAuthenticationDefaults.AuthenticationScheme);
+
+    if (!authenticateResult.Succeeded || authenticateResult.Principal == null)
     {
-        var authenticateResult = await HttpContext.AuthenticateAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme);
-
-        if (!authenticateResult.Succeeded || authenticateResult.Principal == null)
-        {
-            TempData["AlertError"] = "Đăng nhập Google thất bại hoặc đã bị hủy.";
-            return RedirectToAction(nameof(Login));
-        }
-
-        var principal = authenticateResult.Principal;
-        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
-        var googleId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
-        var email = NormalizeEmail(principal.FindFirstValue(ClaimTypes.Email));
-        var fullName = principal.FindFirstValue(ClaimTypes.Name) ?? email;
-        var emailVerified = IsGoogleEmailVerified(principal);
-
-        if (string.IsNullOrWhiteSpace(googleId) || string.IsNullOrWhiteSpace(email))
-        {
-            TempData["AlertError"] = "Google không trả về đủ thông tin tài khoản.";
-            return RedirectToAction(nameof(Login));
-        }
-
-        if (!emailVerified)
-        {
-            TempData["AlertError"] = "Google chưa xác minh email của tài khoản này.";
-            return RedirectToAction(nameof(Login));
-        }
-
-        var user = await _context.Users
-            .FirstOrDefaultAsync(
-                u => u.ExternalProvider == GoogleProvider
-                     && u.ExternalProviderKey == googleId,
-                cancellationToken);
-
-        var shouldSave = false;
-        if (user == null)
-        {
-            var existingEmailUser = await FindUserByNormalizedEmailAsync(email, cancellationToken);
-
-            if (existingEmailUser != null)
-            {
-                if (!existingEmailUser.Status)
-                {
-                    TempData["AlertError"] = "Tài khoản của bạn đã bị khóa.";
-                    return RedirectToAction(nameof(Login));
-                }
-
-                if (HasDifferentExternalProviderKey(existingEmailUser, googleId))
-                {
-                    TempData["AlertError"] = "Email này đã được liên kết với nhà cung cấp đăng nhập khác.";
-                    return RedirectToAction(nameof(Login));
-                }
-
-                LinkGoogleAccount(existingEmailUser, googleId);
-                user = existingEmailUser;
-                shouldSave = true;
-            }
-            else
-            {
-                user = new User
-                {
-                    FullName = string.IsNullOrWhiteSpace(fullName)
-                        ? email
-                        : fullName.Trim(),
-
-                    Email = email,
-                    PasswordHash = null,
-
-                    // Gmail mới luôn là khách hàng
-                    Role = "KhachHang",
-
-                    Status = true,
-                    EmailConfirmed = true,
-                    ExternalProvider = GoogleProvider,
-                    ExternalProviderKey = googleId
-                };
-
-                _context.Users.Add(user);
-                shouldSave = true;
-            }
-
-            if (shouldSave)
-            {
-                try
-                {
-                    await _context.SaveChangesAsync(cancellationToken);
-                }
-                catch (DbUpdateException exception) when (IsDuplicateAccountError(exception))
-                {
-                    var linkedUser = await TryLinkExistingUserAfterGoogleDuplicateAsync(
-                        user,
-                        email,
-                        googleId,
-                        cancellationToken);
-
-                    if (linkedUser == null)
-                    {
-                        TempData["AlertError"] = "Không thể liên kết tài khoản Google này.";
-                        return RedirectToAction(nameof(Login));
-                    }
-
-                    user = linkedUser;
-                }
-            }
-        }
-
-        if (!user.Status)
-        {
-            TempData["AlertError"] = "Tài khoản của bạn đã bị khóa.";
-            return RedirectToAction(nameof(Login));
-        }
-
-        if (!user.EmailConfirmed)
-        {
-            TempData["AlertError"] = "Email của bạn chưa được xác nhận.";
-            return RedirectToAction(nameof(Login));
-        }
-
-        SignInWithSession(user);
-
-        var role = GetUserRole(user);
-        TempData["AlertSuccess"] = $"Đăng nhập Google thành công! Xin chào {user.FullName}";
-
-        return RedirectByRole(role);
+        TempData["AlertError"] = "Đăng nhập Google thất bại hoặc đã bị hủy.";
+        return RedirectToAction(nameof(Login));
     }
+
+    var principal = authenticateResult.Principal;
+    var rememberMe = IsRememberMeRequested(authenticateResult.Properties);
+    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+    var googleId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+    var email = NormalizeEmail(principal.FindFirstValue(ClaimTypes.Email));
+    var fullName = principal.FindFirstValue(ClaimTypes.Name) ?? email;
+    var emailVerified = IsGoogleEmailVerified(principal);
+
+    if (string.IsNullOrWhiteSpace(googleId) || string.IsNullOrWhiteSpace(email))
+    {
+        TempData["AlertError"] = "Google không trả về đủ thông tin tài khoản.";
+        return RedirectToAction(nameof(Login));
+    }
+
+    if (!emailVerified)
+    {
+        TempData["AlertError"] = "Google chưa xác minh email của tài khoản này.";
+        return RedirectToAction(nameof(Login));
+    }
+
+    // 1. Kiểm tra xem tài khoản liên kết Google này đã tồn tại trong DB chưa
+    var user = await _context.Users
+        .FirstOrDefaultAsync(
+            u => u.ExternalProvider == GoogleProvider
+                 && u.ExternalProviderKey == googleId,
+            cancellationToken);
+
+    var shouldSave = false;
+    if (user == null)
+    {
+        // 2. Nếu chưa, kiểm tra xem Email này đã được đăng ký bằng phương thức thường chưa
+        var existingEmailUser = await FindUserByNormalizedEmailAsync(email, cancellationToken);
+
+        if (existingEmailUser != null)
+        {
+            if (!existingEmailUser.Status)
+            {
+                TempData["AlertError"] = "Tài khoản của bạn đã bị khóa.";
+                return RedirectToAction(nameof(Login));
+            }
+
+            if (HasDifferentExternalProviderKey(existingEmailUser, googleId))
+            {
+                TempData["AlertError"] = "Email này đã được liên kết với nhà cung cấp đăng nhập khác.";
+                return RedirectToAction(nameof(Login));
+            }
+
+            // Liên kết tài khoản thường có sẵn với Google ID mới nhập
+            LinkGoogleAccount(existingEmailUser, googleId);
+            user = existingEmailUser;
+            shouldSave = true;
+        }
+        else
+        {
+            // ✨ ĐÂY LÀ ĐOẠN ĐÃ SỬA ĐỔI: Email mới hoàn toàn, không tạo ngầm nữa!
+            // Lưu thông tin từ Google vào Session để dùng ở Form đăng ký tiếp theo
+            HttpContext.Session.SetString("Google_Email", email);
+            HttpContext.Session.SetString("Google_FullName", fullName.Trim());
+            HttpContext.Session.SetString("Google_Id", googleId);
+            HttpContext.Session.SetString(GoogleRememberMeSessionKey, rememberMe.ToString());
+
+            // Bắn người dùng sang trang điền thêm thông tin (Số điện thoại, Ngày sinh...)
+            return RedirectToAction(nameof(GoogleRegister));
+        }
+
+        if (shouldSave)
+        {
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException exception) when (IsDuplicateAccountError(exception))
+            {
+                var linkedUser = await TryLinkExistingUserAfterGoogleDuplicateAsync(
+                    user,
+                    email,
+                    googleId,
+                    cancellationToken);
+
+                if (linkedUser == null)
+                {
+                    TempData["AlertError"] = "Không thể liên kết tài khoản Google này.";
+                    return RedirectToAction(nameof(Login));
+                }
+
+                user = linkedUser;
+            }
+        }
+    }
+
+    // 3. Kiểm tra trạng thái tài khoản đối với những người dùng đã có sẵn trong hệ thống
+    if (!user.Status)
+    {
+        TempData["AlertError"] = "Tài khoản của bạn đã bị khóa.";
+        return RedirectToAction(nameof(Login));
+    }
+
+    if (!user.EmailConfirmed)
+    {
+        TempData["AlertError"] = "Email của bạn chưa được xác nhận.";
+        return RedirectToAction(nameof(Login));
+    }
+
+    // Đăng nhập thành công, thiết lập Session
+    SignInWithSession(user, rememberMe);
+    var welcomeEmailSent = await SendWelcomeEmailAsync(user, cancellationToken);
+    if (!welcomeEmailSent)
+    {
+        TempData["AlertError"] = "Dang nhap Google thanh cong nhung chua gui duoc email chao mung. Vui long kiem tra cau hinh SMTP.";
+    }
+
+    var role = GetUserRole(user);
+    TempData["AlertSuccess"] = $"Đăng nhập Google thành công! Xin chào {user.FullName}";
+
+    return RedirectByRole(role);
+}
 
     [HttpGet]
     public IActionResult GoogleLoginFailed()
@@ -487,7 +618,41 @@ public class AccountController : Controller
         return View("ConfirmEmailFailed");
     }
 
-    private async Task SendConfirmationEmailAsync(
+    private async Task<bool> SendRegistrationWelcomeEmailAsync(
+        User user,
+        CancellationToken cancellationToken)
+    {
+        var safeFullName = WebUtility.HtmlEncode(user.FullName);
+        var homeLink = Url.Action("Index", "Home", null, Request.Scheme);
+        var safeHomeLink = WebUtility.HtmlEncode(homeLink ?? "/");
+        var htmlBody = $"""
+            <!doctype html>
+            <html>
+            <body style="margin:0;background:#121212;font-family:Arial,sans-serif;color:#f5f5f5;">
+                <div style="max-width:560px;margin:0 auto;padding:32px 24px;text-align:center;">
+                    <h1 style="color:#D4A373;margin:0 0 12px;">COSMOS Cinema</h1>
+                    <h2 style="color:#ffffff;margin:0 0 16px;">Welcome, {safeFullName}!</h2>
+                    <p style="color:#ddd;font-size:16px;line-height:1.6;">
+                        Your COSMOS Cinema account has been activated successfully.
+                    </p>
+                    <p style="margin:28px 0;">
+                        <a href="{safeHomeLink}" style="background:#A67B5B;color:#ffffff;text-decoration:none;padding:14px 22px;border-radius:8px;font-weight:bold;display:inline-block;">
+                            Start booking tickets
+                        </a>
+                    </p>
+                </div>
+            </body>
+            </html>
+            """;
+
+        return await _emailService.SendEmailAsync(
+            user.Email,
+            "Welcome to COSMOS Cinema!",
+            htmlBody,
+            cancellationToken);
+    }
+
+    private async Task<bool> SendConfirmationEmailAsync(
         User user,
         string verificationToken,
         CancellationToken cancellationToken)
@@ -501,7 +666,7 @@ public class AccountController : Controller
         if (string.IsNullOrWhiteSpace(confirmationLink))
         {
             _logger.LogWarning("Could not create email confirmation URL for user {UserID}.", user.UserID);
-            return;
+            return false;
         }
 
         var safeFullName = WebUtility.HtmlEncode(user.FullName);
@@ -526,18 +691,27 @@ public class AccountController : Controller
             </html>
             """;
 
-        await _emailService.SendEmailAsync(
+        return await _emailService.SendEmailAsync(
             user.Email,
             "Xác nhận tài khoản COSMOS Cinema",
             htmlBody,
             cancellationToken);
     }
 
-    private void SignInWithSession(User user)
+    private void SignInWithSession(User user, bool rememberMe = false)
     {
         HttpContext.Session.SetString("UserEmail", user.Email);
+        HttpContext.Session.SetString("UserFullName", user.FullName);
         HttpContext.Session.SetString("UserRole", GetUserRole(user));
         HttpContext.Session.SetInt32("UserID", user.UserID);
+        HttpContext.Session.SetString("RememberMe", rememberMe.ToString());
+    }
+
+    private static bool IsRememberMeRequested(AuthenticationProperties? properties)
+    {
+        return properties?.Items.TryGetValue(RememberMeAuthItemKey, out var value) == true
+               && bool.TryParse(value, out var rememberMe)
+               && rememberMe;
     }
 
     private static string GetUserRole(User user)
