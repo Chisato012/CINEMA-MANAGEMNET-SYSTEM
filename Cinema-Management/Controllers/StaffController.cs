@@ -74,6 +74,17 @@ public class StaffController : Controller
             return BadRequest(new { message = "Phong chieu khong hop le." });
         }
 
+        var roomExists = await _context.Database
+            .SqlQueryRaw<int>(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM Rooms WHERE RoomID = @roomId) THEN 1 ELSE 0 END AS [Value]",
+                new SqlParameter("@roomId", roomId))
+            .SingleAsync();
+
+        if (roomExists == 0)
+        {
+            return NotFound(new { message = "Khong tim thay phong chieu trong database." });
+        }
+
         var showtimes = await _context.Showtimes
             .AsNoTracking()
             .Where(s => s.RoomID == roomId)
@@ -86,6 +97,11 @@ public class StaffController : Controller
                 EndTime = s.EndTime
             })
             .ToListAsync();
+
+        if (showtimeId.HasValue && !showtimes.Any(s => s.ShowtimeID == showtimeId.Value))
+        {
+            return BadRequest(new { message = "Suat chieu khong thuoc phong chieu da chon." });
+        }
 
         var selectedShowtimeId = showtimeId.HasValue && showtimes.Any(s => s.ShowtimeID == showtimeId.Value)
             ? showtimeId.Value
@@ -976,24 +992,36 @@ public class StaffController : Controller
         return await _context.Database
             .SqlQueryRaw<ScreeningSeatRow>(
                 """
+                WITH SeatStates AS (
+                    SELECT
+                        s.SeatID,
+                        s.SeatCode,
+                        s.SeatType,
+                        MAX(CASE
+                            WHEN b.Status = N'Confirmed' THEN 2
+                            WHEN b.Status = N'Pending' THEN 1
+                            ELSE 0
+                        END) AS StateRank
+                    FROM Seats s
+                    LEFT JOIN Tickets t
+                        ON t.SeatID = s.SeatID
+                        AND t.ShowtimeID = @showtimeId
+                    LEFT JOIN Bookings b
+                        ON b.BookingID = t.BookingID
+                    WHERE s.RoomID = @roomId
+                    GROUP BY s.SeatID, s.SeatCode, s.SeatType
+                )
                 SELECT
-                    s.SeatID,
-                    s.SeatCode,
-                    s.SeatType,
+                    SeatID,
+                    SeatCode,
+                    SeatType,
                     CASE
-                        WHEN b.Status = N'Confirmed' THEN N'reserved'
-                        WHEN b.Status = N'Pending' THEN N'pending'
+                        WHEN StateRank = 2 THEN N'reserved'
+                        WHEN StateRank = 1 THEN N'pending'
                         ELSE N'available'
                     END AS ReservationState
-                FROM Seats s
-                LEFT JOIN Tickets t
-                    ON t.SeatID = s.SeatID
-                    AND t.ShowtimeID = @showtimeId
-                LEFT JOIN Bookings b
-                    ON b.BookingID = t.BookingID
-                    AND b.Status <> N'Cancelled'
-                WHERE s.RoomID = @roomId
-                ORDER BY s.SeatCode
+                FROM SeatStates
+                ORDER BY SeatCode
                 """,
                 roomParam,
                 showtimeParam)
@@ -1065,8 +1093,6 @@ public class StaffController : Controller
 
     private static List<ScreeningRoomSeatRowViewModel> BuildScreeningSeatRows(List<ScreeningRoomSeatViewModel> seats)
     {
-        var columnCount = GetScreeningSeatColumnCount(seats);
-
         return seats
             .GroupBy(seat => GetSeatRowLabel(seat.SeatCode))
             .OrderBy(group => group.Key)
@@ -1075,65 +1101,36 @@ public class StaffController : Controller
                 var row = group
                     .OrderBy(seat => GetSeatNumberSort(seat.SeatCode))
                     .ToList();
-                var usesSequentialSpans = row.Any(seat => seat.SeatType == "Couple");
-                var cells = usesSequentialSpans
-                    ? BuildSequentialScreeningSeatCells(row, columnCount)
-                    : BuildPositionedScreeningSeatCells(row, columnCount);
 
                 return new ScreeningRoomSeatRowViewModel
                 {
                     RowLabel = group.Key,
-                    Seats = cells
+                    Seats = BuildScreeningSeatCells(row)
                 };
             })
             .ToList();
     }
 
-    private static int GetScreeningSeatColumnCount(List<ScreeningRoomSeatViewModel> seats)
+    private static List<ScreeningRoomSeatViewModel> BuildScreeningSeatCells(List<ScreeningRoomSeatViewModel> row)
     {
-        return seats
-            .GroupBy(seat => GetSeatRowLabel(seat.SeatCode))
-            .Select(group =>
-            {
-                var row = group.ToList();
-                return row.Any(seat => seat.SeatType == "Couple")
-                    ? row.Sum(seat => seat.ColumnSpan)
-                    : row.Select(seat => GetSeatNumberSort(seat.SeatCode))
-                        .Where(number => number != int.MaxValue)
-                        .DefaultIfEmpty(0)
-                        .Max();
-            })
-            .DefaultIfEmpty(0)
-            .Max();
-    }
-
-    private static List<ScreeningRoomSeatViewModel> BuildSequentialScreeningSeatCells(List<ScreeningRoomSeatViewModel> row, int columnCount)
-    {
-        var cells = row.ToList();
-        var usedColumns = cells.Sum(seat => seat.ColumnSpan);
-
-        while (usedColumns < columnCount)
-        {
-            cells.Add(CreateScreeningSeatPlaceholder());
-            usedColumns++;
-        }
-
-        return cells;
-    }
-
-    private static List<ScreeningRoomSeatViewModel> BuildPositionedScreeningSeatCells(List<ScreeningRoomSeatViewModel> row, int columnCount)
-    {
-        var seatsByColumn = row
-            .Select(seat => new { Seat = seat, Column = GetSeatNumberSort(seat.SeatCode) })
-            .Where(item => item.Column != int.MaxValue)
-            .ToDictionary(item => item.Column, item => item.Seat);
-
         var cells = new List<ScreeningRoomSeatViewModel>();
-        for (var column = 1; column <= columnCount; column++)
+        var expectedSeatNumber = 1;
+
+        foreach (var seat in row)
         {
-            cells.Add(seatsByColumn.TryGetValue(column, out var seat)
-                ? seat
-                : CreateScreeningSeatPlaceholder());
+            var seatNumber = GetSeatNumberSort(seat.SeatCode);
+            if (seatNumber != int.MaxValue)
+            {
+                while (expectedSeatNumber < seatNumber)
+                {
+                    cells.Add(CreateScreeningSeatPlaceholder());
+                    expectedSeatNumber++;
+                }
+
+                expectedSeatNumber = seatNumber + 1;
+            }
+
+            cells.Add(seat);
         }
 
         return cells;

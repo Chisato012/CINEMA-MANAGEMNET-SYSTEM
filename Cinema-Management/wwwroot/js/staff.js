@@ -148,26 +148,21 @@
     }
 
     function getSeatClasses(seat) {
-        const classes = ['screening-seat'];
+        const classes = ['screening-seat', 'seat'];
 
         if (seat.isPlaceholder) {
             classes.push('is-placeholder');
             return classes.join(' ');
         }
 
-        if (seat.seatType === 'VIP') {
-            classes.push('seat-vip');
-        } else if (seat.seatType === 'Couple') {
-            classes.push('seat-couple');
-        } else {
-            classes.push('seat-regular');
-        }
-
-        if (seat.reservationState === 'reserved') {
-            classes.push('is-reserved');
-        } else if (seat.reservationState === 'pending') {
-            classes.push('is-pending');
-        }
+        classes.push(seat.seatType === 'Couple' ? 'seat-couple' : 'seat-single');
+        classes.push(
+            seat.reservationState === 'reserved'
+                ? 'reserved'
+                : seat.reservationState === 'pending'
+                    ? 'pending'
+                    : 'available'
+        );
 
         return classes.join(' ');
     }
@@ -297,6 +292,10 @@
             url.searchParams.set('showtimeId', showtimeId);
         }
 
+        clearSeatMap();
+        resetCounts();
+        renderReservations([], null);
+        showtimeSelect.disabled = true;
         setMessage('Loading seats...');
 
         try {
@@ -323,6 +322,7 @@
         } catch (error) {
             clearSeatMap();
             resetCounts();
+            populateShowtimes([], null);
             renderReservations([], null);
             setMessage('Could not load room seats from the database.');
         }
