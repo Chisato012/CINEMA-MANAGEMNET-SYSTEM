@@ -120,8 +120,10 @@ body { background-color: var(--color-neutral-950); color: var(--color-neutral-50
 .screening-seat-grid { --screening-seat-columns: 10; display: flex; flex-direction: column; gap: 8px; }
 .screening-seat-row { display: grid; grid-template-columns: repeat(var(--screening-seat-columns), 28px); gap: 8px; justify-content: center; }
 .screening-seat { width: 100%; height: 28px; border: 1px solid transparent; border-radius: 4px 4px 2px 2px; display: flex; align-items: center; justify-content: center; font-family: var(--font-label); font-size: 0.68rem; color: var(--color-neutral-50); box-shadow: inset 0 -4px 0 rgba(0,0,0,0.24); box-sizing: border-box; }
-.screening-seat.available, .seat.available, .seat-status-legend__swatch.available { background-color: #15803d; border-color: #22c55e; color: #ffffff; }
-.screening-seat.reserved, .seat.reserved, .seat-status-legend__swatch.reserved { background-color: #dc2626; border-color: #f87171; color: #ffffff; }
+.screening-seat.available.regular, .seat.available.regular, .seat-status-legend__swatch.available { background-color: #FFDCC4; border-color: #FFDCC4; color: #1a1a1a; }
+.screening-seat.available.vip, .seat.available.vip { background-color: #D1A27F; border-color: #D1A27F; color: #1a1a1a; }
+.screening-seat.available.couple, .seat.available.couple { background-color: #D1A27F; border-color: #D1A27F; color: #1a1a1a; }
+.screening-seat.reserved, .seat.reserved, .seat-status-legend__swatch.reserved { background-color: #7C5639; border-color: #7C5639; color: #ffffff; }
 .screening-seat.pending, .seat.pending, .seat-status-legend__swatch.pending { background-color: #6b7280; border-color: #9ca3af; color: #ffffff; }
 .screening-seat.is-placeholder { visibility: hidden; box-shadow: none; }
 .seat-status-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; align-self: flex-start; background: var(--color-neutral-900); border: 1px solid var(--color-neutral-800); border-radius: 6px; padding: 8px 10px; }

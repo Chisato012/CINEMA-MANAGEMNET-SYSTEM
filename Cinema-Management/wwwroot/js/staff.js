@@ -155,7 +155,11 @@
             return classes.join(' ');
         }
 
+        const seatTypeClass = (seat.seatType || '').toLowerCase();
         classes.push(seat.seatType === 'Couple' ? 'seat-couple' : 'seat-single');
+        if (seatTypeClass) {
+            classes.push(seatTypeClass);
+        }
         classes.push(
             seat.reservationState === 'reserved'
                 ? 'reserved'
