@@ -2,6 +2,7 @@ using Cinema_Management.Data;
 using Cinema_Management.Models;
 using Cinema_Management.Services;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.EntityFrameworkCore;
@@ -26,22 +27,42 @@ builder.Services.Configure<EmailSettings>(
     builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 
-builder.Services
+var googleClientId =
+    builder.Configuration["Authentication:Google:ClientId"];
+
+var googleClientSecret =
+    builder.Configuration["Authentication:Google:ClientSecret"];
+
+// Trong moi truong Development, neu chua cau hinh Google OAuth
+// thi khong dang ky Google authentication de ung dung van chay.
+// Cookie authentication va che do dang nhap gia lap van hoat dong.
+var authenticationBuilder = builder.Services
     .AddAuthentication(options =>
     {
-        options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+        options.DefaultAuthenticateScheme =
+            CookieAuthenticationDefaults.AuthenticationScheme;
+
+        options.DefaultSignInScheme =
+            CookieAuthenticationDefaults.AuthenticationScheme;
+
+        options.DefaultChallengeScheme =
+            CookieAuthenticationDefaults.AuthenticationScheme;
     })
     .AddCookie(options =>
     {
-        options.Cookie.Name = "Cinema.GoogleOAuth";
-        options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
-        options.SlidingExpiration = false;
-    })
-    .AddGoogle(options =>
+        options.LoginPath = "/Account/Login";
+        options.AccessDeniedPath = "/Account/AccessDenied";
+    });
+
+// Production phai cau hinh ClientId va ClientSecret that
+// truoc khi bat lai dang nhap Google.
+if (!string.IsNullOrWhiteSpace(googleClientId) &&
+    !string.IsNullOrWhiteSpace(googleClientSecret))
+{
+    authenticationBuilder.AddGoogle(options =>
     {
-        options.ClientId = builder.Configuration["Authentication:Google:ClientId"] ?? string.Empty;
-        options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"] ?? string.Empty;
+        options.ClientId = googleClientId;
+        options.ClientSecret = googleClientSecret;
         options.CallbackPath = "/signin-google";
         options.SaveTokens = false;
         options.Events.OnCreatingTicket = context =>
@@ -63,6 +84,7 @@ builder.Services
             return Task.CompletedTask;
         };
     });
+}
 
 // Lấy chuỗi kết nối từ appsettings.Development.json hoặc appsettings.json
 var connectionString = builder.Configuration
@@ -116,6 +138,86 @@ app.UseSession();
 
 app.UseAuthentication();
 
+
+// Chi bat bo qua dang nhap trong moi truong Development va khi
+// appsettings.Development.json dat DevelopmentLogin:Enabled = true.
+// Tuyet doi khong them cau hinh nay vao Production.
+if (app.Environment.IsDevelopment() &&
+    app.Configuration.GetValue<bool>("DevelopmentLogin:Enabled"))
+{
+    app.Use(async (context, next) =>
+    {
+        // Chi tao tai khoan dang nhap gia lap khi request hien tai
+        // chua co nguoi dung da dang nhap.
+        if (context.User.Identity?.IsAuthenticated != true)
+        {
+            var userId =
+                app.Configuration.GetValue<int>(
+                    "DevelopmentLogin:UserId");
+
+            var email =
+                app.Configuration[
+                    "DevelopmentLogin:Email"];
+
+            var fullName =
+                app.Configuration[
+                    "DevelopmentLogin:FullName"];
+
+            var role =
+                app.Configuration[
+                    "DevelopmentLogin:Role"];
+
+            // Tao cac claim tam thoi de he thong Authorize
+            // nhan dien nguoi dung va vai tro trong luc phat trien.
+            // Phan quyen theo vai tro van dung ClaimTypes.Role.
+            // Doi Role trong appsettings.Development.json thanh Staff,
+            // Admin hoac KhachHang de kiem thu cac quyen khac nhau.
+            var claims = new List<Claim>
+            {
+                new(
+                    ClaimTypes.NameIdentifier,
+                    userId.ToString()),
+
+                new(
+                    ClaimTypes.Name,
+                    fullName ?? "Development User"),
+
+                new(
+                    ClaimTypes.Email,
+                    email ?? "staff@gmail.com"),
+
+                new(
+                    ClaimTypes.Role,
+                    role ?? "Staff")
+            };
+
+            var identity = new ClaimsIdentity(
+                claims,
+                CookieAuthenticationDefaults
+                    .AuthenticationScheme);
+
+            var principal =
+                new ClaimsPrincipal(identity);
+
+            // Gan nguoi dung gia lap vao request hien tai.
+            context.User = principal;
+
+            // Luu cookie de cac request tiep theo van duoc xem
+            // la da dang nhap trong moi truong Development.
+            // Khi bam Logout, cookie co the bi xoa trong request do,
+            // nhung request tiep theo se duoc dang nhap lai neu bypass con bat.
+            await context.SignInAsync(
+                CookieAuthenticationDefaults
+                    .AuthenticationScheme,
+                principal);
+        }
+
+        await next();
+    });
+}
+
+// De khoi phuc luong dang nhap binh thuong trong Development,
+// doi DevelopmentLogin:Enabled thanh false.
 app.UseAuthorization();
 
 // Định tuyến MVC

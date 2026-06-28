@@ -3,6 +3,13 @@
 }
 
 @model Cinema_Management.Models.LoginRequest
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+
+@{
+    var googleLoginEnabled =
+        !string.IsNullOrWhiteSpace(Configuration["Authentication:Google:ClientId"]) &&
+        !string.IsNullOrWhiteSpace(Configuration["Authentication:Google:ClientSecret"]);
+}
 
 <head>
     <link rel="stylesheet" href="~/css/auth.css">
@@ -121,6 +128,9 @@
                     </form>
                 }
 
+                @* Chi hien nut Google khi da cau hinh du ClientId va ClientSecret. *@
+                @if (googleLoginEnabled)
+                {
                 <div class="auth-divider">
                     <span>Hoặc tiếp tục với</span>
                 </div>
@@ -136,6 +146,7 @@
                         <span>Tiếp tục với Google</span>
                     </a>
                 </div>
+                }
                 </div>
 
             </div>
@@ -147,12 +158,15 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-    <script>
-        document.getElementById('googleLoginBtn')?.addEventListener('click', function () {
-            const rememberMe = document.getElementById('RememberMe')?.checked || false;
-            this.href = '@Url.Action("GoogleLogin", "Account")?rememberMe=' + rememberMe;
-        });
-    </script>
+    @if (googleLoginEnabled)
+    {
+        <script>
+            document.getElementById('googleLoginBtn')?.addEventListener('click', function () {
+                const rememberMe = document.getElementById('RememberMe')?.checked || false;
+                this.href = '@Url.Action("GoogleLogin", "Account")?rememberMe=' + rememberMe;
+            });
+        </script>
+    }
 }
 
     

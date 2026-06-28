@@ -23,7 +23,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Person> Persons { get; set; }
     public DbSet<Showtimes> Showtimes { get; set; }
     public DbSet<Combo> Combos { get; set; }
-    public DbSet<Payment> Payments { get; set; }
+    public DbSet<Payment> Payments { get; set; } = null!;
 
     
 
@@ -52,11 +52,27 @@ public class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<Payment>(entity =>
         {
+            entity.ToTable("Payments");
+
+            entity.HasKey(p => p.PaymentID);
+
             entity.Property(p => p.Amount)
-                .HasColumnType("decimal(10,2)");
+                .HasColumnType("decimal(10,2)")
+                .IsRequired();
+
+            entity.Property(p => p.PaymentDate)
+                .IsRequired();
 
             entity.Property(p => p.Status)
-                .HasMaxLength(10);
+                .HasMaxLength(10)
+                .IsRequired()
+                .HasDefaultValue("Pending");
+
+            entity.Property(p => p.BookingID)
+                .IsRequired();
+
+            entity.Property(p => p.MethodID)
+                .IsRequired();
         });
 
         modelBuilder.Entity<User>(entity =>
