@@ -29,13 +29,6 @@ public class AccountController : Controller
             "staff@gmail.com",
             "admin@gmail.com"
         };
-    private static readonly Dictionary<string, string> DevelopmentPasswordlessExpectedRoles =
-        new(StringComparer.OrdinalIgnoreCase)
-        {
-            ["khach@gmail.com"] = "KhachHang",
-            ["staff@gmail.com"] = "Staff",
-            ["admin@gmail.com"] = "Admin"
-        };
     private static readonly TimeSpan EmailVerificationLifetime = TimeSpan.FromMinutes(30);
     private static readonly TimeSpan ResendConfirmationCooldown = TimeSpan.FromMinutes(2);
 
@@ -79,19 +72,16 @@ public class AccountController : Controller
         model.CaptchaToken = Request.Form["cf-turnstile-response"].ToString();
         ModelState.Remove(nameof(LoginRequest.CaptchaToken));
 
-        var normalizedEmail = model.Email?.Trim();
-        var isDevelopmentPasswordlessEmail =
-            !string.IsNullOrWhiteSpace(normalizedEmail)
-            && DevelopmentPasswordlessEmails.Contains(normalizedEmail);
+        var normalizedEmail = model.Email?.Trim().ToLowerInvariant() ?? string.Empty;
         var isDevelopmentPasswordlessLogin =
             _environment.IsDevelopment()
-            && isDevelopmentPasswordlessEmail;
+            && DevelopmentPasswordlessEmails.Contains(normalizedEmail);
 
         if (_environment.IsDevelopment())
         {
             _logger.LogInformation(
                 "Development passwordless login attempted. Matched allowlist: {MatchedAllowlist}.",
-                isDevelopmentPasswordlessEmail);
+                DevelopmentPasswordlessEmails.Contains(normalizedEmail));
         }
 
         if (isDevelopmentPasswordlessLogin)
@@ -113,8 +103,7 @@ public class AccountController : Controller
             return View(model);
         }
 
-        var email = NormalizeEmail(model.Email);
-        var user = await FindUserByNormalizedEmailAsync(email, cancellationToken);
+        var user = await FindUserByNormalizedEmailAsync(normalizedEmail, cancellationToken);
 
         if (isDevelopmentPasswordlessLogin)
         {
@@ -136,7 +125,7 @@ public class AccountController : Controller
             {
                 _logger.LogWarning(
                     "Development passwordless login failed. Matched allowlist: {MatchedAllowlist}. User found: {UserFound}. Database role: {DatabaseRole}.",
-                    isDevelopmentPasswordlessEmail,
+                    DevelopmentPasswordlessEmails.Contains(normalizedEmail),
                     user != null,
                     user?.Role ?? "(none)");
             }
@@ -144,19 +133,6 @@ public class AccountController : Controller
             ViewBag.ShowDevelopmentPasswordlessLoginMessage = _environment.IsDevelopment();
             ModelState.AddModelError(string.Empty, "Sai email hoặc mật khẩu");
             TempData["AlertError"] = "Sai email hoặc mật khẩu. Vui lòng thử lại.";
-            return View(model);
-        }
-
-        if (isDevelopmentPasswordlessLogin
-            && (!DevelopmentPasswordlessExpectedRoles.TryGetValue(normalizedEmail!, out var expectedRole)
-                || !string.Equals(user.Role, expectedRole, StringComparison.OrdinalIgnoreCase)))
-        {
-            _logger.LogWarning(
-                "Development passwordless login failed because the database role did not match the expected test role. Database role: {DatabaseRole}.",
-                user.Role);
-            ViewBag.ShowDevelopmentPasswordlessLoginMessage = _environment.IsDevelopment();
-            ModelState.AddModelError(string.Empty, "Sai email hoac mat khau");
-            TempData["AlertError"] = "Sai email hoac mat khau. Vui long thu lai.";
             return View(model);
         }
 
@@ -175,10 +151,12 @@ public class AccountController : Controller
             return View(model);
         }
 
-        var requiresEmailVerification = string.Equals(
-            user.Role,
-            "KhachHang",
-            StringComparison.OrdinalIgnoreCase);
+        var requiresEmailVerification =
+            !isDevelopmentPasswordlessLogin &&
+            string.Equals(
+                user.Role,
+                "KhachHang",
+                StringComparison.OrdinalIgnoreCase);
 
         if (requiresEmailVerification && !user.EmailConfirmed)
         {

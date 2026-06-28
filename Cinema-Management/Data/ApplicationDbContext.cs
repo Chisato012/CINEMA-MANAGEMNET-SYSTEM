@@ -23,6 +23,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Person> Persons { get; set; }
     public DbSet<Showtimes> Showtimes { get; set; }
     public DbSet<Combo> Combos { get; set; }
+    public DbSet<Payment> Payments { get; set; }
 
     
 
@@ -47,6 +48,15 @@ public class ApplicationDbContext : DbContext
 
             entity.Property(s => s.BasePrice)
                 .HasColumnType("decimal(10,2)");
+        });
+
+        modelBuilder.Entity<Payment>(entity =>
+        {
+            entity.Property(p => p.Amount)
+                .HasColumnType("decimal(10,2)");
+
+            entity.Property(p => p.Status)
+                .HasMaxLength(10);
         });
 
         modelBuilder.Entity<User>(entity =>

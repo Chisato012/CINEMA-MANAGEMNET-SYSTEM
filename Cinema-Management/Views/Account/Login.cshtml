@@ -25,12 +25,6 @@
             <!-- Login Form -->
             <div id="login-container">
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3" style="font-size: 12px;"></div>
-                @if (ViewBag.ShowDevelopmentPasswordlessLoginMessage == true)
-                {
-                    <div class="alert alert-warning py-2 mb-3" style="font-size: 12px;">
-                        Development test login: the three configured test accounts do not require a password.
-                    </div>
-                }
                 <form asp-controller="Account" asp-action="Login" method="post">
                     <!-- Email Input -->
                     <div class="mb-4">

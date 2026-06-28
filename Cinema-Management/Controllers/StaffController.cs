@@ -501,15 +501,37 @@ public class StaffController : Controller
 
     private async Task<ConcessionsViewModel> LoadConcessionsViewModelAsync(Combo? form = null)
     {
+        var now = DateTime.Now;
+        var startOfMonth = new DateTime(now.Year, now.Month, 1);
+        var startOfNextMonth = startOfMonth.AddMonths(1);
+
         var items = await _context.Combos
             .AsNoTracking()
             .OrderBy(c => c.ComboName)
             .ToListAsync();
 
+        var paymentStatistics = await _context.Payments
+            .AsNoTracking()
+            .Where(p =>
+                p.Status == "Success" &&
+                p.PaymentDate >= startOfMonth &&
+                p.PaymentDate < startOfNextMonth)
+            .GroupBy(_ => 1)
+            .Select(group => new
+            {
+                MonthlyRevenue = group.Sum(p => p.Amount),
+                TotalTransactions = group.Count(),
+                AverageOrderValue = group.Average(p => p.Amount)
+            })
+            .FirstOrDefaultAsync();
+
         return new ConcessionsViewModel
         {
             Items = items,
-            Form = form ?? new Combo()
+            Form = form ?? new Combo(),
+            MonthlyRevenue = paymentStatistics?.MonthlyRevenue ?? 0m,
+            TotalTransactions = paymentStatistics?.TotalTransactions ?? 0,
+            AverageOrderValue = paymentStatistics?.AverageOrderValue ?? 0m
         };
     }
 

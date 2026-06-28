@@ -27,18 +27,18 @@
     <div class="concessions-main">
         <div class="pos-stats">
             <div class="stat-card">
-                <p class="stat-label">LOI NHUAN DOANH THU HANG NGAY</p>
-                <h3>0 VND</h3>
+                <p class="stat-label">DOANH THU THÁNG NÀY</p>
+                <h3>@Model.MonthlyRevenue.ToString("N0", culture) VND</h3>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
             </div>
             <div class="stat-card">
-                <p class="stat-label">TONG SO GIAO DICH</p>
-                <h3>0 GIAO DICH</h3>
+                <p class="stat-label">TỔNG SỐ GIAO DỊCH</p>
+                <h3>@Model.TotalTransactions GIAO DỊCH</h3>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
             </div>
             <div class="stat-card">
-                <p class="stat-label">GIA TRI TRUNG BINH MOI DON</p>
-                <h3>0 VND</h3>
+                <p class="stat-label">GIÁ TRỊ TRUNG BÌNH MỖI ĐƠN</p>
+                <h3>@Model.AverageOrderValue.ToString("N0", culture) VND</h3>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
             </div>
         </div>

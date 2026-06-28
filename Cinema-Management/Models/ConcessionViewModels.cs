@@ -4,6 +4,9 @@ public class ConcessionsViewModel
 {
     public IReadOnlyList<Combo> Items { get; set; } = Array.Empty<Combo>();
     public Combo Form { get; set; } = new();
+    public decimal MonthlyRevenue { get; set; }
+    public int TotalTransactions { get; set; }
+    public decimal AverageOrderValue { get; set; }
 }
 
 public class ConcessionSaleRequest
