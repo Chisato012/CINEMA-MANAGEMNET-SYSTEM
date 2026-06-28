@@ -1,4 +1,9 @@
 using Cinema_Management.Data;
+using Cinema_Management.Models;
+using Cinema_Management.Services;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +21,48 @@ builder.Services.AddSession(options =>
 
 // Dùng để gọi API Cloudflare Turnstile
 builder.Services.AddHttpClient();
+
+builder.Services.Configure<EmailSettings>(
+    builder.Configuration.GetSection("EmailSettings"));
+builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+
+builder.Services
+    .AddAuthentication(options =>
+    {
+        options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+    })
+    .AddCookie(options =>
+    {
+        options.Cookie.Name = "Cinema.GoogleOAuth";
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
+        options.SlidingExpiration = false;
+    })
+    .AddGoogle(options =>
+    {
+        options.ClientId = builder.Configuration["Authentication:Google:ClientId"] ?? string.Empty;
+        options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"] ?? string.Empty;
+        options.CallbackPath = "/signin-google";
+        options.SaveTokens = false;
+        options.Events.OnCreatingTicket = context =>
+        {
+            if (context.User.TryGetProperty("email_verified", out var emailVerified))
+            {
+                var identity = context.Principal?.Identity as ClaimsIdentity;
+                identity?.AddClaim(new Claim(
+                    "urn:google:email_verified",
+                    emailVerified.ToString()));
+            }
+
+            return Task.CompletedTask;
+        };
+        options.Events.OnRemoteFailure = context =>
+        {
+            context.HandleResponse();
+            context.Response.Redirect("/Account/GoogleLoginFailed");
+            return Task.CompletedTask;
+        };
+    });
 
 // Lấy chuỗi kết nối từ appsettings.Development.json hoặc appsettings.json
 var connectionString = builder.Configuration
@@ -66,6 +113,8 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseSession();
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 
