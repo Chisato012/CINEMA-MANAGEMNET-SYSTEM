@@ -9,26 +9,12 @@ public class Combo
     [Key]
     public int ComboID { get; set; }
 
-    [Required]
-    [MaxLength(150)]
+    [Required(ErrorMessage = "Ten mon khong duoc de trong.")]
+    [StringLength(150, ErrorMessage = "Ten mon toi da 150 ky tu.")]
     public string ComboName { get; set; } = string.Empty;
 
     [Column(TypeName = "decimal(10,2)")]
-    [Range(0.01, double.MaxValue)]
+    [Range(0.01, 999999999, ErrorMessage = "Gia mon phai lon hon 0.")]
     public decimal ComboPrice { get; set; }
 
-    [MaxLength(500)]
-    public string? Description { get; set; }
-
-    [MaxLength(1000)]
-    public string? ImageUrl { get; set; }
-
-    [Required]
-    [MaxLength(30)]
-    public string Category { get; set; } = "Other";
-
-    [Range(0, int.MaxValue)]
-    public int StockQuantity { get; set; }
-
-    public bool IsActive { get; set; } = true;
 }

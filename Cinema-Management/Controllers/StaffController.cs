@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.SqlClient;
 using Cinema_Management.Data;
@@ -13,7 +14,18 @@ namespace Cinema_Management.Controllers;
 public class StaffController : Controller
 {
     private readonly ApplicationDbContext _context;
-    public StaffController(ApplicationDbContext context) => _context = context;
+    private readonly IWebHostEnvironment _environment;
+    private readonly ILogger<StaffController> _logger;
+
+    public StaffController(
+        ApplicationDbContext context,
+        IWebHostEnvironment environment,
+        ILogger<StaffController> logger)
+    {
+        _context = context;
+        _environment = environment;
+        _logger = logger;
+    }
 
     private static readonly string[] AgeRatings = { "P", "K", "T13", "T16", "T18", "C" };
     private const decimal DefaultBasePrice = 90000m;
@@ -399,10 +411,120 @@ public class StaffController : Controller
         return View(viewModel);
     }
 
-    public IActionResult Concessions()
+    [Authorize(Roles = "Staff,Admin")]
+    public async Task<IActionResult> Concessions()
     {
         ViewBag.ActiveTab = "concessions";
-        return View();
+        LogConcessionDatabaseInfoInDevelopment();
+        return View(await LoadConcessionsViewModelAsync());
+    }
+
+    [HttpGet]
+    [Authorize(Roles = "Staff,Admin")]
+    public async Task<IActionResult> CreateConcession()
+    {
+        ViewBag.ActiveTab = "concessions";
+        ViewBag.ConcessionFormMode = "create";
+        return View("Concessions", await LoadConcessionsViewModelAsync(new Combo()));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Staff,Admin")]
+    public async Task<IActionResult> CreateConcession(Combo model)
+    {
+        model.ComboName = model.ComboName?.Trim() ?? string.Empty;
+
+        if (!ModelState.IsValid)
+        {
+            ViewBag.ActiveTab = "concessions";
+            ViewBag.ConcessionFormMode = "create";
+            return View("Concessions", await LoadConcessionsViewModelAsync(model));
+        }
+
+        _context.Combos.Add(model);
+        await _context.SaveChangesAsync();
+
+        TempData["AlertSuccess"] = "Them mon thanh cong.";
+        return RedirectToAction(nameof(Concessions));
+    }
+
+    [HttpGet]
+    [Authorize(Roles = "Staff,Admin")]
+    public async Task<IActionResult> EditConcession(int id)
+    {
+        if (id <= 0)
+        {
+            return BadRequest();
+        }
+
+        var combo = await _context.Combos.FindAsync(id);
+        if (combo == null)
+        {
+            return NotFound();
+        }
+
+        ViewBag.ActiveTab = "concessions";
+        ViewBag.ConcessionFormMode = "edit";
+        return View("Concessions", await LoadConcessionsViewModelAsync(combo));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Staff,Admin")]
+    public async Task<IActionResult> EditConcession(Combo model)
+    {
+        model.ComboName = model.ComboName?.Trim() ?? string.Empty;
+
+        if (!ModelState.IsValid)
+        {
+            ViewBag.ActiveTab = "concessions";
+            ViewBag.ConcessionFormMode = "edit";
+            return View("Concessions", await LoadConcessionsViewModelAsync(model));
+        }
+
+        var combo = await _context.Combos
+            .FirstOrDefaultAsync(x => x.ComboID == model.ComboID);
+        if (combo == null)
+        {
+            return NotFound();
+        }
+
+        combo.ComboName = model.ComboName;
+        combo.ComboPrice = model.ComboPrice;
+
+        await _context.SaveChangesAsync();
+
+        TempData["AlertSuccess"] = "Cap nhat mon thanh cong.";
+        return RedirectToAction(nameof(Concessions));
+    }
+
+    private async Task<ConcessionsViewModel> LoadConcessionsViewModelAsync(Combo? form = null)
+    {
+        var items = await _context.Combos
+            .AsNoTracking()
+            .OrderBy(c => c.ComboName)
+            .ToListAsync();
+
+        return new ConcessionsViewModel
+        {
+            Items = items,
+            Form = form ?? new Combo()
+        };
+    }
+
+    private void LogConcessionDatabaseInfoInDevelopment()
+    {
+        if (!_environment.IsDevelopment())
+        {
+            return;
+        }
+
+        var connection = _context.Database.GetDbConnection();
+        _logger.LogInformation(
+            "Staff concessions database: Server={Server}, Database={Database}",
+            connection.DataSource,
+            connection.Database);
     }
 
     [HttpPost, ValidateAntiForgeryToken]

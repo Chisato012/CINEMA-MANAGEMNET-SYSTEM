@@ -22,10 +22,25 @@ public class AccountController : Controller
     private const string GoogleProvider = "Google";
     private const string GoogleRememberMeSessionKey = "Google_RememberMe";
     private const string RememberMeAuthItemKey = "rememberMe";
+    private static readonly HashSet<string> DevelopmentPasswordlessEmails =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            "khach@gmail.com",
+            "staff@gmail.com",
+            "admin@gmail.com"
+        };
+    private static readonly Dictionary<string, string> DevelopmentPasswordlessExpectedRoles =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["khach@gmail.com"] = "KhachHang",
+            ["staff@gmail.com"] = "Staff",
+            ["admin@gmail.com"] = "Admin"
+        };
     private static readonly TimeSpan EmailVerificationLifetime = TimeSpan.FromMinutes(30);
     private static readonly TimeSpan ResendConfirmationCooldown = TimeSpan.FromMinutes(2);
 
     private readonly IConfiguration _configuration;
+    private readonly IWebHostEnvironment _environment;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ApplicationDbContext _context;
     private readonly IEmailService _emailService;
@@ -33,12 +48,14 @@ public class AccountController : Controller
 
     public AccountController(
         IConfiguration configuration,
+        IWebHostEnvironment environment,
         IHttpClientFactory httpClientFactory,
         ApplicationDbContext context,
         IEmailService emailService,
         ILogger<AccountController> logger)
     {
         _configuration = configuration;
+        _environment = environment;
         _httpClientFactory = httpClientFactory;
         _context = context;
         _emailService = emailService;
@@ -49,6 +66,7 @@ public class AccountController : Controller
     public IActionResult Login()
     {
         SetTurnstileSiteKey();
+        ViewBag.ShowDevelopmentPasswordlessLoginMessage = _environment.IsDevelopment();
         return View();
     }
 
@@ -61,13 +79,35 @@ public class AccountController : Controller
         model.CaptchaToken = Request.Form["cf-turnstile-response"].ToString();
         ModelState.Remove(nameof(LoginRequest.CaptchaToken));
 
+        var normalizedEmail = model.Email?.Trim();
+        var isDevelopmentPasswordlessEmail =
+            !string.IsNullOrWhiteSpace(normalizedEmail)
+            && DevelopmentPasswordlessEmails.Contains(normalizedEmail);
+        var isDevelopmentPasswordlessLogin =
+            _environment.IsDevelopment()
+            && isDevelopmentPasswordlessEmail;
+
+        if (_environment.IsDevelopment())
+        {
+            _logger.LogInformation(
+                "Development passwordless login attempted. Matched allowlist: {MatchedAllowlist}.",
+                isDevelopmentPasswordlessEmail);
+        }
+
+        if (isDevelopmentPasswordlessLogin)
+        {
+            ModelState.Remove(nameof(LoginRequest.Password));
+        }
+
         if (!ModelState.IsValid)
         {
+            ViewBag.ShowDevelopmentPasswordlessLoginMessage = _environment.IsDevelopment();
             return View(model);
         }
 
         if (!await IsTurnstileValidAsync(cancellationToken))
         {
+            ViewBag.ShowDevelopmentPasswordlessLoginMessage = _environment.IsDevelopment();
             ViewBag.CaptchaError = "Vui lòng xác minh captcha.";
             TempData["AlertError"] = "Xác minh CAPTCHA thất bại. Vui lòng thử lại.";
             return View(model);
@@ -76,22 +116,80 @@ public class AccountController : Controller
         var email = NormalizeEmail(model.Email);
         var user = await FindUserByNormalizedEmailAsync(email, cancellationToken);
 
-        if (user == null || !IsPasswordValid(model.Password, user.PasswordHash))
+        if (isDevelopmentPasswordlessLogin)
         {
+            _logger.LogInformation(
+                "Development passwordless login database lookup. User found: {UserFound}. Database role: {DatabaseRole}.",
+                user != null,
+                user?.Role ?? "(none)");
+
+            if (user == null)
+            {
+                _logger.LogWarning(
+                    "Development passwordless login failed because the allowlisted user was not found.");
+            }
+        }
+
+        if (user == null || (!isDevelopmentPasswordlessLogin && !IsPasswordValid(model.Password, user.PasswordHash)))
+        {
+            if (isDevelopmentPasswordlessLogin)
+            {
+                _logger.LogWarning(
+                    "Development passwordless login failed. Matched allowlist: {MatchedAllowlist}. User found: {UserFound}. Database role: {DatabaseRole}.",
+                    isDevelopmentPasswordlessEmail,
+                    user != null,
+                    user?.Role ?? "(none)");
+            }
+
+            ViewBag.ShowDevelopmentPasswordlessLoginMessage = _environment.IsDevelopment();
             ModelState.AddModelError(string.Empty, "Sai email hoặc mật khẩu");
             TempData["AlertError"] = "Sai email hoặc mật khẩu. Vui lòng thử lại.";
             return View(model);
         }
 
+        if (isDevelopmentPasswordlessLogin
+            && (!DevelopmentPasswordlessExpectedRoles.TryGetValue(normalizedEmail!, out var expectedRole)
+                || !string.Equals(user.Role, expectedRole, StringComparison.OrdinalIgnoreCase)))
+        {
+            _logger.LogWarning(
+                "Development passwordless login failed because the database role did not match the expected test role. Database role: {DatabaseRole}.",
+                user.Role);
+            ViewBag.ShowDevelopmentPasswordlessLoginMessage = _environment.IsDevelopment();
+            ModelState.AddModelError(string.Empty, "Sai email hoac mat khau");
+            TempData["AlertError"] = "Sai email hoac mat khau. Vui long thu lai.";
+            return View(model);
+        }
+
         if (!user.Status)
         {
+            if (isDevelopmentPasswordlessLogin)
+            {
+                _logger.LogWarning(
+                    "Development passwordless login failed because the account is inactive. Database role: {DatabaseRole}.",
+                    user.Role);
+            }
+
+            ViewBag.ShowDevelopmentPasswordlessLoginMessage = _environment.IsDevelopment();
             ModelState.AddModelError(string.Empty, "Tài khoản đã bị khóa");
             TempData["AlertError"] = "Tài khoản của bạn đã bị khóa.";
             return View(model);
         }
 
-        if (!user.EmailConfirmed)
+        var requiresEmailVerification = string.Equals(
+            user.Role,
+            "KhachHang",
+            StringComparison.OrdinalIgnoreCase);
+
+        if (requiresEmailVerification && !user.EmailConfirmed)
         {
+            if (isDevelopmentPasswordlessLogin)
+            {
+                _logger.LogWarning(
+                    "Development passwordless login failed because email is unconfirmed. Database role: {DatabaseRole}.",
+                    user.Role);
+            }
+
+            ViewBag.ShowDevelopmentPasswordlessLoginMessage = _environment.IsDevelopment();
             ViewBag.UnconfirmedEmail = user.Email;
             ModelState.AddModelError(string.Empty, "Email của bạn chưa được xác nhận.");
             TempData["AlertError"] = "Email của bạn chưa được xác nhận.";
@@ -100,7 +198,14 @@ public class AccountController : Controller
 
         SignInWithSession(user, model.RememberMe);
 
-        var role = GetUserRole(user);
+        var role = user.Role;
+        if (isDevelopmentPasswordlessLogin)
+        {
+            _logger.LogInformation(
+                "Development passwordless login succeeded. Database role: {DatabaseRole}.",
+                role);
+        }
+
         TempData["AlertSuccess"] = $"Đăng nhập thành công! Xin chào {user.FullName} (Role: {role})";
 
         return RedirectByRole(role);
@@ -702,9 +807,36 @@ public async Task<IActionResult> GoogleCallback(CancellationToken cancellationTo
     {
         HttpContext.Session.SetString("UserEmail", user.Email);
         HttpContext.Session.SetString("UserFullName", user.FullName);
-        HttpContext.Session.SetString("UserRole", GetUserRole(user));
+        HttpContext.Session.SetString("UserRole", user.Role);
         HttpContext.Session.SetInt32("UserID", user.UserID);
         HttpContext.Session.SetString("RememberMe", rememberMe.ToString());
+
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.UserID.ToString()),
+            new Claim(ClaimTypes.Name, user.FullName),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Role, user.Role)
+        };
+
+        var identity = new ClaimsIdentity(
+            claims,
+            CookieAuthenticationDefaults.AuthenticationScheme);
+        var principal = new ClaimsPrincipal(identity);
+        var properties = new AuthenticationProperties
+        {
+            IsPersistent = rememberMe,
+            ExpiresUtc = rememberMe
+                ? DateTimeOffset.UtcNow.AddDays(30)
+                : null
+        };
+
+        HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                principal,
+                properties)
+            .GetAwaiter()
+            .GetResult();
     }
 
     private static bool IsRememberMeRequested(AuthenticationProperties? properties)

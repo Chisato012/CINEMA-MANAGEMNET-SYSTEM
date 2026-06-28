@@ -25,6 +25,12 @@
             <!-- Login Form -->
             <div id="login-container">
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3" style="font-size: 12px;"></div>
+                @if (ViewBag.ShowDevelopmentPasswordlessLoginMessage == true)
+                {
+                    <div class="alert alert-warning py-2 mb-3" style="font-size: 12px;">
+                        Development test login: the three configured test accounts do not require a password.
+                    </div>
+                }
                 <form asp-controller="Account" asp-action="Login" method="post">
                     <!-- Email Input -->
                     <div class="mb-4">
@@ -61,7 +67,14 @@
                                         d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" />
                                 </svg>
                             </span>
-                            <input type="password" id="passwordInput" class="form-control " asp-for="Password">
+                            @if (ViewBag.ShowDevelopmentPasswordlessLoginMessage == true)
+                            {
+                                <input type="password" id="passwordInput" name="Password" class="form-control " value="@Model?.Password">
+                            }
+                            else
+                            {
+                                <input type="password" id="passwordInput" class="form-control " asp-for="Password">
+                            }
                             <span class="input-group-text end-icon" id="togglePassword">
                                     <!-- Eye Slash Icon -->
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"

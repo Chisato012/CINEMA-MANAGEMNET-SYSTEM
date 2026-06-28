@@ -22,6 +22,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<MovieDirectors> MovieDirectors { get; set; }
     public DbSet<Person> Persons { get; set; }
     public DbSet<Showtimes> Showtimes { get; set; }
+    public DbSet<Combo> Combos { get; set; }
 
     
 
