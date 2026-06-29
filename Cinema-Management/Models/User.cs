@@ -34,4 +34,7 @@ public class User
     [Required]
     [StringLength(20)]
     public string Role {get; set;}
+
+    //1 user có nhiều booking
+    public ICollection<Booking> Bookings {get; set;} = new List<Booking>();
 }
