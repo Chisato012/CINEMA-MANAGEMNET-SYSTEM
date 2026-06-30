@@ -7,7 +7,9 @@
     <title>@ViewData["Title"] - Cinema_Management</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/ticketprice.css" asp-append-version="true"/>
     <link rel="stylesheet" href="~/Cinema_Management.styles.css" asp-append-version="true" />
+    <script src="https://cdn.jsdelivr.net/npm/@@tailwindcss/browser@@4"></script>
     @await RenderSectionAsync("Styles", required: false)
 </head>
 
@@ -28,7 +30,7 @@
 
                 <div class="d-none d-lg-flex gap-4 ms-5 me-auto ">
                     <a href="#" class="cosmos-nav-link">Phim</a>
-                    <a href="#" class="cosmos-nav-link">Giá vé</a>
+                    <a class="cosmos-nav-link" asp-area="" asp-controller="Home" asp-action="TicketPricing">Giá vé</a>
                     <a href="#" class="cosmos-nav-link">Ưu đãi</a>
                     <a href="#" class="cosmos-nav-link">Đặt vé</a>
                 </div>
@@ -84,7 +86,7 @@
         <div class="container-fluid py-4" style="background-color: #121212; color: #888; font-size: 0.85rem;">
             <div class="row">
                 <div class="col-md-6">
-                    <p>&copy; 2023 COSMOS CINEMA. All rights reserved.</p>
+                    <p>&copy; 2026 COSMOS CINEMA. All rights reserved.</p>
                 </div>
                 <div class="col-md-6 text-md-end">
                     <p>Contact us: info@cosmoscinema.com</p>
