@@ -21,14 +21,15 @@ public class ApplicationDbContext : DbContext
     public DbSet<MovieCasts> MovieCasts { get; set; }
     public DbSet<MovieDirectors> MovieDirectors { get; set; }
     public DbSet<Person> Persons { get; set; }
+    public DbSet<Showtimes> Showtimes { get; set; }
+    public DbSet<Combo> Combos { get; set; }
+    public DbSet<Payment> Payments { get; set; } = null!;
 
     public DbSet<Booking> Bookings { set; get; }
 
-    public DbSet<Showtimes> Showtimes { get; set; }
     public DbSet<Ticket> Tickets { get; set; }
     public DbSet<Seat> Seats { get; set; }
     public DbSet<Room> Rooms { get; set; }
-    public DbSet<Payment> Payments { get; set; }
     public DbSet<PaymentMethod> PaymentMethods { get; set; }
     public DbSet<SeatTypePricing> SeatTypePricings { get; set; }
 
@@ -155,6 +156,8 @@ public class ApplicationDbContext : DbContext
         {
             entity.Property(e => e.Amount).HasColumnType("decimal(10,2)");
             entity.Property(e => e.Status).HasDefaultValue("Pending");
+            entity.Property(p => p.PaymentDate)
+                .IsRequired();
 
             entity.HasCheckConstraint(
                 "CK_Payments_Status",
@@ -173,6 +176,34 @@ public class ApplicationDbContext : DbContext
         });
 
 
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasIndex(u => u.Email)
+                .IsUnique();
 
+            entity.HasIndex(u => new { u.ExternalProvider, u.ExternalProviderKey })
+                .IsUnique()
+                .HasFilter("[ExternalProvider] IS NOT NULL AND [ExternalProviderKey] IS NOT NULL");
+
+            entity.Property(u => u.Email)
+                .HasMaxLength(200);
+
+            entity.Property(u => u.PasswordHash)
+                .HasMaxLength(512)
+                .IsRequired(false);
+
+            entity.Property(u => u.Role)
+                .HasMaxLength(20)
+                .HasDefaultValue("KhachHang");
+
+            entity.Property(u => u.ExternalProvider)
+                .HasMaxLength(50);
+
+            entity.Property(u => u.ExternalProviderKey)
+                .HasMaxLength(200);
+
+            entity.Property(u => u.EmailVerificationTokenHash)
+                .HasMaxLength(64);
+        });
     }
 }

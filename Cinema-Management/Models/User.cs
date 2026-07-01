@@ -18,9 +18,8 @@ public class User
     [StringLength(200)]
     public string Email { get; set; } = string.Empty;
 
-    [Required]
     [StringLength(512)]
-    public string PasswordHash { get; set; } = string.Empty;
+    public string? PasswordHash { get; set; }
 
     [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
     [StringLength(15)]
@@ -30,6 +29,21 @@ public class User
     public DateTime? DOB { get; set; }
 
     public bool Status { get; set; } = true;
+
+    public bool EmailConfirmed { get; set; } = false;
+
+    [StringLength(50)]
+    public string? ExternalProvider { get; set; }
+
+    [StringLength(200)]
+    public string? ExternalProviderKey { get; set; }
+
+    [StringLength(64)]
+    public string? EmailVerificationTokenHash { get; set; }
+
+    public DateTime? EmailVerificationTokenExpiresAt { get; set; }
+
+    public DateTime? EmailVerificationLastSentAt { get; set; }
 
     [Required]
     [StringLength(20)]

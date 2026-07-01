@@ -1,3 +1,4 @@
+
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -31,3 +32,4 @@ namespace Cinema_Management.Models
         public PaymentMethod? PaymentMethod { get; set; }
     }
 }
+

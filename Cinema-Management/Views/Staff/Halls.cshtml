@@ -1,143 +1,122 @@
-@{ ViewData["Title"] = "Cinema Halls Editor"; }
+@model Cinema_Management.Models.StaffHallsViewModel
+@{
+    ViewData["Title"] = "Cinema Halls";
+    var firstRoom = Model.Rooms.FirstOrDefault();
+}
 
 <header class="staff-header">
     <div style="display:flex;align-items:center;gap:16px;">
-        <h2>QUẢN LÝ PHÒNG CHIẾU</h2>
-        <span class="badge badge-outline">ĐANG KẾT NỐI</span>
+        <h2>SCREENING ROOMS</h2>
+        <span class="badge badge-outline">DB LIVE</span>
     </div>
     <div style="display:flex;gap:12px;">
-        <button class="btn-secondary" style="border:none;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-            LƯU
-        </button>
-        <button class="btn-secondary" style="border:none;padding:8px">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-        </button>
+        <a class="btn-secondary" asp-controller="Staff" asp-action="Index" style="border:none;text-decoration:none;">
+            SCHEDULE
+        </a>
     </div>
 </header>
 
-<div class="halls-layout">
-    <div class="halls-tabs-row">
-        <div class="halls-tabs">
-            <button class="hall-tab active">PHÒNG CHIẾU 01 (IMAX)</button>
-            <button class="hall-tab">PHÒNG CHIẾU 02 (DELUXE)</button>
-            <button class="hall-tab">PHÒNG CHIẾU 03 (VIP)</button>
-            <button class="hall-tab">PHÒNG CHIẾU 04 (STANDARD)</button>
-            <button class="hall-tab add-hall">+ THÊM PHÒNG CHIẾU</button>
-        </div>
-        <button class="btn-danger" style="display:flex;align-items:center;gap:4px">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-            XOÁ PHÒNG CHIẾU
-        </button>
-    </div>
-
-    <div class="editor-panel">
-        <div class="editor-controls">
-            <div class="brush-tools">
-                <p class="tool-label">CÔNG CỤ PHÂN LOẠI GHẾ NGỒI <br/> (NHẤN VÀO MỤC BÊN DƯỚI, SAU ĐÓ NHẤN/KÉO TRÊN LƯỚI GHẾ NGỒI)</p>
-                <div class="brush-row">
-                    <button class="brush-btn active">
-                        <span class="seat-swatch" style="background:var(--color-neutral-400)"></span>
-                        Standard
-                    </button>
-                    <button class="brush-btn">
-                        <span class="seat-swatch" style="background:var(--color-primary-300)"></span>
-                        VIP Premium
-                    </button>
-                    <button class="brush-btn">
-                        <span class="seat-swatch" style="background:var(--color-primary-500)"></span>
-                        Sweetbox (Ghế đôi)
-                    </button>
-                </div>
-                <div class="brush-row" style="margin-top:8px">
-                    <button class="brush-btn">
-                        <span class="seat-swatch" style="background:var(--color-neutral-900);border:1px solid var(--color-neutral-700)"></span>
-                        Disabled / No Seat
-                    </button>
-                </div>
-            </div>
-            
-            <div class="dimensions-tools">
-                <div class="dim-input">
-                    <label>SỐ LƯỢNG HÀNG</label>
-                    <input type="number" value="10" />
-                </div>
-                <div class="dim-input">
-                    <label>SỐ LƯỢNG CỘT</label>
-                    <input type="number" value="12" />
-                </div>
-                <button class="btn-primary" style="height:42px;margin-top:18px;border-radius:4px;background:var(--color-primary-300);color:var(--color-neutral-950)">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                    LƯU THAY ĐỔI
-                </button>
-            </div>
-        </div>
-
-        <div class="seat-map-container">
-            <div class="screen-curve">
-                <div class="screen-line"></div>
-                <p>MÀN HÌNH CHIẾU</p>
-            </div>
-
-            <div class="seat-grid-wrap">
-                <div class="row-labels left">
-                    <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>I</span><span>J</span>
-                </div>
-                
-                <div class="seat-grid">
-                    <!-- A -->
-                    <div class="seat-row">
-                        <div class="seat disabled"></div><div class="seat disabled"></div><div class="seat">3</div><div class="seat">4</div><div class="seat">5</div><div class="seat">6</div><div class="seat">7</div><div class="seat">8</div><div class="seat">9</div><div class="seat">10</div><div class="seat">11</div><div class="seat disabled"></div>
-                    </div>
-                    <!-- B -->
-                    <div class="seat-row">
-                        <div class="seat">1</div><div class="seat">2</div><div class="seat">3</div><div class="seat">4</div><div class="seat">5</div><div class="seat">6</div><div class="seat">7</div><div class="seat">8</div><div class="seat">9</div><div class="seat">10</div><div class="seat">11</div><div class="seat">12</div>
-                    </div>
-                    <!-- C -->
-                    <div class="seat-row">
-                        <div class="seat">1</div><div class="seat">2</div><div class="seat">3</div><div class="seat">4</div><div class="seat">5</div><div class="seat">6</div><div class="seat">7</div><div class="seat">8</div><div class="seat">9</div><div class="seat">10</div><div class="seat">11</div><div class="seat">12</div>
-                    </div>
-                    <!-- D -->
-                    <div class="seat-row">
-                        <div class="seat">1</div><div class="seat">2</div><div class="seat vip">3</div><div class="seat vip">4</div><div class="seat vip">5</div><div class="seat vip">6</div><div class="seat vip">7</div><div class="seat vip">8</div><div class="seat vip">9</div><div class="seat vip">10</div><div class="seat">11</div><div class="seat">12</div>
-                    </div>
-                    <!-- E -->
-                    <div class="seat-row">
-                        <div class="seat vip">1</div><div class="seat vip">2</div><div class="seat vip">3</div><div class="seat vip">4</div><div class="seat vip">5</div><div class="seat vip">6</div><div class="seat vip">7</div><div class="seat vip">8</div><div class="seat vip">9</div><div class="seat vip">10</div><div class="seat vip">11</div><div class="seat vip">12</div>
-                    </div>
-                    <!-- F -->
-                    <div class="seat-row">
-                        <div class="seat vip">1</div><div class="seat vip">2</div><div class="seat vip">3</div><div class="seat vip">4</div><div class="seat vip">5</div><div class="seat vip">6</div><div class="seat vip">7</div><div class="seat vip">8</div><div class="seat vip">9</div><div class="seat vip">10</div><div class="seat vip">11</div><div class="seat vip">12</div>
-                    </div>
-                    <!-- G -->
-                    <div class="seat-row">
-                        <div class="seat">1</div><div class="seat">2</div><div class="seat">3</div><div class="seat">4</div><div class="seat">5</div><div class="seat">6</div><div class="seat">7</div><div class="seat">8</div><div class="seat">9</div><div class="seat">10</div><div class="seat">11</div><div class="seat">12</div>
-                    </div>
-                    <!-- H -->
-                    <div class="seat-row">
-                        <div class="seat">1</div><div class="seat">2</div><div class="seat">3</div><div class="seat">4</div><div class="seat">5</div><div class="seat">6</div><div class="seat">7</div><div class="seat">8</div><div class="seat">9</div><div class="seat">10</div><div class="seat">11</div><div class="seat">12</div>
-                    </div>
-                    <!-- I -->
-                    <div class="seat-row">
-                        <div class="seat">1</div><div class="seat">2</div><div class="seat">3</div><div class="seat">4</div><div class="seat">5</div><div class="seat">6</div><div class="seat">7</div><div class="seat">8</div><div class="seat">9</div><div class="seat">10</div><div class="seat">11</div><div class="seat">12</div>
-                    </div>
-                    <!-- J -->
-                    <div class="seat-row">
-                        <div class="seat sweetbox">1</div><div class="seat sweetbox">2</div><div class="seat sweetbox">3</div><div class="seat sweetbox">4</div><div class="seat sweetbox">5</div><div class="seat sweetbox">6</div><div class="seat sweetbox">7</div><div class="seat sweetbox">8</div><div class="seat sweetbox">9</div><div class="seat sweetbox">10</div><div class="seat sweetbox">11</div><div class="seat sweetbox">12</div>
-                    </div>
-                </div>
-
-                <div class="row-labels right">
-                    <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>I</span><span>J</span>
-                </div>
-            </div>
-
-            <div class="seat-legend">
-                <div class="legend-item"><span class="seat-swatch" style="background:var(--color-neutral-700)"></span>Standard: 78</div>
-                <div class="legend-item"><span class="seat-swatch" style="background:var(--color-primary-300)"></span>VIP: 36</div>
-                <div class="legend-item"><span class="seat-swatch" style="background:var(--color-primary-500)"></span>Sweetbox: 12</div>
-                <div class="legend-item"><span class="seat-swatch" style="background:var(--color-neutral-900);border:1px solid var(--color-neutral-700)"></span>Disabled: 2</div>
-            </div>
+@if (!Model.Rooms.Any())
+{
+    <div class="halls-layout">
+        <div class="editor-panel">
+            <p class="tool-label">No screening rooms found in the database.</p>
         </div>
     </div>
-</div>
+}
+else
+{
+    <div class="halls-shell">
+        <aside class="screening-room-sidebar">
+            <div class="room-sidebar-header">
+                <span>ROOMS</span>
+                <strong>@Model.Rooms.Count</strong>
+            </div>
+            <div class="room-sidebar-list">
+                @for (var i = 0; i < Model.Rooms.Count; i++)
+                {
+                    var room = Model.Rooms[i];
+                    <button type="button"
+                            class="room-sidebar-item @(i == 0 ? "active" : "")"
+                            data-screening-room-button
+                            data-room-id="@room.RoomID"
+                            data-room-name="@room.RoomName">
+                        <span class="room-sidebar-name">@room.RoomName</span>
+                        <span class="room-sidebar-meta">
+                            @room.SeatCount seats
+                            <span>@room.ReservationCount reservations</span>
+                        </span>
+                    </button>
+                }
+            </div>
+        </aside>
+
+        <main class="hall-workspace">
+            <div class="hall-management-grid">
+                <section class="screening-seat-panel screening-seat-panel-management" aria-label="Screening room seats">
+                    <div class="screening-seat-header">
+                        <div>
+                            <p class="tool-label">CINEMA MANAGEMENT</p>
+                            <h3 id="screeningRoomTitle">@(firstRoom?.RoomName ?? "Screening room")</h3>
+                        </div>
+                        <div class="screening-seat-controls">
+                            <label>
+                                Showtime
+                                <select id="screeningShowtimeSelect" disabled>
+                                    <option value="">No showtimes</option>
+                                </select>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="screening-seat-stats" id="screeningSeatStats">
+                        <span>Total <strong data-seat-count="total">0</strong></span>
+                        <span>Regular <strong data-seat-count="regular">0</strong></span>
+                        <span>VIP <strong data-seat-count="vip">0</strong></span>
+                        <span>Couple <strong data-seat-count="couple">0</strong></span>
+                        <span>Reserved <strong data-seat-count="reserved">0</strong></span>
+                        <span>Pending <strong data-seat-count="pending">0</strong></span>
+                        <span>Available <strong data-seat-count="available">0</strong></span>
+                    </div>
+
+                    <div class="seat-status-legend" aria-label="Chú thích trạng thái ghế">
+                        <div class="seat-status-legend__item">
+                            <span class="seat-status-legend__swatch available"></span>
+                            <span>Ghế trống</span>
+                        </div>
+                        <div class="seat-status-legend__item">
+                            <span class="seat-status-legend__swatch reserved"></span>
+                            <span>Đã đặt</span>
+                        </div>
+                        <div class="seat-status-legend__item">
+                            <span class="seat-status-legend__swatch pending"></span>
+                            <span>Đang giữ</span>
+                        </div>
+                    </div>
+
+                    <div class="screening-seat-message" id="screeningSeatMessage">Select a room to load seats.</div>
+
+                    <div class="screening-seat-map" id="screeningSeatMap" hidden>
+                        <div class="screening-row-labels" id="screeningRowLabelsLeft"></div>
+                        <div class="screening-seat-grid" id="screeningSeatGrid"></div>
+                        <div class="screening-row-labels" id="screeningRowLabelsRight"></div>
+                    </div>
+                </section>
+
+                <aside class="reservations-panel">
+                    <div class="reservations-header">
+                        <span>RESERVATIONS</span>
+                        <strong id="screeningReservationTicketCount">0 tickets</strong>
+                    </div>
+                    <div id="screeningReservationList">
+                        <div class="reservation-empty">No reservations for this showtime.</div>
+                    </div>
+                </aside>
+            </div>
+        </main>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/js/staff.js" asp-append-version="true"></script>
+}

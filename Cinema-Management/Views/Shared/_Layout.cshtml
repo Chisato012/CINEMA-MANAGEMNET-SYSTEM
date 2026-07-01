@@ -38,8 +38,10 @@
                 <div class="d-flex align-items-center gap-2">
                     @if (Context.Session.GetString("UserEmail") != null)
                     {
+                        var displayName = Context.Session.GetString("UserFullName")
+                            ?? Context.Session.GetString("UserEmail");
                         <span style="color: #D4A373; font-size: 0.85rem; font-family: 'Manrope', sans-serif;">
-                            Welcome @Context.Session.GetString("UserEmail")
+                            Welcome @displayName
                             @* hiện chào mừng *@
                         </span>
                         <div class="user-dropdown">
