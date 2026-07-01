@@ -1,0 +1,119 @@
+@model TicketPricingViewModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Bảng Giá Vé";
+    var vietnameseCulture = CultureInfo.GetCultureInfo("vi-VN");
+}
+
+<div class="ticket-page bg-background text-on-background font-body-md min-h-screen flex flex-col film-grain">
+<main class="ticket-main flex-grow py-aisle px-margin-desktop max-w-container-max mx-auto w-full flex flex-col items-center">
+    <div class="ticket-hero w-full text-center mb-16 relative">
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-tertiary/10 via-background/0 to-transparent -z-10 h-64"></div>
+        <h1 class="font-display-lg text-display-lg" style="--ticket-primary: #8b5e3c">Bảng Giá Vé</h1>
+        <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">Trải nghiệm điện ảnh đỉnh cao với không gian sang trọng và chất lượng âm thanh,<br> hình ảnh chuẩn quốc tế.</p>
+    </div>
+    <div class="pricing-card w-full max-w-5xl bg-surface-container-low rounded-xl p-8 shadow-2xl relative overflow-hidden">
+        <div class="pricing-card__glow absolute -top-24 -right-24 w-64 h-64 bg-primary-container/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="pricing-scroll overflow-x-auto">
+            <div class="pricing-tabs-wrap flex justify-center mb-8">
+                <div class="pricing-tabs inline-flex p-1 bg-surface-container-highest rounded-full" role="tablist" aria-label="Định dạng phim">
+                    @for (var index = 0; index < Model.MovieFormats.Count; index++)
+                    {
+                        var format = Model.MovieFormats[index];
+                        var isActive = index == 0;
+                        <button type="button" id="tab-@format.Id" role="tab" aria-controls="pricing-@format.Id"
+                                aria-selected="@(isActive ? "true" : "false")" data-pricing-tab="@format.Id"
+                                class="pricing-tab px-8 py-2 rounded-full font-label-md text-label-md transition-all duration-200 @(isActive ? "bg-primary-container text-on-primary-container shadow-lg" : "text-on-surface-variant hover:text-on-surface")">
+                            @format.TabLabel
+                        </button>
+                    }
+                </div>
+            </div>
+
+            @for (var formatIndex = 0; formatIndex < Model.MovieFormats.Count; formatIndex++)
+            {
+                var format = Model.MovieFormats[formatIndex];
+                var standardPrice = format.SeatPrices.First(seat => seat.SeatType == SeatType.Standard);
+                var vipPrice = format.SeatPrices.First(seat => seat.SeatType == SeatType.Vip);
+                var sweetboxPrice = format.SeatPrices.First(seat => seat.SeatType == SeatType.Sweetbox);
+                    
+                <div id="pricing-@format.Id" role="tabpanel" aria-labelledby="tab-@format.Id"
+                     data-pricing-panel="@format.Id" class="@(formatIndex == 0 ? "" : "hidden")">
+                    <table class="pricing-table pricing-table--day-seat w-full text-left border-collapse min-w-[600px]">
+                        <thead>
+                        <tr class="border-b border-outline-variant/30 text-on-surface font-headline-sm text-headline-sm">
+                            <th class="py-6 px-4 font-semibold">Loại ngày</th>
+                            <th class="py-6 px-4 font-semibold text-center">BasePrice</th>
+                            <th class="py-6 px-4 font-semibold w-1/4 text-center">Standard
+                                <br/>
+                                <span class="font-body-md text-body-md text-on-surface-variant font-normal">(Ghế Thường)</span>
+                            </th>
+                            <th class="py-6 px-4 font-semibold w-1/4 text-center">VIP
+                                <br/>
+                                <span class="font-body-md text-body-md text-on-surface-variant font-normal">(Ghế VIP)</span>
+                            </th>
+                            <th class="py-6 px-4 font-semibold w-1/4 text-center">Sweetbox
+                                <br/>
+                                <span class="font-body-md text-body-md text-on-surface-variant font-normal">(Ghế Couple)</span>
+                            </th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-outline-variant/10">
+                        <tr class="transition-all duration-300 glow-hover group cursor-default">
+                            <td class="py-8 px-4 font-headline-md text-headline-md text-on-surface">Ngày thường</td>
+                            <td class="py-8 px-4 text-center font-label-md text-label-md text-primary-container text-xl group-hover:text-primary transition-colors">@standardPrice.NormalDay.ToString("N0", vietnameseCulture)đ</td>
+                            <td class="py-8 px-4 text-center font-label-md text-label-md text-primary-container text-xl group-hover:text-primary transition-colors">@standardPrice.NormalDay.ToString("N0", vietnameseCulture)đ</td>
+                            <td class="py-8 px-4 text-center font-label-md text-label-md text-primary-container text-xl group-hover:text-primary transition-colors">@vipPrice.NormalDay.ToString("N0", vietnameseCulture)đ</td>
+                            <td class="py-8 px-4 text-center font-label-md text-label-md text-primary-container text-xl group-hover:text-primary transition-colors font-bold">@sweetboxPrice.NormalDay.ToString("N0", vietnameseCulture)đ</td>
+                        </tr>
+                        <tr class="transition-all duration-300 glow-hover group cursor-default">
+                            <td class="py-8 px-4 font-headline-md text-headline-md text-on-surface">Cuối tuần</td>
+                            <td class="py-8 px-4 text-center font-label-md text-label-md text-primary-container text-xl group-hover:text-primary transition-colors">@standardPrice.WeekendOrHoliday.ToString("N0", vietnameseCulture)đ</td>
+                            <td class="py-8 px-4 text-center font-label-md text-label-md text-primary-container text-xl group-hover:text-primary transition-colors">@standardPrice.WeekendOrHoliday.ToString("N0", vietnameseCulture)đ</td>
+                            <td class="py-8 px-4 text-center font-label-md text-label-md text-primary-container text-xl group-hover:text-primary transition-colors">@vipPrice.WeekendOrHoliday.ToString("N0", vietnameseCulture)đ</td>
+                            <td class="py-8 px-4 text-center font-label-md text-label-md text-primary-container text-xl group-hover:text-primary transition-colors font-bold">@sweetboxPrice.WeekendOrHoliday.ToString("N0", vietnameseCulture)đ</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                }
+        </div>
+        <div class="pricing-notes mt-8 border-t border-outline-variant/20 pt-6">
+            <p class="font-body-md text-body-md text-on-surface-variant italic text-sm">
+                @for (var index = 0; index < Model.Footnotes.Count; index++)
+                {
+                    <text>* @Model.Footnotes[index]</text>
+                    @if (index < Model.Footnotes.Count - 1) { <br/> }
+                }
+            </p>
+        </div>
+    </div>
+</main>
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const tabs = document.querySelectorAll('[data-pricing-tab]');
+            const panels = document.querySelectorAll('[data-pricing-panel]');
+
+            tabs.forEach((tab) => {
+                tab.addEventListener('click', () => {
+                    const selectedFormat = tab.dataset.pricingTab;
+
+                    tabs.forEach((candidate) => {
+                        const isActive = candidate.dataset.pricingTab === selectedFormat;
+                        candidate.classList.toggle('bg-primary-container', isActive);
+                        candidate.classList.toggle('text-on-primary-container', isActive);
+                        candidate.classList.toggle('shadow-lg', isActive);
+                        candidate.classList.toggle('text-on-surface-variant', !isActive);
+                        candidate.classList.toggle('hover:text-on-surface', !isActive);
+                        candidate.setAttribute('aria-selected', isActive.toString());
+                    });
+
+                    panels.forEach((panel) => panel.classList.toggle('hidden', panel.dataset.pricingPanel !== selectedFormat));
+                });
+            });
+        })();
+    </script>
+}
