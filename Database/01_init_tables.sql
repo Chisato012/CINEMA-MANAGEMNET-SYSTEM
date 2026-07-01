@@ -150,6 +150,18 @@ create table Users (
   DOB          date,
   Status       bit           DEFAULT (1),
   [Role]       nvarchar(20)  NOT NULL DEFAULT N'KhachHang',
+    EmailConfirmed BIT NOT NULL
+        CONSTRAINT DF_Users_EmailConfirmed DEFAULT 0,
+
+    EmailVerificationLastSentAt DATETIME2 NULL,
+
+    EmailVerificationTokenExpiresAt DATETIME2 NULL,
+
+    EmailVerificationTokenHash VARCHAR(512) NULL,
+
+    ExternalProvider NVARCHAR(50) NULL,
+
+    ExternalProviderKey NVARCHAR(200) NULL;
 
 CONSTRAINT CK_Users_Role CHECK ([Role] IN ('Admin', 'Staff', 'KhachHang'))
 )
