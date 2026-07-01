@@ -3,6 +3,13 @@
 }
 
 @model Cinema_Management.Models.LoginRequest
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+
+@{
+    var googleLoginEnabled =
+        !string.IsNullOrWhiteSpace(Configuration["Authentication:Google:ClientId"]) &&
+        !string.IsNullOrWhiteSpace(Configuration["Authentication:Google:ClientSecret"]);
+}
 
 <head>
     <link rel="stylesheet" href="~/css/auth.css">
@@ -24,6 +31,7 @@
             </div>
             <!-- Login Form -->
             <div id="login-container">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3" style="font-size: 12px;"></div>
                 <form asp-controller="Account" asp-action="Login" method="post">
                     <!-- Email Input -->
                     <div class="mb-4">
@@ -60,7 +68,14 @@
                                         d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" />
                                 </svg>
                             </span>
-                            <input type="password" id="passwordInput" class="form-control " asp-for="Password">
+                            @if (ViewBag.ShowDevelopmentPasswordlessLoginMessage == true)
+                            {
+                                <input type="password" id="passwordInput" name="Password" class="form-control " value="@Model?.Password">
+                            }
+                            else
+                            {
+                                <input type="password" id="passwordInput" class="form-control " asp-for="Password">
+                            }
                             <span class="input-group-text end-icon" id="togglePassword">
                                     <!-- Eye Slash Icon -->
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
@@ -92,8 +107,8 @@
 
                         <!-- Remember Me -->
                     <div class="mb-4 form-check">
-                        <input type="checkbox" class="form-check-input" asp-for="RememberMe">
-                        <label class="form-check-label" for="rememberMe">Ghi nhớ thiết bị này</label>
+                        <input type="checkbox" id="RememberMe" class="form-check-input" asp-for="RememberMe">
+                        <label class="form-check-label" for="RememberMe">Ghi nhớ thiết bị này</label>
                     </div>
 
                     <div class="mb-4" style="font-size: 13px; color:#ccc">
@@ -104,6 +119,34 @@
                         <button type="submit" class="btn btn-submit">Đăng nhập</button>
                     </div>
                 </form>
+
+                @if (ViewBag.UnconfirmedEmail != null)
+                {
+                    <form asp-controller="Account" asp-action="ResendConfirmationEmail" method="post" class="auth-resend-form">
+                        <input type="hidden" name="email" value="@ViewBag.UnconfirmedEmail" />
+                        <button type="submit" class="btn-resend-confirmation">Gửi lại email xác nhận</button>
+                    </form>
+                }
+
+                @* Chi hien nut Google khi da cau hinh du ClientId va ClientSecret. *@
+                @if (googleLoginEnabled)
+                {
+                <div class="auth-divider">
+                    <span>Hoặc tiếp tục với</span>
+                </div>
+
+                <div class="d-grid">
+                    <a id="googleLoginBtn" class="btn btn-google-login" asp-controller="Account" asp-action="GoogleLogin">
+                        <svg class="google-logo" viewBox="0 0 48 48" aria-hidden="true">
+                            <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.3.2 24 .2 14.6.2 6.5 5.6 2.6 13.5l7.8 6.1C12.2 13.7 17.7 9.5 24 9.5z" />
+                            <path fill="#4285F4" d="M46.5 24.5c0-1.7-.2-3.4-.5-5H24v9.5h12.6c-.5 3-2.2 5.5-4.7 7.2l7.3 5.7c4.3-4 7.3-9.8 7.3-17.4z" />
+                            <path fill="#FBBC05" d="M10.4 28.4c-.5-1.4-.8-2.9-.8-4.4s.3-3 .8-4.4l-7.8-6.1C1 16.7.2 20.2.2 24s.8 7.3 2.4 10.5l7.8-6.1z" />
+                            <path fill="#34A853" d="M24 47.8c6.3 0 11.6-2.1 15.5-5.8l-7.3-5.7c-2 1.3-4.6 2.1-8.2 2.1-6.3 0-11.8-4.2-13.6-10l-7.8 6.1C6.5 42.4 14.6 47.8 24 47.8z" />
+                        </svg>
+                        <span>Tiếp tục với Google</span>
+                    </a>
+                </div>
+                }
                 </div>
 
             </div>
@@ -115,6 +158,15 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    @if (googleLoginEnabled)
+    {
+        <script>
+            document.getElementById('googleLoginBtn')?.addEventListener('click', function () {
+                const rememberMe = document.getElementById('RememberMe')?.checked || false;
+                this.href = '@Url.Action("GoogleLogin", "Account")?rememberMe=' + rememberMe;
+            });
+        </script>
+    }
 }
 
     

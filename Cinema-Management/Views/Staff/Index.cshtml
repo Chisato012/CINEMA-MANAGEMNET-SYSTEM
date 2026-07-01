@@ -1,5 +1,9 @@
-@model IEnumerable<Cinema_Management.Models.MovieViewModel>
-@{ ViewData["Title"] = "Movie Scheduling"; }
+@model Cinema_Management.Models.StaffScheduleViewModel
+@{
+    ViewData["Title"] = "Movie Scheduling";
+    var scheduleDate = DateTime.Today.ToString("yyyy-MM-dd");
+    var renderStaticRooms = false;
+}
 
 <header class="staff-header">
     <div style="display:flex;align-items:center;gap:16px;">
@@ -10,10 +14,10 @@
     <div style="display:flex;align-items:center;gap:16px;">
         <div class="date-picker">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-            <span>10/23/2025</span>
+            <input type="date" id="scheduleDate" value="@scheduleDate" style="background:transparent;border:none;color:inherit;font:inherit;width:130px;" />
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
         </div>
-        <button class="btn-secondary" style="border:none;">
+        <button class="btn-secondary" id="btnSaveSchedule" style="border:none;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
             LƯU
         </button>
@@ -22,6 +26,16 @@
         </button>
     </div>
 </header>
+
+@if (TempData["AlertSuccess"] is string successMessage)
+{
+    <div class="staff-alert staff-alert-success">@successMessage</div>
+}
+
+@if (TempData["AlertError"] is string errorMessage)
+{
+    <div class="staff-alert staff-alert-error">@errorMessage</div>
+}
 
 <div class="scheduling-layout">
     <div class="sidebar-movies">
@@ -34,14 +48,14 @@
         </div>
         <div class="search-box">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input type="text" placeholder="Tìm kiếm theo tiêu đề, thể loại,..." />
+            <input type="text" id="movieSearchInput" placeholder="Tìm kiếm theo tên phim..." autocomplete="off" />
         </div>
         
         <div class="movies-list">
-            @foreach (var movie in Model)
+            @foreach (var movie in Model.Movies)
             {
                 var genreText = movie.MovieGenres != null ? string.Join(", ", movie.MovieGenres.Select(mg => mg.Genre?.Name).Where(n => n != null)) : "";
-                <div class="movie-list-item" data-movie-id="@movie.MovieId" data-title="@movie.Title" data-duration="@movie.Duration" data-rating="@movie.AgeRating" data-genre="@genreText" data-poster="@movie.PosterURL" data-synopsis="@movie.Synopsis" data-trailer="@movie.Trailer">
+                <div class="movie-list-item" draggable="true" data-movie-id="@movie.MovieId" data-title="@movie.Title" data-duration="@movie.Duration" data-rating="@movie.AgeRating" data-genre="@genreText" data-poster="@movie.PosterURL" data-synopsis="@movie.Synopsis" data-trailer="@movie.Trailer" data-release-date="@movie.ReleaseDate.ToString("yyyy-MM-dd")">
                     <img src="@movie.PosterURL" alt="@movie.Title" />
                     <div class="ml-info">
                         <h5>@movie.Title</h5>
@@ -65,6 +79,7 @@
                     </div>
                 </div>
             }
+            <div class="movie-search-empty" id="movieSearchEmpty" hidden>Không tìm thấy phim phù hợp.</div>
         </div>
     </div>
 
@@ -72,25 +87,33 @@
         <div class="matrix-header">
             <div class="mh-halls">RẠP CHIẾU</div>
             <div class="mh-times">
-                <span>08:00 AM</span>
-                <span>09:00 AM</span>
-                <span>10:00 AM</span>
-                <span>11:00 AM</span>
-                <span>12:00 PM</span>
-                <span>01:00 PM</span>
-                <span>02:00 PM</span>
-                <span>03:00 PM</span>
-                <span>04:00 PM</span>
+                @for (var hour = 8; hour <= 23; hour++)
+                {
+                    <span>@($"{hour:00}:00")</span>
+                }
             </div>
         </div>
         <div class="matrix-body">
+            @foreach (var room in Model.Rooms)
+            {
+                <div class="matrix-row">
+                    <div class="mr-hall-info">
+                        <h4>@room.RoomName</h4>
+                        <span class="hall-tag @room.TagCssClass">@room.DisplayType</span>
+                        <span>@room.SeatCount GHE</span>
+                    </div>
+                    <div class="mr-timeline" data-room-id="@room.RoomID" data-hall-number="@room.RoomID"></div>
+                </div>
+            }
+            @if (renderStaticRooms)
+            {
             <!-- Hall 01 -->
             <div class="matrix-row">
                 <div class="mr-hall-info">
                     <h4>PHÒNG CHIẾU 01</h4>
                     <span class="hall-tag tag-imax">IMAX</span> <span>120 GHẾ</span>
                 </div>
-                <div class="mr-timeline">
+                <div class="mr-timeline" data-hall-number="1">
                     <!-- blocks go here -->
                 </div>
             </div>
@@ -100,7 +123,7 @@
                     <h4>PHÒNG CHIẾU 02</h4>
                     <span class="hall-tag tag-deluxe">DELUXE</span> <span>80 GHẾ</span>
                 </div>
-                <div class="mr-timeline"></div>
+                <div class="mr-timeline" data-hall-number="2"></div>
             </div>
             <!-- Hall 03 -->
             <div class="matrix-row">
@@ -108,7 +131,7 @@
                     <h4>PHÒNG CHIẾU 03</h4>
                     <span class="hall-tag tag-vip">VIP</span> <span>40 GHẾ</span>
                 </div>
-                <div class="mr-timeline"></div>
+                <div class="mr-timeline" data-hall-number="3"></div>
             </div>
             <!-- Hall 04 -->
             <div class="matrix-row">
@@ -116,8 +139,9 @@
                     <h4>PHÒNG CHIẾU 04</h4>
                     <span class="hall-tag tag-standard">STANDARD</span> <span>150 GHẾ</span>
                 </div>
-                <div class="mr-timeline"></div>
+                <div class="mr-timeline" data-hall-number="4"></div>
             </div>
+            }
         </div>
 
         <div class="matrix-footer">
@@ -130,6 +154,7 @@
                 <div style="flex:1"></div>
             </div>
         </div>
+
     </div>
 </div>
 
@@ -159,7 +184,7 @@
                 </div>
                 <div class="form-group">
                     <label>TRAILER URL</label>
-                    <input type="text" name="TrailerURL" placeholder="https://..." />
+                    <input type="text" name="Trailer" placeholder="https://..." />
                 </div>
                 <div class="form-group">
                     <label>POSTER PHIM URL</label>
@@ -201,7 +226,7 @@
                     </div>
                     <div class="form-group">
                         <label>THỂ LOẠI</label>
-                        <input type="text" placeholder="vd: Hành động, Hài,..." />
+                        <input type="text" name="Genre" placeholder="vd: Hành động, Hài,..." />
                     </div>
                 </div>
                 <div class="form-group" style="flex: 1; display: flex; flex-direction: column;">
@@ -291,7 +316,7 @@
                     </div>
                     <div class="form-group">
                         <label>THỂ LOẠI</label>
-                        <input type="text" id="editGenre" />
+                        <input type="text" id="editGenre" name="Genre" />
                     </div>
                 </div>
                 <div class="form-group" style="flex: 1; display: flex; flex-direction: column;">
@@ -317,9 +342,333 @@
         const editorModal = document.getElementById('movieEditorModal');
         const createModal = document.getElementById('movieCreateModal');
         const btnAddMovie = document.getElementById('btnAddMovie');
+        const scheduleDateInput = document.getElementById('scheduleDate');
+        const btnSaveSchedule = document.getElementById('btnSaveSchedule');
+        const movieSearchInput = document.getElementById('movieSearchInput');
+        const movieSearchEmpty = document.getElementById('movieSearchEmpty');
+        const scheduleStartHour = 8;
+        const scheduleEndHour = 23;
+        const scheduleTotalMinutes = (scheduleEndHour - scheduleStartHour) * 60;
+        const scheduleSnapMinutes = 15;
+        const scheduleDefaultBasePrice = 90000;
         
         const closeBtns = document.querySelectorAll('.btn-close-modal');
         const editBtns = document.querySelectorAll('.edit-movie-btn');
+        const telemetryText = document.querySelector('.telemetry p');
+
+        function setTelemetry(message) {
+            if (telemetryText) {
+                telemetryText.textContent = `TELEMETRY LOGS: ${message}`;
+            }
+        }
+
+        function getMoviePayload(item) {
+            return {
+                movieId: Number(item.dataset.movieId),
+                title: item.dataset.title || '',
+                duration: Number(item.dataset.duration || 0)
+            };
+        }
+
+        function normalizeText(value) {
+            return (value || '')
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/đ/g, 'd')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function filterMoviesByName() {
+            const keyword = normalizeText(movieSearchInput?.value);
+            let visibleCount = 0;
+
+            document.querySelectorAll('.movie-list-item').forEach(item => {
+                const title = normalizeText(item.dataset.title);
+                const genre = normalizeText(item.dataset.genre);
+                const titleMatches = title.includes(keyword);
+                const genreMatches = !titleMatches && genre.includes(keyword);
+                const isVisible = !keyword || titleMatches || genreMatches;
+                item.classList.toggle('is-search-hidden', !isVisible);
+                item.draggable = isVisible;
+
+                if (isVisible) {
+                    visibleCount++;
+                }
+            });
+
+            if (movieSearchEmpty) {
+                movieSearchEmpty.hidden = visibleCount > 0;
+            }
+
+            if (keyword) {
+                setTelemetry(`Tim thay ${visibleCount} phim phu hop.`);
+            }
+        }
+
+        function minutesToTime(minutesFromStart) {
+            const totalMinutes = scheduleStartHour * 60 + minutesFromStart;
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        }
+
+        function timeToMinutes(time) {
+            const parts = time.split(':').map(Number);
+            return ((parts[0] * 60) + parts[1]) - (scheduleStartHour * 60);
+        }
+
+        function clockTimeToMinutes(time) {
+            const parts = time.split(':').map(Number);
+            return (parts[0] * 60) + parts[1];
+        }
+
+        function clampStart(startMinutes, duration) {
+            return Math.max(0, Math.min(startMinutes, scheduleTotalMinutes - duration));
+        }
+
+        function createScheduleBlock({ showtimeId, movieId, title, duration, startMinutes, basePrice }) {
+            const block = document.createElement('div');
+            const safeDuration = Math.max(duration || scheduleSnapMinutes, scheduleSnapMinutes);
+            const safeStart = clampStart(startMinutes, safeDuration);
+
+            block.className = 'schedule-block';
+            block.dataset.showtimeId = showtimeId || '';
+            block.dataset.movieId = movieId;
+            block.dataset.duration = safeDuration;
+            block.dataset.startTime = minutesToTime(safeStart);
+            block.dataset.endTime = minutesToTime(safeStart + safeDuration);
+            block.dataset.basePrice = basePrice || scheduleDefaultBasePrice;
+            block.style.left = `${(safeStart / scheduleTotalMinutes) * 100}%`;
+            block.style.width = `${(safeDuration / scheduleTotalMinutes) * 100}%`;
+            block.innerHTML = `
+                <button type="button" class="schedule-block-remove" title="Xoa lich">&times;</button>
+                <span class="schedule-block-title"></span>
+                <span class="schedule-block-time"></span>
+            `;
+            block.querySelector('.schedule-block-title').textContent = title;
+            block.querySelector('.schedule-block-time').textContent = `${block.dataset.startTime} - ${block.dataset.endTime}`;
+            block.querySelector('.schedule-block-remove').addEventListener('click', () => block.remove());
+            return block;
+        }
+
+        function addScheduleBlock(timeline, movie, startMinutes) {
+            const resolvedMovieId = movie.movieId ?? movie.movieID ?? movie.MovieID;
+            const block = createScheduleBlock({
+                showtimeId: movie.showtimeId ?? movie.showtimeID ?? movie.ShowtimeID,
+                movieId: resolvedMovieId,
+                title: movie.title,
+                duration: movie.duration,
+                basePrice: movie.basePrice,
+                startMinutes
+            });
+            timeline.appendChild(block);
+        }
+
+        function getDropStartMinutes(timeline, event, duration) {
+            const rect = timeline.getBoundingClientRect();
+            const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+            const rawMinutes = ratio * scheduleTotalMinutes;
+            const snapped = Math.round(rawMinutes / scheduleSnapMinutes) * scheduleSnapMinutes;
+            return clampStart(snapped, duration);
+        }
+
+        function timelineHasOverlap(timeline, startMinutes, endMinutes, ignoredBlock = null) {
+            return Array.from(timeline.querySelectorAll('.schedule-block')).some(block => {
+                if (block === ignoredBlock) {
+                    return false;
+                }
+
+                const blockStart = timeToMinutes(block.dataset.startTime);
+                const blockEnd = timeToMinutes(block.dataset.endTime);
+                return startMinutes < blockEnd && endMinutes > blockStart;
+            });
+        }
+
+        function getSchedulePayloadItems() {
+            return Array.from(document.querySelectorAll('.mr-timeline')).flatMap(timeline =>
+                Array.from(timeline.querySelectorAll('.schedule-block')).map(block => ({
+                    ShowtimeID: Number(block.dataset.showtimeId || 0),
+                    MovieID: Number(block.dataset.movieId),
+                    RoomID: Number(timeline.dataset.roomId || timeline.dataset.hallNumber),
+                    Date: scheduleDateInput.value,
+                    StartTime: buildScheduleDateTime(block.dataset.startTime),
+                    EndTime: buildScheduleDateTime(block.dataset.endTime),
+                    BasePrice: Number(block.dataset.basePrice || scheduleDefaultBasePrice),
+                    _startMinutes: timeToMinutes(block.dataset.startTime),
+                    _endMinutes: timeToMinutes(block.dataset.endTime)
+                }))
+            );
+        }
+
+        function findInvalidScheduleItem(items) {
+            return items.find(item =>
+                !Number.isInteger(item.MovieID) || item.MovieID <= 0 ||
+                !Number.isInteger(item.RoomID) || item.RoomID <= 0 ||
+                !Number.isFinite(item.BasePrice) || item.BasePrice <= 0 ||
+                item._endMinutes <= item._startMinutes
+            );
+        }
+
+        function findOverlappingScheduleItem(items) {
+            const grouped = items.reduce((map, item) => {
+                if (!map.has(item.RoomID)) {
+                    map.set(item.RoomID, []);
+                }
+                map.get(item.RoomID).push(item);
+                return map;
+            }, new Map());
+
+            for (const roomItems of grouped.values()) {
+                const ordered = roomItems.slice().sort((a, b) => a._startMinutes - b._startMinutes);
+                for (let i = 1; i < ordered.length; i++) {
+                    if (ordered[i - 1]._endMinutes > ordered[i]._startMinutes) {
+                        return ordered[i];
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        document.querySelectorAll('.movie-list-item').forEach(item => {
+            item.addEventListener('dragstart', event => {
+                if (event.target.closest('.ml-actions')) {
+                    event.preventDefault();
+                    return;
+                }
+
+                event.dataTransfer.setData('application/json', JSON.stringify(getMoviePayload(item)));
+                event.dataTransfer.effectAllowed = 'copy';
+            });
+        });
+
+        movieSearchInput?.addEventListener('input', filterMoviesByName);
+        filterMoviesByName();
+
+        document.querySelectorAll('.mr-timeline').forEach(timeline => {
+            timeline.addEventListener('dragover', event => {
+                event.preventDefault();
+                timeline.classList.add('drag-over');
+            });
+
+            timeline.addEventListener('dragleave', () => timeline.classList.remove('drag-over'));
+
+            timeline.addEventListener('drop', event => {
+                event.preventDefault();
+                timeline.classList.remove('drag-over');
+
+                const payload = event.dataTransfer.getData('application/json');
+                if (!payload) {
+                    return;
+                }
+
+                const movie = JSON.parse(payload);
+                const startMinutes = getDropStartMinutes(timeline, event, movie.duration);
+                const endMinutes = startMinutes + Math.max(movie.duration || scheduleSnapMinutes, scheduleSnapMinutes);
+                if (timelineHasOverlap(timeline, startMinutes, endMinutes)) {
+                    setTelemetry('Lich chieu bi trung gio trong cung phong chieu.');
+                    return;
+                }
+
+                addScheduleBlock(timeline, movie, startMinutes);
+                setTelemetry(`Da them "${movie.title}" vao phong chieu ${timeline.dataset.roomId || timeline.dataset.hallNumber}.`);
+            });
+        });
+
+        async function loadSchedule() {
+            document.querySelectorAll('.schedule-block').forEach(block => block.remove());
+
+            const response = await fetch(`/Staff/GetSchedule?date=${encodeURIComponent(scheduleDateInput.value)}`);
+            if (!response.ok) {
+                setTelemetry('Khong tai duoc lich chieu.');
+                return;
+            }
+
+            const showtimes = await response.json();
+            showtimes.forEach(showtime => {
+                const roomId = showtime.roomId || showtime.roomID || showtime.hallNumber;
+                const timeline = document.querySelector(`.mr-timeline[data-room-id="${roomId}"], .mr-timeline[data-hall-number="${roomId}"]`);
+                if (!timeline) {
+                    return;
+                }
+
+                addScheduleBlock(timeline, {
+                    showtimeId: showtime.showtimeId ?? showtime.showtimeID ?? showtime.ShowtimeID,
+                    movieId: showtime.movieId ?? showtime.movieID ?? showtime.MovieID,
+                    title: showtime.movieTitle,
+                    duration: showtime.duration,
+                    basePrice: showtime.basePrice
+                }, timeToMinutes(showtime.startTime));
+            });
+
+            setTelemetry(`Da tai ${showtimes.length} suat chieu.`);
+        }
+
+        function buildScheduleDateTime(time) {
+            return `${scheduleDateInput.value}T${time}:00`;
+        }
+
+        async function readScheduleResponse(response) {
+            const text = await response.text();
+            if (!text) {
+                return {};
+            }
+
+            try {
+                return JSON.parse(text);
+            } catch {
+                return {
+                    message: `Server tra ve phan hoi khong phai JSON (${response.status}).`,
+                    detail: text.slice(0, 300)
+                };
+            }
+        }
+
+        async function saveSchedule() {
+            const payloadItems = getSchedulePayloadItems();
+            const invalidItem = findInvalidScheduleItem(payloadItems);
+            if (invalidItem) {
+                setTelemetry(`Du lieu lich chieu khong hop le: MovieID=${invalidItem.MovieID}, RoomID=${invalidItem.RoomID}, BasePrice=${invalidItem.BasePrice}.`);
+                return;
+            }
+
+            const overlapItem = findOverlappingScheduleItem(payloadItems);
+            if (overlapItem) {
+                setTelemetry(`Lich chieu bi trung gio trong phong ${overlapItem.RoomID}.`);
+                return;
+            }
+
+            const items = payloadItems.map(({ _startMinutes, _endMinutes, ...item }) => item);
+
+            const response = await fetch('/Staff/SaveSchedule', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    Date: scheduleDateInput.value,
+                    Items: items
+                })
+            });
+
+            const result = await readScheduleResponse(response);
+            if (!response.ok) {
+                const details = result.errors
+                    ? Object.entries(result.errors)
+                        .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+                        .join(' | ')
+                    : result.detail || '';
+                setTelemetry(details ? `${result.message}: ${details}` : result.message || 'Luu lich that bai.');
+                return;
+            }
+
+            setTelemetry(`${result.message} (${result.count} suat chieu, them ${result.created || 0}, cap nhat ${result.updated || 0}, xoa ${result.deleted || 0})`);
+            await loadSchedule();
+        }
+
+        btnSaveSchedule.addEventListener('click', saveSchedule);
+        scheduleDateInput.addEventListener('change', loadSchedule);
+        loadSchedule();
 
         btnAddMovie.addEventListener('click', () => {
             createModal.classList.add('show');
@@ -369,6 +718,7 @@
                     document.getElementById('editTrailer').value = item.dataset.trailer || '';
                     document.getElementById('editPoster').value = item.dataset.poster || '';
                     document.getElementById('editGenre').value = item.dataset.genre || '';
+                    document.getElementById('editReleaseDate').value = item.dataset.releaseDate || '';
                     // trigger input event to show image
                     document.getElementById('editPoster').dispatchEvent(new Event('input'));
                     

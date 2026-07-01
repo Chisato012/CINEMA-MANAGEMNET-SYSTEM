@@ -72,5 +72,81 @@ public class HomeController : Controller
 
         return View(movie);
     }
+    
+        public IActionResult TicketPricing()
+    {
+        var viewModel = new TicketPricingViewModel
+        {
+            MovieFormats =
+            [
+                new MoviePricingViewModel
+                {
+                    Id = "2D",
+                    TabLabel = "Phim 2D",
+                    SeatPrices =
+                    [
+                        new SeatPricingViewModel
+                        {
+                            SeatType = SeatType.Standard,
+                            BasePrice = 65_000,
+                            NormalDay = 65_000,
+                            WeekendOrHoliday = 85_000
+                        },
+                        new SeatPricingViewModel
+                        {
+                            SeatType = SeatType.Vip,
+                            BasePrice = 97_500,
+                            NormalDay = 97_500,
+                            WeekendOrHoliday = 127_500
+                        },
+                        new SeatPricingViewModel
+                        {
+                            SeatType = SeatType.Sweetbox,
+                            BasePrice = 162_500,
+                            NormalDay = 162_500,
+                            WeekendOrHoliday = 212_500
+                        }
+                    ]
+                },
+                new MoviePricingViewModel
+                {
+                    Id = "IMAX",
+                    TabLabel = "Phim IMAX",
+                    SeatPrices =
+                    [
+                        new SeatPricingViewModel
+                        {
+                            SeatType = SeatType.Standard,
+                            BasePrice = 135_000,
+                            NormalDay = 135_000,
+                            WeekendOrHoliday = 165_000
+                        },
+                        new SeatPricingViewModel
+                        {
+                            SeatType = SeatType.Vip,
+                            BasePrice = 202_500,
+                            NormalDay = 202_500,
+                            WeekendOrHoliday = 247_500
+                        },
+                        new SeatPricingViewModel
+                        {
+                            SeatType = SeatType.Sweetbox,
+                            BasePrice = 337_500,
+                            NormalDay = 337_500,
+                            WeekendOrHoliday = 412_500
+                        }
+                    ]
+                }
+            ],
+            Footnotes =
+            [
+                "Giá vé định dạng IMAX phụ thu thêm 50.000đ tùy hạng ghế.",
+                "Sweetbox là giá vé dành cho 2 người.",
+                "Trẻ em dưới 1m3 được giảm 20.000đ/vé (Chỉ áp dụng mua tại quầy)."
+            ]
+        };
+
+        return View("~/Views/Home/TicketPricing.cshtml", viewModel);
+    }
 
 }
