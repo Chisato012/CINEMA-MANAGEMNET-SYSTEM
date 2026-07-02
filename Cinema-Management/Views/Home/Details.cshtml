@@ -6,166 +6,163 @@
 
 @section Styles {
     <link rel="stylesheet" href="~/css/details.css" asp-append-version="true" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 }
 
-<!-- Breadcrumb Navigation -->
+<main class="details-page">
+    <nav class="details-breadcrumb" aria-label="Breadcrumb">
+        <a asp-controller="Home" asp-action="Index">Trang chủ</a>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9.47 5.47a.75.75 0 0 1 1.06 0l6 6a.75.75 0 0 1 0 1.06l-6 6a.75.75 0 1 1-1.06-1.06L14.94 12 9.47 6.53a.75.75 0 0 1 0-1.06Z" />
+        </svg>
+        <span class="breadcrumb-current">@Model.Title</span>
+    </nav>
 
-<!-- Hero Section -->
-<div class="details-breadcrumb">
-    <a asp-controller="Home" asp-action="Index">Trang chủ</a>
-    <i class="fa-solid fa-angle-right"></i>
-    <span class="breadcrumb-current">@Model.Title</span>
-</div>
-<section class="details-hero">
-    <!-- Hero Content -->
-    <div class="details-hero__content">
-        <!-- Movie Poster -->
-        <div class="details-poster">
-            <div class="details-poster__frame">
-                <img src="@Model.PosterURL" alt="@Model.Title poster" />
+    <section class="details-hero" style="--poster-image: url('@Model.PosterURL');">
+        <div class="details-hero__content">
+            <div class="details-poster" aria-label="Poster phim @Model.Title">
+                <div class="details-poster__frame">
+                    <img src="@Model.PosterURL" alt="Poster phim @Model.Title" />
+                </div>
+            </div>
+
+            <div class="details-info">
+                <p class="details-kicker">COSMOS PRESENTS</p>
+
+                <div class="details-tags" aria-label="Thông tin nhanh">
+                    @if (!string.IsNullOrEmpty(Model.Genre))
+                    {
+                        <span class="details-tag">@Model.Genre</span>
+                    }
+                    <span class="details-tag details-tag--duration">@Model.Duration phút</span>
+                    @if (!string.IsNullOrEmpty(Model.AgeRating))
+                    {
+                        <span class="details-tag details-tag--age">@Model.AgeRating</span>
+                    }
+                </div>
+
+                <h1 class="details-title">@Model.Title</h1>
+
+                @if (!string.IsNullOrEmpty(Model.Synopsis))
+                {
+                    <p class="details-synopsis">@Model.Synopsis</p>
+                }
+
+                <div class="details-actions">
+                    <a href="#" class="details-btn--book" id="btn-book-tickets">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M5.75 5A2.75 2.75 0 0 0 3 7.75v2.5a.75.75 0 0 0 .75.75 1 1 0 0 1 0 2 .75.75 0 0 0-.75.75v2.5A2.75 2.75 0 0 0 5.75 20h12.5A2.75 2.75 0 0 0 21 17.25v-2.5a.75.75 0 0 0-.75-.75 1 1 0 0 1 0-2 .75.75 0 0 0 .75-.75v-2.5A2.75 2.75 0 0 0 18.25 5H5.75Zm0 1.5h12.5c.69 0 1.25.56 1.25 1.25v1.85a2.5 2.5 0 0 0 0 4.8v1.85c0 .69-.56 1.25-1.25 1.25H5.75c-.69 0-1.25-.56-1.25-1.25V14.4a2.5 2.5 0 0 0 0-4.8V7.75c0-.69.56-1.25 1.25-1.25Zm8 2.25a.75.75 0 0 1 .75.75v5a.75.75 0 0 1-1.5 0v-5a.75.75 0 0 1 .75-.75Z" />
+                        </svg>
+                        <span>Đặt vé</span>
+                    </a>
+                    <button type="button"
+                            class="details-btn--trailer"
+                            id="btn-watch-trailer"
+                            onclick="openTrailer('@Model.Trailer')">
+                        <span class="play-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M8.75 5.74c0-.93 1.02-1.5 1.82-1.02l9.03 5.43a1.2 1.2 0 0 1 0 2.06l-9.03 5.43a1.2 1.2 0 0 1-1.82-1.02V5.74Z" />
+                            </svg>
+                        </span>
+                        <span>Xem trailer</span>
+                    </button>
+                </div>
             </div>
         </div>
-        <!-- Movie thông tin -->
-        <div class="details-info">
-            <!-- Tags: các tag từ thể loại, rating-->
-            <div class="details-tags">
-                @if (!string.IsNullOrEmpty(Model.Genre))
-                {
-                    <span class="details-tag">@Model.Genre</span>
-                }
-                <span class="details-tag details-tag--duration">@Model.Duration phút</span>
-                @if (!string.IsNullOrEmpty(Model.AgeRating))
-                {
-                    <span class="details-tag details-tag--age">@Model.AgeRating</span>
-                }
-            </div>
+    </section>
 
-            <!-- Title -->
-            <h1 class="details-title">@Model.Title</h1>
+    <section class="details-extra" aria-labelledby="movie-facts-title">
+        <div class="details-section-heading">
+            <p>Hồ sơ phim</p>
+            <h2 id="movie-facts-title">Thông tin chi tiết</h2>
+        </div>
 
-            <!-- Synopsis -->
-            @if (!string.IsNullOrEmpty(Model.Synopsis))
+        <div class="details-extra__grid">
+            @if (!string.IsNullOrEmpty(Model.MovieDirector))
             {
-                <p class="details-synopsis">@Model.Synopsis</p>
+                <div class="details-extra__item">
+                    <span class="details-extra__label">Đạo diễn</span>
+                    <span class="details-extra__value">@Model.MovieDirector</span>
+                </div>
             }
-        </div>
-    </div>
 
-    <!-- 2 nút -->
-    <div class="details-actions">
-        <a href="#" class="details-btn--book" id="btn-book-tickets">
-            <i class="fa-solid fa-ticket"></i>
-            Book Tickets
-        </a>
-        <button type="button" class="details-btn--trailer" id="btn-watch-trailer"
-        @* Truyền link trailer *@
-                onclick="openTrailer('@Model.Trailer')">
-            <span class="play-icon">▶</span>
-            Watch Trailer
-        </button>
-    </div>
-</section>
-
-<!-- Divider -->
-<hr class="details-divider" />
-
-<!--Section thông tin-->
-<section class="details-extra">
-    <div class="details-extra__grid">
-        @if (!string.IsNullOrEmpty(Model.MovieDirector))
-        {
-            <div class="details-extra__item">
-                <span class="details-extra__label">Đạo diễn</span>
-                <span class="details-extra__value">@Model.MovieDirector</span>
-            </div>
-        }
-
-        @if (!string.IsNullOrEmpty(Model.MovieCast))
-        {
-            <div class="details-extra__item">
-                <span class="details-extra__label">Diễn viên</span>
-                <span class="details-extra__value">@Model.MovieCast</span>
-            </div>
-        }
-
-        @if (Model.Language != null)
-        {
-            <div class="details-extra__item">
-                <span class="details-extra__label">Ngôn ngữ</span>
-                <span class="details-extra__value">@Model.Language.LanguageName</span>
-            </div>
-        }
-
-        @if (Model.Country != null)
-        {
-            <div class="details-extra__item">
-                <span class="details-extra__label">Quốc gia</span>
-                <span class="details-extra__value">@Model.Country.CountryName</span>
-            </div>
-        }
-
-        <div class="details-extra__item">
-            <span class="details-extra__label">Ngày khởi chiếu</span>
-            <span class="details-extra__value">@Model.ReleaseDate.ToString("dd/MM/yyyy")</span>
-        </div>
-
-        <div class="details-extra__item">
-            <span class="details-extra__label">Thời lượng</span>
-            <span class="details-extra__value">@Model.Duration phút</span>
-        </div>
-    </div>
-</section>
-
-<!-- Trailer Modal -->
-<div class="trailer-modal" id="trailerModal">
-    <div class="trailer-modal__content">
-        <button class="trailer-modal__close" onclick="closeTrailer()" aria-label="Close trailer">   
-        </button>
-        <iframe id="trailerIframe" src="" allowfullscreen
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
-        </iframe>
-    </div>
-</div>
-
-@* section lịch chiếu *@
-@if (Model.Showtimes != null && Model.Showtimes.Any())
-{
-    var today = DateTime.Today;
-    var endDate = today.AddDays(6);
-
-    var groupedByDate = Model.Showtimes
-        .Where(s => s.Date.Date >= today && s.Date.Date <= endDate)
-        .OrderBy(s => s.Date)
-        .GroupBy(s => s.Date.Date)
-        .ToList();
-
-    var vietnameseDays = new Dictionary<DayOfWeek, string>
-    {
-        { DayOfWeek.Monday, "T2" },
-        { DayOfWeek.Tuesday, "T3" },
-        { DayOfWeek.Wednesday, "T4" },
-        { DayOfWeek.Thursday, "T5" },
-        { DayOfWeek.Friday, "T6" },
-        { DayOfWeek.Saturday, "T7" },
-        { DayOfWeek.Sunday, "CN" }
-    };
-
-    <section class="showtimes-section">
-        <div class="showtimes-header">
-            <h2 class="showtimes-header__title">LỊCH CHIẾU</h2>
-        </div>
-
-        <!-- Date Tabs -->
-        <div class="showtimes-dates">
-            @for (int i = 0; i < groupedByDate.Count; i++)
+            @if (!string.IsNullOrEmpty(Model.MovieCast))
             {
-                var dateGroup = groupedByDate[i];
-                var date = dateGroup.Key;
+                <div class="details-extra__item">
+                    <span class="details-extra__label">Diễn viên</span>
+                    <span class="details-extra__value">@Model.MovieCast</span>
+                </div>
+            }
+
+            @if (Model.Language != null)
+            {
+                <div class="details-extra__item">
+                    <span class="details-extra__label">Ngôn ngữ</span>
+                    <span class="details-extra__value">@Model.Language.LanguageName</span>
+                </div>
+            }
+
+            @if (Model.Country != null)
+            {
+                <div class="details-extra__item">
+                    <span class="details-extra__label">Quốc gia</span>
+                    <span class="details-extra__value">@Model.Country.CountryName</span>
+                </div>
+            }
+
+            <div class="details-extra__item">
+                <span class="details-extra__label">Ngày khởi chiếu</span>
+                <span class="details-extra__value">@Model.ReleaseDate.ToString("dd/MM/yyyy")</span>
+            </div>
+
+            <div class="details-extra__item">
+                <span class="details-extra__label">Thời lượng</span>
+                <span class="details-extra__value">@Model.Duration phút</span>
+            </div>
+        </div>
+    </section>
+
+    @{
+        var today = DateTime.Today;
+        var endDate = today.AddDays(6);
+        var displayDates = Enumerable.Range(0, 7)
+            .Select(offset => today.AddDays(offset))
+            .ToList();
+
+        var showtimesByDate = (Model.Showtimes ?? Enumerable.Empty<Cinema_Management.Models.Showtimes>())
+            .Where(s => s.Date.Date >= today && s.Date.Date <= endDate)
+            .OrderBy(s => s.Date)
+            .GroupBy(s => s.Date.Date)
+            .ToDictionary(
+                group => group.Key,
+                group => group.OrderBy(s => s.StartTime).ToList());
+
+        var vietnameseDays = new Dictionary<DayOfWeek, string>
+        {
+            { DayOfWeek.Monday, "T2" },
+            { DayOfWeek.Tuesday, "T3" },
+            { DayOfWeek.Wednesday, "T4" },
+            { DayOfWeek.Thursday, "T5" },
+            { DayOfWeek.Friday, "T6" },
+            { DayOfWeek.Saturday, "T7" },
+            { DayOfWeek.Sunday, "CN" }
+        };
+    }
+
+    <section class="showtimes-section" aria-labelledby="showtimes-title">
+        <div class="showtimes-header">
+            <p>Lịch trong 7 ngày tới</p>
+            <h2 class="showtimes-header__title" id="showtimes-title">Lịch chiếu</h2>
+        </div>
+
+        <div class="showtimes-dates" role="tablist" aria-label="Chọn ngày chiếu">
+            @for (int i = 0; i < displayDates.Count; i++)
+            {
+                var date = displayDates[i];
                 var dayLabel = vietnameseDays[date.DayOfWeek];
                 var isActive = i == 0 ? "active" : "";
 
                 <button class="showtimes-date-tab @isActive"
+                        type="button"
                         data-date="@date.ToString("yyyy-MM-dd")"
                         onclick="switchDateTab(this)">
                     <span class="showtimes-date-tab__day">@date.Day</span>
@@ -174,26 +171,49 @@
             }
         </div>
 
-        <!-- Time Slots mỗi ngày -->
-        @for (int i = 0; i < groupedByDate.Count; i++)
+        @for (int i = 0; i < displayDates.Count; i++)
         {
-            var dateGroup = groupedByDate[i];
-            var date = dateGroup.Key;
+            var date = displayDates[i];
             var displayStyle = i == 0 ? "flex" : "none";
+            var hasShowtimes = showtimesByDate.TryGetValue(date, out var dateShowtimes) && dateShowtimes.Any();
 
             <div class="showtimes-times" data-date="@date.ToString("yyyy-MM-dd")" style="display: @displayStyle;">
-                <div class="showtimes-times__grid">
-                    @foreach (var showtime in dateGroup.OrderBy(s => s.StartTime))
-                    {
-                        <a href="#" class="showtimes-time-card">
-                            <span class="showtimes-time-card__time">@showtime.StartTime.ToString("HH:mm")</span>
-                        </a>
-                    }
-                </div>
+                @if (hasShowtimes)
+                {
+                    <div class="showtimes-times__grid">
+                        @foreach (var showtime in dateShowtimes)
+                        {
+                            <a href="#" class="showtimes-time-card">
+                                <span class="showtimes-time-card__time">@showtime.StartTime.ToString("HH:mm")</span>
+                            </a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="showtimes-empty showtimes-empty--panel">
+                        <p>Chưa có suất chiếu trong ngày này.</p>
+                    </div>
+                }
             </div>
         }
     </section>
-}
+
+    <div class="trailer-modal" id="trailerModal" aria-hidden="true">
+        <div class="trailer-modal__content">
+            <button class="trailer-modal__close" onclick="closeTrailer()" aria-label="Đóng trailer">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6.22 4.97a.75.75 0 0 1 1.06 0L12 9.69l4.72-4.72a.75.75 0 1 1 1.06 1.06L13.06 10.75l4.72 4.72a.75.75 0 1 1-1.06 1.06L12 11.81l-4.72 4.72a.75.75 0 0 1-1.06-1.06l4.72-4.72-4.72-4.72a.75.75 0 0 1 0-1.06Z" />
+                </svg>
+            </button>
+            <iframe id="trailerIframe"
+                    src=""
+                    allowfullscreen
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+            </iframe>
+        </div>
+    </div>
+</main>
 
 @section Scripts {
     <script>

@@ -31,41 +31,65 @@ body {
 
 
 .custom-navbar {
-  background-color: #151515;
-  height: 80px;
-
-  /* Hiệu ứng đổ bóng giúp navbar nổi lên */
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
-
-  /* Bạn có thể kết hợp thêm viền dưới cực mờ để tạo độ sắc nét cho cạnh */
-  border-bottom: 1px solid rgba(255, 255, 255, 0.004);
-
-  /* Đảm bảo navbar luôn đè lên các nội dung khác khi cuộn trang */
+  background:
+    linear-gradient(180deg, rgba(31, 29, 25, 0.96), rgba(18, 18, 18, 0.98));
+  border-bottom: 1px solid rgba(225, 193, 148, 0.16);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
+  min-height: 78px;
   z-index: 1030;
 }
 
 .cosmos-logo {
-  color: #E1C194 !important;
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 900;
-  font-size: 2.2rem;
-  letter-spacing: -0.5px;
+  color: #D6A079!important;
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  font-weight: 800;
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  letter-spacing: 0;
+  line-height: 1;
   text-decoration: none;
+  transition: color 0.22s ease, transform 0.22s ease;
+}
+
+.cosmos-logo img{
+  height: 2.5rem;
+  width: auto;
+  object-fit: contain;
+}
+
+.cosmos-logo:hover,
+.cosmos-logo:focus-visible {
+  color: #f2d6a7 !important;
+  transform: translateY(-1px);
 }
 
 .cosmos-nav-link {
-  color: #E1C194 !important;
-  font-family: 'Montserrat', sans-serif;
+  color: #D6A079 !important;
+  font-family: "Manrope", "Segoe UI", sans-serif;
   font-weight: 600;
-  font-size: 0.95rem;
-  letter-spacing: 1.5px;
-  transition: opacity 0.2s ease-in-out;
-  padding: 0.5rem 1rem;
+  font-size: 0.92rem;
+  letter-spacing: 0;
+  line-height: 1;
+  transition: color 0.22s ease, background-color 0.22s ease, transform 0.22s ease;
+  /* padding: 0.7rem 0.95rem; */
   text-decoration: none;
 }
 
 .cosmos-nav-link:hover {
-  opacity: 0.7;
+  color: #f6dfb8 !important;
+  transform: translateY(-1px);
+}
+
+.cosmos-nav-link:focus-visible,
+.cosmos-icon-button:focus-visible,
+.cosmos-profile-button:focus-visible {
+  outline: 2px solid rgba(225, 193, 148, 0.85);
+  outline-offset: 3px;
+}
+
+.cosmos-nav-link:active,
+.cosmos-icon-button:active,
+.cosmos-profile-button:active {
+  transform: translateY(0) scale(0.98);
 }
 
 /* Căn giữa tuyệt đối cho cụm menu */
@@ -77,42 +101,260 @@ body {
 
 
 
-/* Thiết lập vị trí gốc cho thẻ chứa toàn bộ dropdown */
-.user-dropdown {
-    position: relative;
-    display: inline-block;
+.navbar-account {
+  /* border: 1px solid rgba(225, 193, 148, 0.18);
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.045);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08); */
+  padding: 0.3rem;
 }
 
-/* Ẩn menu đi ở trạng thái bình thường */
-.user-dropdown-content {
-    display: none; /* Ẩn thẻ này đi */
-    position: absolute;
-    right: 0; /* Căn lề phải so với logo */
-    background-color: #fff; /* Màu nền menu */
-    min-width: 160px;
-    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); /* Tạo bóng đổ cho đẹp */
-    z-index: 1000; /* Đảm bảo menu luôn nổi lên trên các thành phần khác */
-    border-radius: 5px;
-    overflow: hidden;
+.cosmos-welcome {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  color: #f5e5cf;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-size: 0.84rem;
+  line-height: 1;
+  padding-left: 0.7rem;
+  white-space: nowrap;
+  min-width: 0;
 }
 
-/* Trang trí cho các đường link bên trong menu */
-.user-dropdown-content a {
-    color: #333;
-    padding: 12px 16px;
-    text-decoration: none;
-    display: block;
-    font-size: 14px;
+.cosmos-welcome-label {
+  color: rgba(245, 229, 207, 0.62);
 }
 
-/* Đổi màu nền khi di chuột vào từng dòng chữ trong menu */
-.user-dropdown-content a:hover {
-    background-color: #f1f1f1;
+.cosmos-welcome-name {
+  color: #E1C194;
+  display: inline-block;
+  font-weight: 700;
+  max-width: clamp(7rem, 16vw, 14rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
 }
 
-/* QUAN TRỌNG NHẤT: Hiển thị menu ra khi di chuột vào khối user-dropdown */
-.user-dropdown:hover .user-dropdown-content {
-    display: block;
+.cosmos-profile-button,
+.cosmos-icon-button {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 2.35rem;
+  justify-content: center;
+  text-decoration: none;
+  transition: background-color 0.22s ease, color 0.22s ease, transform 0.22s ease;
+  width: 2.35rem;
+}
+
+.cosmos-profile-button {
+  background-color: #E1C194;
+  color: #171511;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.cosmos-profile-button:hover {
+  background-color: #f2d6a7;
+  color: #171511;
+  transform: translateY(-1px);
+}
+
+.cosmos-profile-avatar {
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.cosmos-icon-button {
+  background-color: rgba(225, 193, 148, 0.08);
+  border: 1px solid rgba(225, 193, 148, 0.13);
+  color: #E1C194;
+}
+
+.cosmos-icon-button svg {
+  display: block;
+  fill: currentColor;
+  height: 1.15rem;
+  width: 1.15rem;
+}
+
+.cosmos-icon-button:hover {
+  background-color: rgba(225, 193, 148, 0.15);
+  color: #f2d6a7;
+  transform: translateY(-1px);
+}
+
+.cosmos-logout-button {
+  color: #efb8ae;
+}
+
+.cosmos-logout-button:hover {
+  background-color: rgba(239, 184, 174, 0.12);
+  border-color: rgba(239, 184, 174, 0.22);
+  color: #ffd2ca;
+}
+
+@media (max-width: 575.98px) {
+  .custom-navbar .container-fluid {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  .cosmos-welcome-label {
+    display: none;
+  }
+
+  .cosmos-welcome-name {
+    max-width: 6.5rem;
+  }
+
+  .navbar-account {
+    gap: 0.25rem !important;
+  }
+}
+
+.cosmos-profile-page {
+  background:
+    radial-gradient(circle at top left, rgba(225, 193, 148, 0.11), transparent 34rem),
+    #121212;
+  color: #f7efe4;
+  min-height: calc(100dvh - 78px);
+  padding: clamp(2rem, 6vw, 5rem) 1rem;
+}
+
+.cosmos-profile-shell {
+  border-top: 1px solid rgba(225, 193, 148, 0.22);
+  margin: 0 auto;
+  max-width: 760px;
+  padding-top: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.cosmos-profile-identity {
+  align-items: center;
+  display: flex;
+  gap: 1.1rem;
+}
+
+.cosmos-profile-large-avatar {
+  align-items: center;
+  background-color: #E1C194;
+  border-radius: 50%;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  color: #171511;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 1.5rem;
+  font-weight: 800;
+  height: 4.25rem;
+  justify-content: center;
+  width: 4.25rem;
+}
+
+.cosmos-profile-kicker {
+  color: rgba(245, 229, 207, 0.62);
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.cosmos-profile-identity h1 {
+  color: #f7efe4;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1;
+  margin: 0;
+}
+
+.cosmos-profile-details {
+  display: grid;
+  gap: 0;
+  margin: clamp(2rem, 5vw, 3rem) 0;
+}
+
+.cosmos-profile-details div {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(8rem, 0.35fr) 1fr;
+  padding: 1rem 0;
+}
+
+.cosmos-profile-details div:last-child {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cosmos-profile-details dt {
+  color: rgba(245, 229, 207, 0.58);
+  font-weight: 600;
+}
+
+.cosmos-profile-details dd {
+  color: #f7efe4;
+  font-weight: 700;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.cosmos-profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.cosmos-profile-secondary-action,
+.cosmos-profile-danger-action {
+  border-radius: 999px;
+  display: inline-flex;
+  font-weight: 800;
+  justify-content: center;
+  line-height: 1;
+  padding: 0.9rem 1.1rem;
+  text-decoration: none;
+  transition: background-color 0.22s ease, color 0.22s ease, transform 0.22s ease;
+}
+
+.cosmos-profile-secondary-action {
+  background-color: rgba(225, 193, 148, 0.1);
+  border: 1px solid rgba(225, 193, 148, 0.18);
+  color: #E1C194;
+}
+
+.cosmos-profile-danger-action {
+  background-color: rgba(239, 184, 174, 0.11);
+  border: 1px solid rgba(239, 184, 174, 0.2);
+  color: #ffd2ca;
+}
+
+.cosmos-profile-secondary-action:hover,
+.cosmos-profile-danger-action:hover {
+  transform: translateY(-1px);
+}
+
+.cosmos-profile-secondary-action:hover {
+  background-color: rgba(225, 193, 148, 0.16);
+  color: #f2d6a7;
+}
+
+.cosmos-profile-danger-action:hover {
+  background-color: rgba(239, 184, 174, 0.16);
+  color: #ffe2dc;
+}
+
+@media (max-width: 575.98px) {
+  .cosmos-profile-identity {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cosmos-profile-details div {
+    grid-template-columns: 1fr;
+  }
 }
 
 /*Ticket Picing Form*/

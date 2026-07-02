@@ -151,29 +151,6 @@ public class AccountController : Controller
             return View(model);
         }
 
-        var requiresEmailVerification =
-            !isDevelopmentPasswordlessLogin &&
-            string.Equals(
-                user.Role,
-                "KhachHang",
-                StringComparison.OrdinalIgnoreCase);
-
-        if (requiresEmailVerification && !user.EmailConfirmed)
-        {
-            if (isDevelopmentPasswordlessLogin)
-            {
-                _logger.LogWarning(
-                    "Development passwordless login failed because email is unconfirmed. Database role: {DatabaseRole}.",
-                    user.Role);
-            }
-
-            ViewBag.ShowDevelopmentPasswordlessLoginMessage = _environment.IsDevelopment();
-            ViewBag.UnconfirmedEmail = user.Email;
-            ModelState.AddModelError(string.Empty, "Email của bạn chưa được xác nhận.");
-            TempData["AlertError"] = "Email của bạn chưa được xác nhận.";
-            return View(model);
-        }
-
         SignInWithSession(user, model.RememberMe);
 
         var role = user.Role;
@@ -210,11 +187,6 @@ public class AccountController : Controller
         if (!user.Status)
         {
             return Unauthorized("Tài khoản đã bị khóa");
-        }
-
-        if (!user.EmailConfirmed)
-        {
-            return Unauthorized("Email của bạn chưa được xác nhận");
         }
 
         return Ok(new
@@ -263,7 +235,7 @@ public class AccountController : Controller
             return View(model);
         }
 
-        // 1. Tạo đối tượng User mới (Mặc định EmailConfirmed = false)
+        // Email verification is temporarily disabled, so new accounts are active immediately.
         var user = new User
         {
             FullName = model.FullName.Trim(),
@@ -273,11 +245,9 @@ public class AccountController : Controller
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password),
             Role = "KhachHang",
             Status = true,
-            EmailConfirmed = false 
+            EmailConfirmed = true
         };
 
-        // 2. Sinh mã Token ngẫu nhiên và lưu Hash vào DB
-        var verificationToken = CreateEmailVerificationToken(user);
         _context.Users.Add(user);
 
         try
@@ -290,21 +260,14 @@ public class AccountController : Controller
             return View(model);
         }
 
-        // 🚀 3. TỰ ĐỘNG GỬI MAIL XÁC NHẬN NGAY TẠI ĐÂY
-        var confirmationEmailSent = await SendConfirmationEmailAsync(user, verificationToken, cancellationToken);
-        if (!confirmationEmailSent)
-        {
-            TempData["AlertError"] = "Dang ky thanh cong nhung chua gui duoc email xac nhan. Vui long kiem tra cau hinh SMTP.";
-        }
-
         var welcomeEmailSent = await SendRegistrationWelcomeEmailAsync(user, cancellationToken);
         if (!welcomeEmailSent)
         {
             TempData["AlertError"] = "Dang ky thanh cong nhung chua gui duoc email chao mung. Vui long kiem tra cau hinh SMTP.";
         }
 
-        // 4. Chuyển hướng sang trang thông báo chờ xác nhận (RegisterPending)
-        return RedirectToAction(nameof(RegisterPending), new { email = user.Email });
+        TempData["AlertSuccess"] = "Dang ky thanh cong. Ban co the dang nhap ngay.";
+        return RedirectToAction(nameof(Login));
     }
 
     [HttpGet]
@@ -667,12 +630,6 @@ public async Task<IActionResult> GoogleCallback(CancellationToken cancellationTo
         return RedirectToAction(nameof(Login));
     }
 
-    if (!user.EmailConfirmed)
-    {
-        TempData["AlertError"] = "Email của bạn chưa được xác nhận.";
-        return RedirectToAction(nameof(Login));
-    }
-
     // Đăng nhập thành công, thiết lập Session
     SignInWithSession(user, rememberMe);
     var welcomeEmailSent = await SendWelcomeEmailAsync(user, cancellationToken);
@@ -1028,5 +985,11 @@ public async Task<IActionResult> GoogleCallback(CancellationToken cancellationTo
     {
         [JsonPropertyName("success")]
         public bool Success { get; set; }
+    }
+
+
+    public IActionResult Profile()
+    {
+        return View();
     }
 }

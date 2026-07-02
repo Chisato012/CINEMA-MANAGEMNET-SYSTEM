@@ -46,3 +46,35 @@ button.accept-policy {
   white-space: nowrap;
   line-height: 60px;
 }
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+}
+
+.custom-navbar {
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+.custom-navbar .container-fluid {
+  min-height: 78px;
+}
+
+@media (max-width: 991.98px) {
+  .custom-navbar .container-fluid {
+    gap: 1rem;
+  }
+
+  .cosmos-logo {
+    margin-right: auto !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .custom-navbar .container-fluid {
+    padding-bottom: 0.85rem !important;
+    padding-top: 0.85rem !important;
+  }
+}

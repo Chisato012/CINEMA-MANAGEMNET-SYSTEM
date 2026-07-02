@@ -1,6 +1,6 @@
 # Agent Instructions for ASP.NET MVC Razor Project
 
-Before generating frontend code, read `docs/SKILL.md`.
+Before generating frontend code, read `.agents/skills/desgin-taste-frontend-v1/SKILL.md`.
 
 This project uses:
 - ASP.NET MVC
@@ -22,3 +22,5 @@ Rules:
 - Use accessible labels for forms.
 - Keep UI responsive on mobile.
 - Check existing dependencies before suggesting JS libraries.
+- Use 3 font Archivo Narrow, Manrope, JetBrains Mono
+- Use main color: #301400 or #9C6D49 or #B98661 or #D6A079 or #F4BB92 or #FFDCC5 or #FFEDE3 or #4A280A

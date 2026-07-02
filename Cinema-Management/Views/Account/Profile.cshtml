@@ -1,0 +1,37 @@
+@{
+    ViewData["Title"] = "Trang cá nhân";
+    var fullName = Context.Session.GetString("UserFullName") ?? "Khách hàng COSMOS";
+    var email = Context.Session.GetString("UserEmail");
+    var role = Context.Session.GetString("UserRole") ?? "Khách hàng";
+    var avatarInitial = !string.IsNullOrWhiteSpace(fullName)
+        ? fullName.Trim()[0].ToString().ToUpperInvariant()
+        : "C";
+}
+
+<section class="cosmos-profile-page">
+    <div class="cosmos-profile-shell">
+        <div class="cosmos-profile-identity">
+            <span class="cosmos-profile-large-avatar" aria-hidden="true">@avatarInitial</span>
+            <div>
+                <p class="cosmos-profile-kicker">Hồ sơ cá nhân</p>
+                <h1>@fullName</h1>
+            </div>
+        </div>
+
+        <dl class="cosmos-profile-details">
+            <div>
+                <dt>Email</dt>
+                <dd>@(email ?? "Chưa đăng nhập")</dd>
+            </div>
+            <div>
+                <dt>Vai trò</dt>
+                <dd>@role</dd>
+            </div>
+        </dl>
+
+        <div class="cosmos-profile-actions">
+            <a asp-controller="Home" asp-action="Index" class="cosmos-profile-secondary-action">Về trang chủ</a>
+            <a asp-controller="Account" asp-action="Logout" class="cosmos-profile-danger-action">Đăng xuất</a>
+        </div>
+    </div>
+</section>
