@@ -1,145 +1,370 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
-}
-
 @model List<Cinema_Management.Models.MovieViewModel>
 
+@{
+    ViewData["Title"] = "COSMOS Cinema";
 
-<head>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css">
-    <link rel="stylesheet" href="~/css/home.css">
+    var movies = Model ?? new List<Cinema_Management.Models.MovieViewModel>();
+    var fallbackPosters = new[]
+    {
+        Url.Content("~/img/poster/supergirl.png"),
+        Url.Content("~/img/poster/heman.jpg"),
+        Url.Content("~/img/poster/chuhoa.jpg"),
+        Url.Content("~/img/poster/toystory.png"),
+        Url.Content("~/img/poster/doraemon.jpg"),
+        Url.Content("~/img/poster/maxo.jpg")
+    };
+    const int featuredSlideCount = 6;
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400;700&family=JetBrains+Mono:wght@400;700&family=Manrope:wght@400;700&display=swap" rel="stylesheet">
-</head>
-<body>
-    <div class="slider-container">
-        <div class="slider-wrapper" id="sliderWrapper">
-            <div class="slider-slide"><img src="" alt="Slide 1"></div>
-            <div class="slider-slide"><img src="" alt="Slide 2"></div>
-            <div class="slider-slide"><img src="" alt="Slide 3"></div>
-            <div class="slider-slide"><img src="" alt="Slide 4"></div>
-            <div class="slider-slide"><img src="" alt="Slide 5"></div>
-            <div class="slider-slide"><img src="" alt="Slide 6"></div>
-        </div>
+    string ResolvePosterUrl(string? posterUrl, string fallbackUrl)
+    {
+        var value = string.IsNullOrWhiteSpace(posterUrl)
+            ? fallbackUrl
+            : posterUrl.Trim();
 
-        <button class="slider-btn prev" onclick="moveSlide(-1)">&#10094;</button>
-        <button class="slider-btn next" onclick="moveSlide(1)">&#10095;</button>
-    </div>
-
-<div class="content">
-    <div class="movie-navbar-container">
-        <div class="movie-navbar-content" id="movieTabs">
-            <a href="javascript:void(0)" class="tab-item" onclick="activateTab(this)">PHIM SẮP CHIẾU</a>
-            <a href="javascript:void(0)" class="tab-item active" onclick="activateTab(this)">PHIM ĐANG CHIẾU</a>
-            <a href="javascript:void(0)" class="tab-item" onclick="activateTab(this)">SUẤT CHIẾU ĐẶC BIỆT</a>
-        </div>
-    </div>
-
-    <div class="movie-gallery ms-100 mt-5 ml-5 mr-5" >
-        <div class="movie-gallery__row g-0">
-            @* Lặp qua danh sách phim từ Controller trả về *@
-            @if (Model != null && Model.Any())
-            {
-                foreach (var movie in Model)
-                {
-                    <div class="movie-gallery__col">
-                        <a class="movie-poster" asp-controller="Home" asp-action="Details" asp-route-id=@movie.MovieId>
-                            <img src="@movie.PosterURL" alt="@movie.Title"> 
-                        </a>
-                        <div class="movie-details">
-                            <div class="movie-details__content">
-                                <a class="movie-title" asp-controller="Home" asp-action="Details" asp-route-id=@movie.MovieId>@movie.Title</a>
-                                <div class="movie-genre-duration">
-                                    <div class="movie-genre">@movie.Genre</div>
-                                    <div class="movie-duration">@(movie.Duration)m</div>
-                                </div>
-                                <div class="buy-button__container">
-                                    <button class="buy-button__content"> Đặt vé</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                }
-            }
-            else
-            {
-                <p>Hiện chưa có phim nào.</p>
-            }
-            
-            
-            
-            
-        </div>
-        
-        
-        
-
-        
-        
-    </div>
-
-</div>
-
-
-    
-</body>
-
-
-@* Hiệu ứng chuyển slide *@
-<script>
-    let currentIndex = 0;
-    const slides = document.querySelectorAll('.slider-slide');
-    const totalSlides = slides.length;
-    const wrapper = document.getElementById('sliderWrapper');
-    let autoSlideInterval;
-
-    //Hàm hiển thi ảnh
-    function showSlide(index){
-        if(index >= totalSlides){
-            currentIndex = 0; //Quay lại ảnh đầu nếu đã đến ảnh cuối
-        }else if(index < 0){
-            currentIndex = totalSlides - 1; //Về ảnh cuối nếu bấm lùi ảnh đầu
-        }else{
-            currentIndex = index;
+        if (value.StartsWith("/wwwroot/", StringComparison.OrdinalIgnoreCase))
+        {
+            value = value["/wwwroot".Length..];
+        }
+        else if (value.StartsWith("wwwroot/", StringComparison.OrdinalIgnoreCase))
+        {
+            value = "/" + value["wwwroot/".Length..];
+        }
+        else if (value.StartsWith("img/", StringComparison.OrdinalIgnoreCase))
+        {
+            value = "~/" + value;
         }
 
-        //Dịch chuyển khung giưuã các ảnh
-        wrapper.style.transform = `translateX(-${currentIndex * 100}%)`
+        return value.StartsWith("~/", StringComparison.Ordinal)
+            ? Url.Content(value)
+            : value;
     }
+}
 
-    // Hàm gọi khi người dùng bấm nút
-    function moveSlide(step){
-        showSlide(currentIndex + step);
-        resetInterval(); // Reset lại bộ đếm
-    }
+@section Styles {
+    <link rel="stylesheet" href="~/css/home.css" asp-append-version="true" />
+}
 
-    function startAutoSlide(){
-        autoSlideInterval = setInterval(() =>{
-            showSlide(currentIndex+1);
-        },4000);
-    }
+<main class="home-page" id="homePage">
+    <section class="slider-container" aria-label="Phim nổi bật tại COSMOS">
+        <div class="slider-wrapper" id="sliderWrapper">
+            @for (var slideIndex = 0; slideIndex < featuredSlideCount; slideIndex++)
+            {
+                var movie = movies.ElementAtOrDefault(slideIndex);
+                var poster = ResolvePosterUrl(movie?.PosterURL, fallbackPosters[slideIndex % fallbackPosters.Length]);
+                var title = !string.IsNullOrWhiteSpace(movie?.Title) ? movie!.Title : "COSMOS Cinema";
+                var genre = !string.IsNullOrWhiteSpace(movie?.Genre) ? movie!.Genre : "Không gian điện ảnh hiện đại";
+                var duration = movie != null && movie.Duration > 0 ? $"{movie.Duration} phút" : "Lịch chiếu mới";
 
-    //Hàm làm mới lại tg đếm ngược
-    function resetInterval(){
-        clearInterval(autoSlideInterval);
-        startAutoSlide();
-    }
+                <article class="slider-slide @(slideIndex == 0 ? "is-active" : "")" aria-label="@title">
+                    <img class="slider-slide__backdrop" src="@poster" alt="" aria-hidden="true" />
+                    <div class="slider-slide__shade"></div>
 
-    startAutoSlide();
+                    <div class="slider-slide__content">
+                        <div class="slider-slide__copy">
+                            <span class="home-eyebrow">Đang chiếu tại COSMOS</span>
+                            <h1>@title</h1>
+                            <p>
+                                Chọn suất chiếu yêu thích, giữ chỗ nhanh và tận hưởng một buổi xem phim trọn vẹn
+                                trong không gian âm thanh, ánh sáng và dịch vụ được chăm chút.
+                            </p>
 
-    function activateTab(element) {
-        // Lấy tất cả các thẻ a bên trong movie-navbar-content
-        const tabs = document.querySelectorAll('.movie-navbar-content a');
-        
-        // Bỏ class 'active' khỏi toàn bộ các tab
-        tabs.forEach(tab => {
-            tab.classList.remove('active');
+                            <div class="slider-slide__meta" aria-label="Thông tin phim">
+                                <span>@genre</span>
+                                <span>@duration</span>
+                            </div>
+
+                            <div class="home-actions">
+                                @if (movie != null)
+                                {
+                                    <a class="home-cta home-cta--primary" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">
+                                        Đặt vé ngay
+                                        <svg aria-hidden="true" viewBox="0 0 24 24">
+                                            <path d="M5 12h13m-5-5 5 5-5 5" />
+                                        </svg>
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a class="home-cta home-cta--primary" asp-controller="Home" asp-action="TicketPricing">
+                                        Khám phá giá vé
+                                        <svg aria-hidden="true" viewBox="0 0 24 24">
+                                            <path d="M5 12h13m-5-5 5 5-5 5" />
+                                        </svg>
+                                    </a>
+                                }
+                                <a class="home-cta home-cta--ghost" href="#now-showing">Xem phim</a>
+                            </div>
+                        </div>
+
+                        @if (movie != null)
+                        {
+                            <a class="slider-slide__poster" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId" aria-label="Xem chi tiết @title">
+                                <img src="@poster" alt="@title poster" />
+                            </a>
+                        }
+                        else
+                        {
+                            <a class="slider-slide__poster" asp-controller="Home" asp-action="TicketPricing" aria-label="Xem thông tin COSMOS Cinema">
+                                <img src="@poster" alt="@title poster" />
+                            </a>
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+
+        <button class="slider-btn prev" type="button" data-slider-step="-1" aria-label="Ảnh trước">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+                <path d="m15 6-6 6 6 6" />
+            </svg>
+        </button>
+        <button class="slider-btn next" type="button" data-slider-step="1" aria-label="Ảnh tiếp theo">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+                <path d="m9 6 6 6-6 6" />
+            </svg>
+        </button>
+
+        <div class="slider-dots" aria-label="Chọn ảnh nổi bật">
+            @for (var slideIndex = 0; slideIndex < featuredSlideCount; slideIndex++)
+            {
+                <button class="slider-dot @(slideIndex == 0 ? "is-active" : "")"
+                        type="button"
+                        data-slider-dot="@slideIndex"
+                        aria-label="Chuyển đến ảnh @(slideIndex + 1)">
+                </button>
+            }
+        </div>
+    </section>
+
+    <section class="home-section movie-gallery-section reveal-on-scroll" id="now-showing" data-reveal>
+        <div class="section-heading reveal-on-scroll" data-reveal>
+            <span class="home-eyebrow">Danh sách phim</span>
+        </div>
+
+        @if (movies.Any())
+        {
+            <div class="movie-gallery" aria-label="Phim đang chiếu">
+                <div class="movie-gallery__row">
+                    @for (var movieIndex = 0; movieIndex < movies.Count; movieIndex++)
+                    {
+                        var movie = movies[movieIndex];
+                        var poster = ResolvePosterUrl(movie.PosterURL, fallbackPosters[movieIndex % fallbackPosters.Length]);
+                        var title = !string.IsNullOrWhiteSpace(movie.Title) ? movie.Title : "Phim đang chiếu";
+                        var genre = !string.IsNullOrWhiteSpace(movie.Genre) ? movie.Genre : "Đang cập nhật";
+                        var imageLoading = movieIndex < 4 ? "eager" : "lazy";
+
+                        <article class="movie-gallery__col reveal-on-scroll" style="--movie-index: @movieIndex" data-reveal>
+                            <a class="movie-poster" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId" aria-label="Xem chi tiết @title">
+                                <img src="@poster" alt="@title poster" loading="@imageLoading" />
+                                <span class="movie-poster__overlay">Chi tiết</span>
+                            </a>
+
+                            <div class="movie-details">
+                                <div class="movie-details__content">
+                                    <a class="movie-title" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">@title</a>
+
+                                    <div class="movie-genre-duration">
+                                        <span class="movie-genre">@genre</span>
+                                        <span class="movie-duration">@movie.Duration phút</span>
+                                    </div>
+
+                                    <div class="buy-button__container">
+                                        <a class="buy-button__content" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">
+                                            Đặt vé
+                                            <svg aria-hidden="true" viewBox="0 0 24 24">
+                                                <path d="M5 12h13m-5-5 5 5-5 5" />
+                                            </svg>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="movie-empty reveal-on-scroll" role="status" data-reveal>
+                <span class="movie-empty__mark"></span>
+                <h3>Hiện chưa có phim nào.</h3>
+                <p>Khi nhân viên thêm phim vào hệ thống, danh sách phim sẽ tự động xuất hiện tại đây.</p>
+            </div>
+        }
+    </section>
+
+    <section class="home-section cinema-intro reveal-on-scroll" aria-labelledby="cinemaIntroTitle" data-reveal>
+        <div class="cinema-intro__copy reveal-on-scroll" data-reveal>
+            <span class="home-eyebrow">Về COSMOS</span>
+            <h2 id="cinemaIntroTitle">Một điểm hẹn điện ảnh dành cho những buổi xem phim đáng nhớ</h2>
+            <p>
+                COSMOS Cinema kết hợp lịch chiếu rõ ràng, phòng chiếu thoải mái và dịch vụ đặt vé nhanh để khách hàng
+                có thể tập trung vào điều quan trọng nhất: chọn đúng bộ phim và tận hưởng câu chuyện trên màn ảnh lớn.
+            </p>
+        </div>
+
+        <div class="cinema-intro__grid">
+            <article class="intro-feature intro-feature--wide reveal-on-scroll" data-reveal>
+                <span class="intro-feature__number">01</span>
+                <h3>Không gian xem phim tập trung</h3>
+                <p>Ánh sáng được tiết chế, ghế ngồi dễ chịu và lối đi gọn gàng giúp trải nghiệm xem phim liền mạch hơn.</p>
+            </article>
+            <article class="intro-feature reveal-on-scroll" data-reveal>
+                <span class="intro-feature__number">02</span>
+                <h3>Đặt vé rõ ràng</h3>
+                <p>Thông tin phim, thời lượng và thể loại được trình bày ngay từ danh sách để khách hàng quyết định nhanh.</p>
+            </article>
+            <article class="intro-feature reveal-on-scroll" data-reveal>
+                <span class="intro-feature__number">03</span>
+                <h3>Giá vé minh bạch</h3>
+                <p>Bảng giá riêng giúp khách hàng xem trước mức giá theo định dạng phim và hạng ghế.</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="home-section promo-section reveal-on-scroll" aria-labelledby="promoTitle" data-reveal>
+        <div class="section-heading section-heading--compact reveal-on-scroll" data-reveal>
+            <span class="home-eyebrow">Ưu đãi và dịch vụ</span>
+            <div>
+                <h2 id="promoTitle">Chuẩn bị cho buổi xem phim trọn vẹn hơn</h2>
+                <p>Những điểm chạm nhỏ trước giờ chiếu giúp khách hàng chủ động hơn khi đến rạp.</p>
+            </div>
+        </div>
+
+        <div class="promo-layout">
+            <article class="promo-card promo-card--wide reveal-on-scroll" data-reveal>
+                <div>
+                    <span class="promo-card__label">Combo tại quầy</span>
+                    <h3>Bắp nước sẵn sàng trước giờ phim</h3>
+                    <p>Chọn combo phù hợp cho buổi xem phim cùng bạn bè, gia đình hoặc một tối thư giãn sau giờ làm.</p>
+                </div>
+                <a class="home-cta home-cta--primary" href="#now-showing">
+                    Chọn phim
+                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                        <path d="M5 12h13m-5-5 5 5-5 5" />
+                    </svg>
+                </a>
+            </article>
+
+            <div class="promo-stack">
+                <article class="promo-card reveal-on-scroll" data-reveal>
+                    <span class="promo-card__label">Lịch chiếu</span>
+                    <h3>Suất chiếu được cập nhật theo từng phim</h3>
+                    <p>Trang chi tiết phim hiển thị các ngày chiếu gần nhất để khách hàng chọn giờ thuận tiện.</p>
+                </article>
+                <article class="promo-card promo-card--muted reveal-on-scroll" data-reveal>
+                    <span class="promo-card__label">Giá vé</span>
+                    <h3>Xem giá trước khi đặt</h3>
+                    <p>Kiểm tra giá vé theo định dạng 2D, IMAX và loại ghế trước khi ra quyết định.</p>
+                    <a asp-controller="Home" asp-action="TicketPricing">Xem bảng giá</a>
+                </article>
+            </div>
+        </div>
+    </section>
+</main>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const slider = document.querySelector('.slider-container');
+            const wrapper = document.getElementById('sliderWrapper');
+            const homePage = document.getElementById('homePage');
+            const revealItems = Array.from(document.querySelectorAll('[data-reveal]'));
+            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+            if (homePage && revealItems.length) {
+                homePage.classList.add('js-reveal-ready');
+
+                if (reduceMotion.matches || !('IntersectionObserver' in window)) {
+                    revealItems.forEach(function (item) {
+                        item.classList.add('is-visible');
+                    });
+                } else {
+                    const revealObserver = new IntersectionObserver(function (entries, observer) {
+                        entries.forEach(function (entry) {
+                            if (!entry.isIntersecting) {
+                                return;
+                            }
+
+                            entry.target.classList.add('is-visible');
+                            observer.unobserve(entry.target);
+                        });
+                    }, {
+                        rootMargin: '0px 0px -12% 0px',
+                        threshold: 0.14
+                    });
+
+                    revealItems.forEach(function (item) {
+                        revealObserver.observe(item);
+                    });
+                }
+            }
+
+            if (!slider || !wrapper) {
+                return;
+            }
+
+            const slides = Array.from(slider.querySelectorAll('.slider-slide'));
+            const dots = Array.from(slider.querySelectorAll('[data-slider-dot]'));
+            const buttons = Array.from(slider.querySelectorAll('[data-slider-step]'));
+            let currentIndex = 0;
+            let autoSlideInterval = null;
+
+            function showSlide(index) {
+                currentIndex = (index + slides.length) % slides.length;
+                wrapper.style.transform = `translateX(-${currentIndex * 100}%)`;
+
+                slides.forEach(function (slide, slideIndex) {
+                    slide.classList.toggle('is-active', slideIndex === currentIndex);
+                });
+
+                dots.forEach(function (dot, dotIndex) {
+                    dot.classList.toggle('is-active', dotIndex === currentIndex);
+                    dot.setAttribute('aria-current', dotIndex === currentIndex ? 'true' : 'false');
+                });
+            }
+
+            function stopAutoSlide() {
+                if (autoSlideInterval) {
+                    window.clearInterval(autoSlideInterval);
+                    autoSlideInterval = null;
+                }
+            }
+
+            function startAutoSlide() {
+                if (reduceMotion.matches || slides.length <= 1) {
+                    return;
+                }
+
+                stopAutoSlide();
+                autoSlideInterval = window.setInterval(function () {
+                    showSlide(currentIndex + 1);
+                }, 4500);
+            }
+
+            buttons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const step = Number(button.dataset.sliderStep || 0);
+                    showSlide(currentIndex + step);
+                    startAutoSlide();
+                });
+            });
+
+            dots.forEach(function (dot) {
+                dot.addEventListener('click', function () {
+                    showSlide(Number(dot.dataset.sliderDot || 0));
+                    startAutoSlide();
+                });
+            });
+
+            slider.addEventListener('mouseenter', stopAutoSlide);
+            slider.addEventListener('mouseleave', startAutoSlide);
+            document.addEventListener('visibilitychange', function () {
+                document.hidden ? stopAutoSlide() : startAutoSlide();
+            });
+
+            showSlide(0);
+            startAutoSlide();
         });
-
-        // Thêm class 'active' vào chính tab vừa được click
-        element.classList.add('active');
-    }
-</script>
+    </script>
+}
