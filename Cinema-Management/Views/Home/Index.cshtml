@@ -1,4 +1,4 @@
-﻿@{
+﻿﻿@{
     ViewData["Title"] = "Home Page";
 }
 
@@ -17,12 +17,12 @@
 <body>
     <div class="slider-container">
         <div class="slider-wrapper" id="sliderWrapper">
-            <div class="slider-slide"><img src="" alt="Slide 1"></div>
-            <div class="slider-slide"><img src="" alt="Slide 2"></div>
-            <div class="slider-slide"><img src="" alt="Slide 3"></div>
-            <div class="slider-slide"><img src="" alt="Slide 4"></div>
+            <div class="slider-slide"><img src="~/img/poster/poster1.png" alt="Slide 1"></div>
+            <div class="slider-slide"><img src="~/img/poster/poster2.jpg" alt="Slide 2"></div>
+            <div class="slider-slide"><img src="~/img/poster/poster3.png" alt="Slide 3"></div>
+            <div class="slider-slide"><img src="~/img/poster/poster4.png" alt="Slide 4"></div>
             <div class="slider-slide"><img src="" alt="Slide 5"></div>
-            <div class="slider-slide"><img src="" alt="Slide 6"></div>
+            <div class="slider-slide"><img src="~/img/poster/poster6.png" alt="Slide 6"></div>
         </div>
 
         <button class="slider-btn prev" onclick="moveSlide(-1)">&#10094;</button>
@@ -57,7 +57,10 @@
                                     <div class="movie-duration">@(movie.Duration)m</div>
                                 </div>
                                 <div class="buy-button__container">
-                                    <button class="buy-button__content"> Đặt vé</button>
+                                    <form asp-controller="Home" asp-action="Booking" method="get" class="buy-button__form">
+                                        <input type="hidden" name="movieId" value="@movie.MovieId" />
+                                        <button type="submit" class="buy-button__content">Đặt vé</button>
+                                    </form>
                                 </div>
                             </div>
                         </div>

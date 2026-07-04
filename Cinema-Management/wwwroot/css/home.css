@@ -271,7 +271,14 @@
     margin-bottom: 20px;
     padding-top: 15px; 
 }
+.buy-button__form {
+    margin: 0;
+}
+
 button.buy-button__content {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
     border: none;
     font-size: 18px;
@@ -301,11 +308,13 @@ button.buy-button__content {
 
     /* Hiệu ứng chuyển đổi mượt mà trong 0.2 giây */
     transition: all 0.2s ease-in-out;
+    text-decoration: none;
 }
 
 button.buy-button__content:hover {
     /* Màu gradient sáng hơn một tông */
     background: linear-gradient(to bottom, #b3825e 0%, #956948 100%);
+    color: #FFF1E6;
 
     /* Bóng đổ rõ hơn một chút khi nút sáng lên */
     box-shadow:

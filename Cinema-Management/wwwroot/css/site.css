@@ -124,3 +124,31 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+/* Cảnh báo khi ấn đặt vé nhưng chưa chọn phim */
+.booking-nav-toast {
+    position: fixed;
+    top: 96px;
+    right: 24px;
+    z-index: 100000;
+    width: min(360px, calc(100vw - 32px));
+    padding: 14px 18px;
+    border: 1px solid rgba(212, 163, 115, 0.55);
+    border-left: 4px solid #D4A373;
+    border-radius: 10px;
+    background: #211f1e;
+    color: #FFF1E6;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.38);
+    font-family: 'Manrope', 'Segoe UI', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.booking-nav-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}

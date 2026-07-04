@@ -2,6 +2,11 @@
 
 @{
     ViewData["Title"] = Model.Title + " - Movie Details";
+    var firstFutureShowtime = Model.Showtimes?
+        .Where(s => s.Date.Date >= DateTime.Today)
+        .OrderBy(s => s.Date)
+        .ThenBy(s => s.StartTime)
+        .FirstOrDefault();
 }
 
 @section Styles {
@@ -54,7 +59,12 @@
 
     <!-- 2 nút -->
     <div class="details-actions">
-        <a href="#" class="details-btn--book" id="btn-book-tickets">
+        <a asp-controller="Home"
+           asp-action="Booking"
+           asp-route-movieId="@Model.MovieId"
+           asp-route-showtimeId="@firstFutureShowtime?.ShowtimeID"
+           class="details-btn--book"
+           id="btn-book-tickets">
             <i class="fa-solid fa-ticket"></i>
             Book Tickets
         </a>
@@ -186,7 +196,11 @@
                 <div class="showtimes-times__grid">
                     @foreach (var showtime in dateGroup.OrderBy(s => s.StartTime))
                     {
-                        <a href="#" class="showtimes-time-card">
+                        <a asp-controller="Home"
+                           asp-action="Booking"
+                           asp-route-movieId="@Model.MovieId"
+                           asp-route-showtimeId="@showtime.ShowtimeID"
+                           class="showtimes-time-card">
                             <span class="showtimes-time-card__time">@showtime.StartTime.ToString("HH:mm")</span>
                         </a>
                     }
