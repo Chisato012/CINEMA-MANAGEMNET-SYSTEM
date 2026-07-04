@@ -95,13 +95,13 @@ public class AccountController : Controller
             return View(model);
         }
 
-        if (!await IsTurnstileValidAsync(cancellationToken))
-        {
-            ViewBag.ShowDevelopmentPasswordlessLoginMessage = _environment.IsDevelopment();
-            ViewBag.CaptchaError = "Vui lòng xác minh captcha.";
-            TempData["AlertError"] = "Xác minh CAPTCHA thất bại. Vui lòng thử lại.";
-            return View(model);
-        }
+        // if (!await IsTurnstileValidAsync(cancellationToken))
+        // {
+        //     ViewBag.ShowDevelopmentPasswordlessLoginMessage = _environment.IsDevelopment();
+        //     ViewBag.CaptchaError = "Vui lòng xác minh captcha.";
+        //     TempData["AlertError"] = "Xác minh CAPTCHA thất bại. Vui lòng thử lại.";
+        //     return View(model);
+        // }
 
         var user = await FindUserByNormalizedEmailAsync(normalizedEmail, cancellationToken);
 
