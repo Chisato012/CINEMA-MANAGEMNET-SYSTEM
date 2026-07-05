@@ -49,6 +49,16 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<MovieDirectors>()
             .HasKey(md => new { md.MovieID, md.PersonId });
 
+        modelBuilder.Entity<MovieCasts>()
+            .HasOne(mc => mc.Person)
+            .WithMany()
+            .HasForeignKey(mc => mc.PersonId);
+
+        modelBuilder.Entity<MovieDirectors>()
+            .HasOne(md => md.Person)
+            .WithMany()
+            .HasForeignKey(md => md.PersonId);
+
         //Khai báo quan hệ bảng Booking
         modelBuilder.Entity<Booking>(entity =>
         {

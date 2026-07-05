@@ -2,6 +2,11 @@
 
 @{
     ViewData["Title"] = Model.Title + " - Movie Details";
+    var firstFutureShowtime = Model.Showtimes?
+        .Where(s => s.Date.Date >= DateTime.Today)
+        .OrderBy(s => s.Date)
+        .ThenBy(s => s.StartTime)
+        .FirstOrDefault();
 }
 
 @section Styles {
