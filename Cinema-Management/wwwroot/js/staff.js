@@ -6,13 +6,11 @@
     const message = document.getElementById('screeningSeatMessage');
     const map = document.getElementById('screeningSeatMap');
     const grid = document.getElementById('screeningSeatGrid');
-    const labelsLeft = document.getElementById('screeningRowLabelsLeft');
-    const labelsRight = document.getElementById('screeningRowLabelsRight');
     const statValues = document.querySelectorAll('[data-seat-count]');
     const reservationList = document.getElementById('screeningReservationList');
     const reservationTicketCount = document.getElementById('screeningReservationTicketCount');
 
-    if ((!roomSelect && roomButtons.length === 0) || !showtimeSelect || !message || !map || !grid || !labelsLeft || !labelsRight) {
+    if ((!roomSelect && roomButtons.length === 0) || !showtimeSelect || !message || !map || !grid) {
         return;
     }
 
@@ -74,8 +72,6 @@
 
     function clearSeatMap() {
         grid.innerHTML = '';
-        labelsLeft.innerHTML = '';
-        labelsRight.innerHTML = '';
         map.hidden = true;
     }
 
@@ -151,12 +147,12 @@
         const classes = ['screening-seat', 'seat'];
 
         if (seat.isPlaceholder) {
-            classes.push('is-placeholder');
+            classes.push('is-placeholder seat-placeholder');
             return classes.join(' ');
         }
 
         const seatTypeClass = (seat.seatType || '').toLowerCase();
-        classes.push(seat.seatType === 'Couple' ? 'seat-couple' : 'seat-single');
+        classes.push(seat.seatType === 'Couple' ? 'sweetbox seat-couple' : 'seat-single');
         if (seatTypeClass) {
             classes.push(seatTypeClass);
         }
@@ -179,38 +175,35 @@
             return;
         }
 
-        const maxColumns = rows.reduce((max, row) => {
-            const width = row.seats.reduce((sum, seat) => sum + (seat.columnSpan || 1), 0);
-            return Math.max(max, width);
-        }, 0);
-
-        grid.style.setProperty('--screening-seat-columns', String(Math.max(maxColumns, 1)));
-
         rows.forEach(row => {
-            const leftLabel = document.createElement('span');
-            const rightLabel = document.createElement('span');
             const seatRow = document.createElement('div');
+            const rowLabel = document.createElement('span');
 
-            leftLabel.textContent = row.rowLabel;
-            rightLabel.textContent = row.rowLabel;
-            seatRow.className = 'screening-seat-row';
+            seatRow.className = 'seat-row screening-seat-row';
+            seatRow.dataset.row = row.rowLabel;
+            rowLabel.className = 'row-label';
+            rowLabel.textContent = row.rowLabel;
+            seatRow.appendChild(rowLabel);
 
             row.seats.forEach(seat => {
-                const seatCell = document.createElement('span');
+                const seatCell = document.createElement('button');
                 seatCell.className = getSeatClasses(seat);
-                seatCell.style.gridColumn = `span ${seat.columnSpan || 1}`;
+                seatCell.type = 'button';
+                seatCell.disabled = seat.isPlaceholder || seat.reservationState === 'reserved' || seat.reservationState === 'pending';
+                seatCell.style.setProperty('--seat-span', String(seat.columnSpan || 1));
 
                 if (!seat.isPlaceholder) {
                     seatCell.textContent = seat.seatNumber || seat.seatCode;
                     seatCell.title = `${seat.seatCode} - ${seat.seatType} - ${seat.reservationState}`;
+                    seatCell.setAttribute('aria-label', `${seat.seatCode} ${seat.seatType} ${seat.reservationState}`);
+                } else {
+                    seatCell.setAttribute('aria-hidden', 'true');
                 }
 
                 seatRow.appendChild(seatCell);
             });
 
-            labelsLeft.appendChild(leftLabel);
             grid.appendChild(seatRow);
-            labelsRight.appendChild(rightLabel);
         });
 
         map.hidden = false;

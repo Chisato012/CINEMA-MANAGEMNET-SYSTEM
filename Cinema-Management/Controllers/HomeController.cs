@@ -41,6 +41,32 @@ public class HomeController : Controller
         return View(movies);
     }
 
+    public IActionResult Movie()
+    {
+        var movies = _context.Movies
+            .OrderBy(m => m.Title)
+            .Select(m => new MovieViewModel
+            {
+                MovieId = m.MovieId,
+                Title = m.Title,
+                Duration = m.Duration,
+                PosterURL = m.PosterURL,
+                ReleaseDate = m.ReleaseDate,
+                AgeRating = m.AgeRating,
+                Synopsis = m.Synopsis,
+                Trailer = m.Trailer,
+                Showtimes = m.Showtimes,
+                Language = m.Language,
+                Country = m.Country,
+                Genre = string.Join(", ", m.MovieGenres.Select(mg => mg.Genre.Name)),
+                MovieDirector = string.Join(", ", m.MovieDirectors.Select(md => md.Person.FullName)),
+                MovieCast = string.Join(", ", m.MovieCasts.Select(mc => mc.Person.FullName))
+            })
+            .ToList();
+
+        return View(movies);
+    }
+
     public IActionResult Details(int id)
     {
         var movie = _context.Movies

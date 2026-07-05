@@ -29,7 +29,7 @@
                 </a>
 
                 <div class="d-none d-lg-flex gap-4 ms-5 me-auto ">
-                    <a href="#" class="cosmos-nav-link">Phim</a>
+                    <a class="cosmos-nav-link" asp-area="" asp-controller="Home" asp-action="Movie">Phim</a>
                     <a class="cosmos-nav-link" asp-area="" asp-controller="Home" asp-action="TicketPricing">Giá vé</a>
                     <a href="#" class="cosmos-nav-link">Ưu đãi</a>
                     <a class="cosmos-nav-link" data-booking-nav-warning="true">Đặt vé</a>
@@ -84,18 +84,21 @@
         </main>
     </div>
 
-    <footer>
-        <div class="container-fluid py-4" style="background-color: #121212; color: #888; font-size: 0.85rem;">
-            <div class="row">
-                <div class="col-md-6">
-                    <p>&copy; 2026 COSMOS CINEMA. All rights reserved.</p>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <p>Contact us: info@cosmoscinema.com</p>
+    @if (ViewData["HideDefaultFooter"] as bool? != true)
+    {
+        <footer>
+            <div class="container-fluid py-4" style="background-color: #121212; color: #888; font-size: 0.85rem;">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p>&copy; 2026 COSMOS CINEMA. All rights reserved.</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <p>Contact us: info@cosmoscinema.com</p>
+                    </div>
                 </div>
             </div>
-        </div>
-    </footer>
+        </footer>
+    }
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

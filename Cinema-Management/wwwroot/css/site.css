@@ -152,3 +152,46 @@ body {
     opacity: 1;
     transform: translateY(0);
 }
+
+/* Shared TempData alerts, including logout success */
+body > div[aria-live="polite"][aria-atomic="true"] {
+    top: 96px !important;
+    right: 24px !important;
+    z-index: 100000 !important;
+}
+
+body > div[aria-live="polite"][aria-atomic="true"] > .toast.show {
+    width: min(360px, calc(100vw - 32px)) !important;
+    min-width: 0 !important;
+    border: 1px solid rgba(212, 163, 115, 0.55) !important;
+    border-left: 4px solid #D4A373 !important;
+    border-radius: 10px !important;
+    background: #211f1e !important;
+    color: #FFF1E6 !important;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.38) !important;
+    font-family: 'Manrope', 'Segoe UI', sans-serif !important;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+body > div[aria-live="polite"][aria-atomic="true"] > .toast.show[style*="#dc3545"] {
+    border-color: rgba(224, 122, 139, 0.55) !important;
+    border-left-color: #E07A8B !important;
+    color: #FFE8EC !important;
+}
+
+body > div[aria-live="polite"][aria-atomic="true"] .toast-body {
+    padding: 14px 18px !important;
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+}
+
+body > div[aria-live="polite"][aria-atomic="true"] .btn-close {
+    margin-right: 10px !important;
+    opacity: 0.72;
+    filter: invert(91%) sepia(14%) saturate(533%) hue-rotate(329deg) brightness(105%) contrast(101%);
+}
+
+body > div[aria-live="polite"][aria-atomic="true"] .btn-close:hover {
+    opacity: 1;
+}

@@ -11,14 +11,17 @@
 
 <header class="staff-header">
     <div style="display:flex;align-items:center;gap:16px;">
-        <h2>QUAN LY BAP NUOC</h2>
-        <span class="badge badge-outline">DANG KET NOI</span>
+        <h2>QUẢN LÝ ĐỒ ĂN/UỐNG</h2>
+        <span class="badge badge-outline">
+            <i class="status-dot"></i>
+            ĐANG KẾT NỐI
+        </span>
     </div>
     <div style="display:flex;gap:12px;">
-        <a class="btn-primary" asp-controller="Staff" asp-action="CreateConcession" title="Them mon">+ Them mon</a>
+        <a class="btn-primary" asp-controller="Staff" asp-action="CreateConcession" title="Them mon">+ THÊM MÓN</a>
         <button class="btn-secondary" style="border:none;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-            LUU
+            LƯU
         </button>
     </div>
 </header>
@@ -44,7 +47,7 @@
         </div>
 
         <div class="category-tabs" data-concession-tabs>
-            <button class="tab-btn active" type="button" data-category="all">Tat ca</button>
+            <button class="tab-btn active" type="button" data-category="all">Tất cả</button>
             <button class="tab-btn" type="button" data-category="Drinks">Drinks</button>
             <button class="tab-btn" type="button" data-category="Popcorn">Popcorn</button>
             <button class="tab-btn" type="button" data-category="Combos">Combos</button>
@@ -81,8 +84,8 @@
                                asp-action="EditConcession"
                                asp-route-id="@item.ComboID"
                                title="Sua mon"
-                               aria-label="Sua mon @item.ComboName">Sua</a>
-                            <button class="btn-add" type="button">THEM VAO GIO</button>
+                               aria-label="Sua mon @item.ComboName">Sửa</a>
+                            <button class="btn-add" type="button">THÊM VÀO GIỎ</button>
                         </div>
                     </div>
                 </div>
@@ -92,27 +95,27 @@
 
     <div class="receipt-sidebar">
         <div class="receipt-header">
-            <h4>GIO HANG</h4>
+            <h4>GIỎ HÀNG</h4>
             <span class="badge badge-primary">POS READY</span>
         </div>
 
         <div id="cartDropZone" class="cart-drop-zone">
-            Keo mon vao day de them vao gio
+            KÉO MÓN VÀO ĐÂY ĐỂ THÊM VÀO GIỎ HÀNG
         </div>
 
         <div id="cartItems" class="receipt-cart-items"></div>
 
         <div class="receipt-footer">
             <div class="receipt-total">
-                <span>Tong gia tri (Da tinh thue)</span>
+                <span>TỔNG GIÁ TRỊ<br>(Đã tính thuế)</span>
                 <strong id="cartTotal">0 VND</strong>
             </div>
             <div class="receipt-actions">
                 <button id="resetCartButton" class="btn-secondary" style="flex:1" type="button">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
-                    LAM MOI
+                    LÀM MỚI
                 </button>
-                <button class="btn-primary" style="flex:2;justify-content:center">THANH TOAN</button>
+                <button class="btn-primary" style="flex:2;justify-content:center">THANH TOÁN</button>
             </div>
         </div>
     </div>
