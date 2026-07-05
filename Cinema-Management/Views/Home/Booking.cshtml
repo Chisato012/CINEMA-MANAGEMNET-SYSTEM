@@ -66,10 +66,10 @@
                         <h1 id="movieTitle">@Model.MovieTitle</h1>
                         <div class="rating" aria-label="Rated 4.8 out of 5">★★★★★ <small>4.8/5 · CRITIC CONSENSUS</small></div>
                         <dl class="facts">
-                            <dt>Director</dt><dd>@Model.Director</dd>
-                            <dt>Cast</dt><dd>@Model.Cast</dd>
-                            <dt>Runtime</dt><dd>@Model.DurationMinutes min@(string.IsNullOrWhiteSpace(Model.Genre) ? "" : $" · {Model.Genre}")</dd>
-                            <dt>Rating</dt><dd>@Model.AgeRating</dd>
+                            <dt>Đạo diễn</dt><dd>@Model.Director</dd>
+                            <dt>Diễn viên</dt><dd>@Model.Cast</dd>
+                            <dt>Thời lượng</dt><dd>@Model.DurationMinutes min@(string.IsNullOrWhiteSpace(Model.Genre) ? "" : $" · {Model.Genre}")</dd>
+                            <dt>Độ tuổi</dt><dd>@Model.AgeRating</dd>
                         </dl>
                         <p class="synopsis">@Model.Synopsis</p>
                     </div>

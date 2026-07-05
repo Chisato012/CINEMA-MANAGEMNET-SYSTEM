@@ -47,70 +47,24 @@
 <main class="home-page" id="homePage">
     <section class="slider-container" aria-label="Phim nổi bật tại COSMOS">
         <div class="slider-wrapper" id="sliderWrapper">
-            @for (var slideIndex = 0; slideIndex < featuredSlideCount; slideIndex++)
-            {
-                var movie = movies.ElementAtOrDefault(slideIndex);
-                var poster = ResolvePosterUrl(movie?.PosterURL, fallbackPosters[slideIndex % fallbackPosters.Length]);
-                var title = !string.IsNullOrWhiteSpace(movie?.Title) ? movie!.Title : "COSMOS Cinema";
-                var genre = !string.IsNullOrWhiteSpace(movie?.Genre) ? movie!.Genre : "Không gian điện ảnh hiện đại";
-                var duration = movie != null && movie.Duration > 0 ? $"{movie.Duration} phút" : "Lịch chiếu mới";
-
-                <article class="slider-slide @(slideIndex == 0 ? "is-active" : "")" aria-label="@title">
-                    <img class="slider-slide__backdrop" src="@poster" alt="" aria-hidden="true" />
-                    <div class="slider-slide__shade"></div>
-
-                    <div class="slider-slide__content">
-                        <div class="slider-slide__copy">
-                            <span class="home-eyebrow">Đang chiếu tại COSMOS</span>
-                            <h1>@title</h1>
-                            <p>
-                                Chọn suất chiếu yêu thích, giữ chỗ nhanh và tận hưởng một buổi xem phim trọn vẹn
-                                trong không gian âm thanh, ánh sáng và dịch vụ được chăm chút.
-                            </p>
-
-                            <div class="slider-slide__meta" aria-label="Thông tin phim">
-                                <span>@genre</span>
-                                <span>@duration</span>
-                            </div>
-
-                            <div class="home-actions">
-                                @if (movie != null)
-                                {
-                                    <a class="home-cta home-cta--primary" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">
-                                        Đặt vé ngay
-                                        <svg aria-hidden="true" viewBox="0 0 24 24">
-                                            <path d="M5 12h13m-5-5 5 5-5 5" />
-                                        </svg>
-                                    </a>
-                                }
-                                else
-                                {
-                                    <a class="home-cta home-cta--primary" asp-controller="Home" asp-action="TicketPricing">
-                                        Khám phá giá vé
-                                        <svg aria-hidden="true" viewBox="0 0 24 24">
-                                            <path d="M5 12h13m-5-5 5 5-5 5" />
-                                        </svg>
-                                    </a>
-                                }
-                                <a class="home-cta home-cta--ghost" href="#now-showing">Xem phim</a>
-                            </div>
-                        </div>
-
-                        @if (movie != null)
-                        {
-                            <a class="slider-slide__poster" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId" aria-label="Xem chi tiết @title">
-                                <img src="@poster" alt="@title poster" />
-                            </a>
-                        }
-                        else
-                        {
-                            <a class="slider-slide__poster" asp-controller="Home" asp-action="TicketPricing" aria-label="Xem thông tin COSMOS Cinema">
-                                <img src="@poster" alt="@title poster" />
-                            </a>
-                        }
-                    </div>
+                <article class="slider-slide">
+                    <img src="~/img/poster/poster1.png" alt="">
                 </article>
-            }
+                <article class="slider-slide">
+                    <img src="~/img/poster/poster_minion.png" alt="">
+                </article>
+                <article class="slider-slide">
+                    <img src="~/img/poster/poster6.png" alt="">
+                </article>
+                <article class="slider-slide">
+                    <img src="~/img/poster/poster4.png" alt="">
+                </article>
+                <article class="slider-slide">
+                    <img src="~/img/poster/poster3.png" alt="">
+                </article>
+                <article class="slider-slide">
+                    <img src="~/img/poster/poster2.jpg" alt="">
+                </article>
         </div>
 
         <button class="slider-btn prev" type="button" data-slider-step="-1" aria-label="Ảnh trước">
@@ -135,16 +89,18 @@
             }
         </div>
     </section>
-
+@* Danh sách phim *@
     <section class="home-section movie-gallery-section reveal-on-scroll" id="now-showing" data-reveal>
         <div class="section-heading reveal-on-scroll" data-reveal>
             <span class="home-eyebrow">Danh sách phim</span>
         </div>
-
+        
         @if (movies.Any())
         {
             <div class="movie-gallery" aria-label="Phim đang chiếu">
+                @* Từng dòng phim *@
                 <div class="movie-gallery__row">
+                    @* Sử dungj vòng lặp qua từng phim *@
                     @for (var movieIndex = 0; movieIndex < movies.Count; movieIndex++)
                     {
                         var movie = movies[movieIndex];
@@ -169,12 +125,10 @@
                                     </div>
 
                                     <div class="buy-button__container">
-                                        <a class="buy-button__content" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">
-                                            Đặt vé
-                                            <svg aria-hidden="true" viewBox="0 0 24 24">
-                                                <path d="M5 12h13m-5-5 5 5-5 5" />
-                                            </svg>
-                                        </a>
+                                        <form asp-controller="Home" asp-action="Booking" method="get" class="buy-button__form">
+                                            <input type="hidden" name="movieId" value="@movie.MovieId" />
+                                            <button type="submit" class="buy-button__content">Đặt vé</button>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
