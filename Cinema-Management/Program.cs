@@ -1,5 +1,8 @@
 using Cinema_Management.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +31,57 @@ var connectionString = builder.Configuration
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
+var jwKey = builder.Configuration["Jwt:Key"]; //Lấy key từ appsettings.Development.json hoặc appsettings.json
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            //Kiểm tra server phát hành đúng token hay không
+            ValidateIssuer = true,
+
+            //Kierm tra client nhận token có đúng không
+            ValidateAudience = true,
+            //Kiểm tra thời gian sống của token
+            ValidateLifetime = true,
+            //Kiểm tra key mã hóa token
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwKey)),
+            ClockSkew = TimeSpan.Zero //Loại bỏ thời gian trễ khi kiểm tra thời gian sống của token
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                // Bình thường JWT Bearer đọc token từ header Authorization.
+                // Nhưng khi truy cập UI /Staff/Index bằng browser, browser không tự gắn header đó.
+                // Vì vậy ta đọc JWT từ cookie "access_token".
+                var token = context.Request.Cookies["access_token"];
+
+                if (!string.IsNullOrWhiteSpace(token))
+                {
+                    context.Token = token;
+                }
+
+                return Task.CompletedTask;
+            },
+
+            OnChallenge = context =>
+            {
+                // Nếu truy cập UI mà chưa đăng nhập, chuyển về trang Login thay vì hiện 401 trắng.
+                if (!context.Request.Path.StartsWithSegments("/api"))
+                {
+                    context.HandleResponse();
+                    context.Response.Redirect("/Account/Login");
+                }
+
+                return Task.CompletedTask;
+            }
+        };
+    });
 var app = builder.Build();
 
 // Kiểm tra kết nối database khi khởi động ứng dụng
@@ -66,6 +120,8 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseSession();
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 

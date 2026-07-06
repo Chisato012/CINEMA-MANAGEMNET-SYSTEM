@@ -55,7 +55,7 @@
                         <button type="button" class="btn-icon edit-movie-btn" title="Edit movie registry">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                         </button>
-                        <form method="post" action="/Staff/DeactivateMovie" style="display:inline;margin:0;">
+                        <form method="post" style="display:inline;margin:0;">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@movie.MovieId" />
                             <button type="submit" class="btn-icon delete-movie-btn" title="Delete movie" onclick="return confirm('Are you sure you want to deactivate this movie?');">

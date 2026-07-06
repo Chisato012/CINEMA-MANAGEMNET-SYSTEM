@@ -1,5 +1,6 @@
 namespace Cinema_Management.Controllers;
 
+using Microsoft.AspNetCore.Authorization;
 using Cinema_Management.Data;
 using Cinema_Management.Models;
 using Microsoft.Data.SqlClient;
@@ -7,6 +8,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 public class AccountController : Controller
 {
@@ -31,6 +36,49 @@ public class AccountController : Controller
         _configuration = configuration;
         _httpClientFactory = httpClientFactory;
         _context = context;
+    }
+
+    //Hàm tạo JWT Token
+    private string GenerateJwtToken(User user)
+    {
+        //Lấy cấu hình từ appsettings.json
+        var Key = _configuration["Jwt:Key"];
+        var Issuer = _configuration["Jwt:Issuer"];
+        var Audience = _configuration["Jwt:Audience"];
+
+        if (string.IsNullOrEmpty(Key))
+        {
+            throw new InvalidOperationException("JWT Key chưa cấu hình");
+        }
+
+        // Danh sách thông tin sẽ được nhúng vào token
+        // ClaimTypes.Role rất quan trọng để dùng được [Authorize(Roles = "...")]
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.UserID.ToString()),
+            new Claim(ClaimTypes.Name, user.FullName),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Role, user.Role)
+        };
+
+        //Tạo khoá ký token từ chuỗi Key trong appsettings.json
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Key));
+        //Chọn thuật toán ký token
+        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+        //Tạo JWWT Token
+        var token = new JwtSecurityToken(
+            issuer: Issuer,
+            audience: Audience,
+            claims: claims,
+            expires: DateTime.UtcNow.AddMinutes(
+                int.Parse(_configuration["Jwt:ExpireMinutes"] ?? "60")
+            ), //Token có thời hạn 1 giờ
+            signingCredentials: credentials
+        );
+
+        // Trả về token dưới dạng chuỗi
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
     // =====================================================
@@ -114,6 +162,26 @@ public class AccountController : Controller
         // Thiết lập thông báo thành công
         TempData["AlertSuccess"] = $"Đăng nhập thành công! Xin chào {user.FullName} (Role: {role})";
 
+
+
+        var jwtToken = GenerateJwtToken(user);
+
+        Response.Cookies.Append("access_token", jwtToken, new CookieOptions
+        {
+            // JavaScript không đọc được cookie này, giảm rủi ro bị lấy token qua XSS
+            HttpOnly = true,
+
+            // Chỉ gửi cookie qua HTTPS
+            Secure = true,
+
+            // Giảm rủi ro CSRF cơ bản
+            SameSite = SameSiteMode.Strict,
+
+            // Cookie hết hạn cùng thời gian với JWT
+            Expires = DateTimeOffset.UtcNow.AddMinutes(
+                int.Parse(_configuration["Jwt:ExpireMinutes"] ?? "60")
+            )
+        });
         // Phân quyền chuyển hướng theo Role
         return role switch
         {
@@ -123,6 +191,16 @@ public class AccountController : Controller
         };
 
 
+    }
+
+    [Authorize(Roles = "Staff")]
+    [HttpGet("api/test-staff")]
+    public IActionResult Staff()
+    {
+        return Ok(new
+        {
+            message = "JWT hợp lệ và bạn có quyền Staff"
+        });
     }
 
 
@@ -138,7 +216,9 @@ public class AccountController : Controller
     // =====================================================
     [HttpPost("login")]
     public async Task<IActionResult> LoginApi([FromBody] LoginRequest request)
+
     {
+        ModelState.Remove(nameof(LoginRequest.CaptchaToken));
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
@@ -162,14 +242,21 @@ public class AccountController : Controller
             return Unauthorized("Sai email hoặc mật khẩu");
         }
 
+        //Tạo JWT sau khi đăng nhập thành công
+        var token = GenerateJwtToken(user);
+
+
         return Ok(new
         {
             message = "Đăng nhập thành công",
+            token = token,
+            role = user.Role,
             user = new
             {
                 user.UserID,
                 user.FullName,
-                user.Email
+                user.Email,
+                user.Role
             }
         });
     }
@@ -186,6 +273,8 @@ public class AccountController : Controller
 
         // Xóa thông báo (nếu có)
         TempData["AlertSuccess"] = "Bạn đã đăng xuất thành công.";
+
+        Response.Cookies.Delete("access_token");
 
         // Đẩy về trang chủ
         return RedirectToAction("Index", "Home");
