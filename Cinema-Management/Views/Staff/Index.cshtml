@@ -8,7 +8,10 @@
 <header class="staff-header">
     <div style="display:flex;align-items:center;gap:16px;">
         <h2>LỊCH CHIẾU PHIM</h2>
-        <span class="badge badge-outline">ĐANG KẾT NỐI</span>
+        <span class="badge badge-outline">
+            <i class="status-dot"></i>
+            ĐANG KẾT NỐI
+        </span>
     </div>
     
     <div style="display:flex;align-items:center;gap:16px;">
@@ -59,10 +62,13 @@
                     <img src="@movie.PosterURL" alt="@movie.Title" />
                     <div class="ml-info">
                         <h5>@movie.Title</h5>
-                        <p class="ml-genre">@genreText, @movie.Duration min</p>
+                        <p class="ml-genre">@genreText</p>
                         <div class="ml-badges">
+                            <span class="ml-badge">
+                                <i class="far fa-clock"> </i>
+                                @movie.Duration min
+                            </span>
                             <span class="ml-badge badge-primary">@movie.AgeRating</span>
-                            <span class="ml-badge">2D</span>
                         </div>
                     </div>
                     <div class="ml-actions">
@@ -100,7 +106,7 @@
                     <div class="mr-hall-info">
                         <h4>@room.RoomName</h4>
                         <span class="hall-tag @room.TagCssClass">@room.DisplayType</span>
-                        <span>@room.SeatCount GHE</span>
+                        <span>@room.SeatCount GHẾ</span>
                     </div>
                     <div class="mr-timeline" data-room-id="@room.RoomID" data-hall-number="@room.RoomID"></div>
                 </div>
@@ -149,8 +155,10 @@
                 <p>TELEMETRY LOGS:</p>
             </div>
             <div class="legend-info">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                <span>Kéo phim từ danh sách bên lề hoặc kích hoạt chế độ sắp xếp để lên lịch chiếu phim một cách linh hoạt.</span>
+                <span>
+                    <i class="fa-regular fa-compass"></i>
+                    Kéo phim từ danh sách bên lề hoặc kích hoạt chế độ sắp xếp để lên lịch chiếu phim một cách linh hoạt.
+                </span>
                 <div style="flex:1"></div>
             </div>
         </div>
@@ -195,7 +203,6 @@
                     <div class="format-tags">
                         <span class="format-tag">IMAX</span>
                         <span class="format-tag active">2D</span>
-                        <span class="format-tag">3D</span>
                     </div>
                 </div>
             </div>
@@ -254,8 +261,8 @@
         <input type="hidden" name="MovieId" id="editMovieID" />
         <div class="modal-header">
             <div>
-                <p class="modal-pretitle">CẬP NHẬT THÔNG TIN PHIM</p>
-                <h3>Cinema Database Editor</h3>
+                <p class="modal-pretitle">CẬP NHẬT PHIM</p>
+                <h3>Cập Nhật Dữ Liệu Phim</h3>
             </div>
             <button type="button" class="btn-close-modal">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -285,7 +292,6 @@
                     <div class="format-tags">
                         <span class="format-tag">IMAX</span>
                         <span class="format-tag active">2D</span>
-                        <span class="format-tag">3D</span>
                     </div>
                 </div>
             </div>
@@ -347,7 +353,7 @@
         const movieSearchInput = document.getElementById('movieSearchInput');
         const movieSearchEmpty = document.getElementById('movieSearchEmpty');
         const scheduleStartHour = 8;
-        const scheduleEndHour = 23;
+        const scheduleEndHour = 24;
         const scheduleTotalMinutes = (scheduleEndHour - scheduleStartHour) * 60;
         const scheduleSnapMinutes = 15;
         const scheduleDefaultBasePrice = 90000;
@@ -607,7 +613,17 @@
         }
 
         function buildScheduleDateTime(time) {
-            return `${scheduleDateInput.value}T${time}:00`;
+            const [hours, minutes] = time.split(':').map(Number);
+            const value = new Date(`${scheduleDateInput.value}T00:00:00`);
+            value.setMinutes(value.getMinutes() + (hours * 60) + minutes);
+
+            const year = value.getFullYear();
+            const month = String(value.getMonth() + 1).padStart(2, '0');
+            const day = String(value.getDate()).padStart(2, '0');
+            const resolvedHours = String(value.getHours()).padStart(2, '0');
+            const resolvedMinutes = String(value.getMinutes()).padStart(2, '0');
+
+            return `${year}-${month}-${day}T${resolvedHours}:${resolvedMinutes}:00`;
         }
 
         async function readScheduleResponse(response) {

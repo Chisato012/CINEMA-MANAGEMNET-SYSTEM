@@ -7,7 +7,10 @@
 <header class="staff-header">
     <div style="display:flex;align-items:center;gap:16px;">
         <h2>SCREENING ROOMS</h2>
-        <span class="badge badge-outline">DB LIVE</span>
+        <span class="badge badge-outline">
+            <i class="status-dot"></i>
+            DB LIVE
+        </span>
     </div>
     <div style="display:flex;gap:12px;">
         <a class="btn-secondary" asp-controller="Staff" asp-action="Index" style="border:none;text-decoration:none;">
@@ -78,28 +81,20 @@ else
                         <span>Pending <strong data-seat-count="pending">0</strong></span>
                         <span>Available <strong data-seat-count="available">0</strong></span>
                     </div>
-
-                    <div class="seat-status-legend" aria-label="Chú thích trạng thái ghế">
-                        <div class="seat-status-legend__item">
-                            <span class="seat-status-legend__swatch available"></span>
-                            <span>Ghế trống</span>
-                        </div>
-                        <div class="seat-status-legend__item">
-                            <span class="seat-status-legend__swatch reserved"></span>
-                            <span>Đã đặt</span>
-                        </div>
-                        <div class="seat-status-legend__item">
-                            <span class="seat-status-legend__swatch pending"></span>
-                            <span>Đang giữ</span>
-                        </div>
-                    </div>
-
                     <div class="screening-seat-message" id="screeningSeatMessage">Select a room to load seats.</div>
 
-                    <div class="screening-seat-map" id="screeningSeatMap" hidden>
-                        <div class="screening-row-labels" id="screeningRowLabelsLeft"></div>
-                        <div class="screening-seat-grid" id="screeningSeatGrid"></div>
-                        <div class="screening-row-labels" id="screeningRowLabelsRight"></div>
+                    <div class="screening-seat-map seat-card" id="screeningSeatMap" hidden>
+                        <div class="screen-wrap">
+                            <div class="screen"></div>
+                            <div class="screen-label">MÀN HÌNH CHIẾU</div>
+                        </div>
+                        <div class="seat-matrix screening-seat-grid" id="screeningSeatGrid"></div>
+                        <div class="legend" aria-label="Seat status legend">
+                            <span><i></i>Available</span>
+                            <span><i class="selected-key"></i>Reserved</span>
+                            <span><i class="pending-key"></i>Pending</span>
+                            <span><i class="sweet-key"></i>Couple</span>
+                        </div>
                     </div>
                 </section>
 

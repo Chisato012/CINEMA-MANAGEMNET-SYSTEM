@@ -7,6 +7,7 @@
     <title>@ViewData["Title"] - Cinema_Management</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/movie.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/ticketprice.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Cinema_Management.styles.css" asp-append-version="true" />
     <script src="https://cdn.jsdelivr.net/npm/@@tailwindcss/browser@@4"></script>
@@ -26,8 +27,8 @@
                     <img src="/img/poster/logo.png" alt="">
                 </a>
 
-                <div class="d-none d-lg-flex ms-5 gap-8 me-auto ">
-                    <a href="#" class="cosmos-nav-link">Phim</a>
+                <div class="d-none d-lg-flex gap-4 ms-5 me-auto ">
+                    <a class="cosmos-nav-link" asp-area="" asp-controller="Home" asp-action="Movie">Phim</a>
                     <a class="cosmos-nav-link" asp-area="" asp-controller="Home" asp-action="TicketPricing">Giá vé</a>
                     <a href="#" class="cosmos-nav-link">Ưu đãi</a>
                     <a class="cosmos-nav-link" data-booking-nav-warning="true" >Đặt vé</a>
@@ -85,18 +86,48 @@
         </main>
     </div>
 
-    <footer>
-        <div class="container-fluid py-4" style="background-color: #121212; color: #888; font-size: 0.85rem;">
-            <div class="row">
-                <div class="col-md-6">
-                    <p>&copy; 2026 COSMOS CINEMA. All rights reserved.</p>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <p>Contact us: info@cosmoscinema.com</p>
-                </div>
+    
+        <footer class="cosmos-movie-footer">
+        <div class="cosmos-movie-footer__brand">
+            <a class="cosmos-movie-footer__logo" asp-controller="Home" asp-action="Index">COSMOS<span>CINEMA</span></a>
+            <p>Cinema nights, curated beautifully.</p>
+        </div>
+
+        <nav class="cosmos-movie-footer__links" aria-label="Footer navigation">
+            <div>
+                <h3>About COSMOS</h3>
+                <a href="#">About Us</a>
+                <a href="#">Our Cinemas</a>
+                <a href="#">Careers</a>
+                <a href="#">News & Events</a>
             </div>
+            <div>
+                <h3>Support</h3>
+                <a href="#">FAQs</a>
+                <a href="#">Help Center</a>
+                <a href="#">Booking Guide</a>
+                <a href="#">Contact Us</a>
+            </div>
+        </nav>
+
+        <div class="cosmos-movie-footer__signup">
+            <h3>Luôn cập nhật thông tin</h3>
+            <p>Nhận thông tin về các bộ phim và ưu đãi mới nhất ngay trong hộp thư đến của bạn.</p>
+            <form>
+                <label for="footerEmail" class="visually-hidden">Email address</label>
+                <input id="footerEmail" type="email" placeholder="Enter your email" />
+                <button type="submit">Subscribe</button>
+            </form>
+        </div>
+
+        <div class="cosmos-movie-footer__bottom">
+            <span>&copy; @DateTime.Now.Year COSMOS CINEMA. All rights reserved.</span>
+            <span>Terms of Use</span>
+            <span>Privacy Policy</span>
+            <span>Cookie Policy</span>
         </div>
     </footer>
+    
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

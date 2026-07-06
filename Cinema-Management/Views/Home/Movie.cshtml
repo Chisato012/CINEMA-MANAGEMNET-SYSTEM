@@ -1,0 +1,562 @@
+@model List<Cinema_Management.Models.MovieViewModel>
+@using System.Globalization
+
+
+@* Quang UI *@
+@{
+    ViewData["Title"] = "Movies";
+    ViewData["HideDefaultFooter"] = true;
+
+    var today = DateTime.Today;
+    var movies = (Model ?? new List<MovieViewModel>())
+        .Where(movie => movie != null)
+        .ToList();
+
+    var nowShowing = movies
+        .Where(movie => movie.ReleaseDate.Date <= today ||
+                        (movie.Showtimes != null && movie.Showtimes.Any(showtime => showtime.Date.Date >= today)))
+        .Take(10)
+        .ToList();
+
+    if (!nowShowing.Any())
+    {
+        nowShowing = movies.Take(10).ToList();
+    }
+
+    var comingSoon = movies
+        .Where(movie => movie.ReleaseDate.Date > today)
+        .OrderBy(movie => movie.ReleaseDate)
+        .Take(8)
+        .ToList();
+
+    var topRated = movies
+        .OrderByDescending(movie => CosmosScore(movie))
+        .ThenBy(movie => movie.Title)
+        .Take(5)
+        .ToList();
+
+    var heroSlides = nowShowing.Any()
+        ? nowShowing.Take(4).ToList()
+        : movies.Take(4).ToList();
+
+    var featured = topRated.FirstOrDefault() ?? movies.FirstOrDefault();
+    var suggestions = topRated.Skip(1).Concat(movies).GroupBy(movie => movie.MovieId).Select(group => group.First()).Take(3).ToList();
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/movie.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+}
+
+<div class="movies-page">
+    <section class="movie-shell movie-hero" aria-label="Featured movies">
+        @if (heroSlides.Any())
+        {
+            <div class="movie-hero__viewport">
+                @for (var index = 0; index < heroSlides.Count; index++)
+                {
+                    var slide = heroSlides[index];
+                    var firstFutureShowtime = slide.Showtimes?
+                        .Where(showtime => showtime.Date.Date >= today)
+                        .OrderBy(showtime => showtime.Date)
+                        .ThenBy(showtime => showtime.StartTime)
+                        .FirstOrDefault();
+                    var activeClass = index == 0 ? "is-active" : string.Empty;
+
+                    <article class="movie-hero__slide @activeClass" style="--hero-poster: url('@Poster(slide)');">
+                        <div class="movie-hero__content">
+                            <p class="movie-eyebrow">Phim nổi bật</p>
+                            <h1>@Safe(slide.Title, "Tonight at COSMOS")</h1>
+                            <p class="movie-hero__tagline">@Clamp(slide.Synopsis, 132)</p>
+
+                            <div class="movie-hero__meta" aria-label="Movie metadata">
+                                <span><i class="fa-solid fa-star"></i>@CosmosScore(slide).ToString("0.0", CultureInfo.InvariantCulture)</span>
+                                <span><i class="fa-regular fa-clock"></i>@DurationLabel(slide)</span>
+                                <span>@Safe(slide.Genre, "Cinema pick")</span>
+                            </div>
+
+                            <div class="movie-hero__actions">
+                                <form asp-controller="Home" asp-action="Booking" method="get">
+                                    <input type="hidden" name="movieId" value="@slide.MovieId" />
+                                    @if (firstFutureShowtime != null)
+                                    {
+                                        <input type="hidden" name="showtimeId" value="@firstFutureShowtime.ShowtimeID" />
+                                    }
+                                    <button type="submit" class="movie-btn movie-btn--primary">
+                                        <i class="fa-solid fa-ticket"></i>
+                                        Đặt vé
+                                    </button>
+                                </form>
+
+                                @if (!string.IsNullOrWhiteSpace(slide.Trailer))
+                                {
+                                    <a class="movie-btn movie-btn--ghost" href="@slide.Trailer" target="_blank" rel="noopener">
+                                        <i class="fa-solid fa-play"></i>
+                                        Xem trailer
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a class="movie-btn movie-btn--ghost" asp-controller="Home" asp-action="Details" asp-route-id="@slide.MovieId">
+                                        <i class="fa-solid fa-circle-info"></i>
+                                        View details
+                                    </a>
+                                }
+                            </div>
+                        </div>
+
+                        <a class="movie-hero__poster" asp-controller="Home" asp-action="Details" asp-route-id="@slide.MovieId" aria-label="View @slide.Title details">
+                            <img src="@Poster(slide)" alt="@Safe(slide.Title, "Movie") poster" />
+                        </a>
+                    </article>
+                }
+            </div>
+
+            <button type="button" class="movie-hero__arrow movie-hero__arrow--prev" data-hero-prev aria-label="Previous featured movie">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <button type="button" class="movie-hero__arrow movie-hero__arrow--next" data-hero-next aria-label="Next featured movie">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+
+            <div class="movie-hero__dots" aria-label="Featured movie slides">
+                @for (var index = 0; index < heroSlides.Count; index++)
+                {
+                    <button type="button" class="movie-hero__dot @(index == 0 ? "is-active" : string.Empty)" data-hero-dot="@index" aria-label="Go to featured movie @(index + 1)"></button>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="movie-empty movie-empty--hero">
+                <p class="movie-eyebrow">Movies</p>
+                <h1>No movies are available yet.</h1>
+                <p>Once the database has movie records, this page will populate automatically.</p>
+            </div>
+        }
+    </section>
+
+    <section class="movie-shell movie-filter" aria-labelledby="movie-filter-title">
+        <div class="movie-filter__intro">
+            <span class="movie-section-mark" aria-hidden="true"></span>
+            <h2 id="movie-filter-title">Khám phá theo<br /><span>tâm trạng và thể loại</span></h2>
+        </div>
+
+        <label class="movie-search" for="movieSearch">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input id="movieSearch" type="search" placeholder="Tìm kiếm" autocomplete="off" />
+        </label>
+
+        <div class="movie-filter__chips" aria-label="Movie categories">
+            <button type="button" class="genre-chip is-active" data-filter="all"><i class="fa-solid fa-border-all"></i>Tất cả</button>
+            <button type="button" class="genre-chip" data-filter="action"><i class="fa-solid fa-bolt"></i>Hành động</button>
+            <button type="button" class="genre-chip" data-filter="romance"><i class="fa-regular fa-heart"></i>Lãng mạn</button>
+            <button type="button" class="genre-chip" data-filter="sci-fi"><i class="fa-solid fa-atom"></i>Khoa học viễn tưởng</button>
+            <button type="button" class="genre-chip" data-filter="horror"><i class="fa-solid fa-ghost"></i>Kinh dị</button>
+            <button type="button" class="genre-chip" data-filter="animation"><i class="fa-solid fa-film"></i>Hoạt hình</button>
+            <button type="button" class="genre-chip" data-filter="comedy"><i class="fa-regular fa-face-smile"></i>Hài hước</button>
+            <button type="button" class="genre-chip" data-filter="drama"><i class="fa-solid fa-masks-theater"></i>Kịch</button>
+            <button type="button" class="genre-chip" data-filter="family"><i class="fa-solid fa-people-group"></i>Gia đình</button>
+        </div>
+    </section>
+
+    <section class="movie-shell movie-section" aria-labelledby="now-showing-title">
+        <div class="movie-section__header">
+            <div>
+                <h2 id="now-showing-title">Phim Đang Chiếu</h2>
+                <p>Hiện đang chiếu hôm nay.</p>
+            </div>
+            <a class="movie-section__link" href="#now-showing-title">Xem tất cả <i class="fa-solid fa-chevron-right"></i></a>
+        </div>
+
+        @if (nowShowing.Any())
+        {
+            <div class="movie-card-grid movie-card-grid--wide">
+                @foreach (var movie in nowShowing.Take(5))
+                {
+                    var firstFutureShowtime = movie.Showtimes?
+                        .Where(showtime => showtime.Date.Date >= today)
+                        .OrderBy(showtime => showtime.Date)
+                        .ThenBy(showtime => showtime.StartTime)
+                        .FirstOrDefault();
+
+                    <article class="movie-card" data-movie-card data-title="@Safe(movie.Title, string.Empty).ToLowerInvariant()" data-genres="@GenreData(movie)">
+                        <a class="movie-card__poster" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">
+                            <img src="@Poster(movie)" alt="@Safe(movie.Title, "Movie") poster" />
+                        </a>
+                        <div class="movie-card__body">
+                            <a class="movie-card__title" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">@Safe(movie.Title, "Untitled movie")</a>
+                            <p>@MovieMeta(movie)</p>
+                            <div class="movie-card__rating">
+                                <span><i class="fa-solid fa-star"></i>@CosmosScore(movie).ToString("0.0", CultureInfo.InvariantCulture)</span>
+                                @if (!string.IsNullOrWhiteSpace(movie.AgeRating))
+                                {
+                                    <span class="movie-age">@movie.AgeRating</span>
+                                }
+                            </div>
+                            <form asp-controller="Home" asp-action="Booking" method="get">
+                                <input type="hidden" name="movieId" value="@movie.MovieId" />
+                                @if (firstFutureShowtime != null)
+                                {
+                                    <input type="hidden" name="showtimeId" value="@firstFutureShowtime.ShowtimeID" />
+                                }
+                                <button type="submit" class="movie-card__button">Đặt vé</button>
+                            </form>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="movie-empty">There are no now showing movies yet.</p>
+        }
+    </section>
+
+    <section class="movie-shell movie-section" aria-labelledby="coming-soon-title">
+        <div class="movie-section__header movie-section__header--large">
+            <div>
+                <h2 id="coming-soon-title">Coming Soon</h2>
+                <p>Những phim mới sắp ra mắt.</p>
+            </div>
+            <a class="movie-btn movie-btn--outline" href="#coming-soon-title">View all coming soon <i class="fa-solid fa-chevron-right"></i></a>
+        </div>
+
+        @if (comingSoon.Any())
+        {
+            <div class="movie-card-grid movie-card-grid--wide">
+                @foreach (var movie in comingSoon.Take(5))
+                {
+                    <article class="movie-card movie-card--coming" data-movie-card data-title="@Safe(movie.Title, string.Empty).ToLowerInvariant()" data-genres="@GenreData(movie)">
+                        <a class="movie-card__poster" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">
+                            <img src="@Poster(movie)" alt="@Safe(movie.Title, "Movie") poster" />
+                        </a>
+                        <div class="movie-card__body">
+                            <span class="movie-date-badge"><i class="fa-regular fa-calendar"></i>@DateLabel(movie.ReleaseDate)</span>
+                            <a class="movie-card__title" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">@Safe(movie.Title, "Untitled movie")</a>
+                            <p>@Safe(movie.Genre, "Coming soon")</p>
+                            <a class="movie-card__button movie-card__button--outline" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">
+                                Notify me
+                            </a>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="movie-empty">Hiện tại chưa có phim nào sắp được ra mắt.</p>
+        }
+    </section>
+
+    <section class="movie-shell top-rated" aria-labelledby="top-rated-title">
+        <div class="top-rated__header">
+            <h2 id="top-rated-title">Xếp hạng <span>Phim phổ biến</span></h2>
+            <a class="movie-btn movie-btn--outline" href="#top-rated-title">Xem tất cả <i class="fa-solid fa-chevron-right"></i></a>
+        </div>
+
+        @if (featured != null)
+        {
+            <div class="top-rated__layout">
+                <div class="rank-list">
+                    @for (var index = 0; index < topRated.Count; index++)
+                    {
+                        var movie = topRated[index];
+                        <a class="rank-row" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId" data-title="@Safe(movie.Title, string.Empty).ToLowerInvariant()" data-genres="@GenreData(movie)">
+                            <span class="rank-row__number">@(index + 1)</span>
+                            <img src="@Poster(movie)" alt="@Safe(movie.Title, "Movie") poster" />
+                            <span class="rank-row__copy">
+                                <strong>@Safe(movie.Title, "Untitled movie")</strong>
+                                <small>@Safe(movie.Genre, "Cinema pick")</small>
+                            </span>
+                            <span class="rank-row__score"><i class="fa-solid fa-star"></i>@CosmosScore(movie).ToString("0.0", CultureInfo.InvariantCulture)</span>
+                        </a>
+                    }
+                </div>
+
+                <article class="featured-card">
+                    <div class="featured-card__media" style="--featured-poster: url('@Poster(featured)');">
+                        <img src="@Poster(featured)" alt="@Safe(featured.Title, "Movie") poster" />
+                        <span class="featured-card__score"><i class="fa-solid fa-star"></i>@CosmosScore(featured).ToString("0.0", CultureInfo.InvariantCulture)<small>/10</small></span>
+                    </div>
+                    <div class="featured-card__body">
+                        <h3>@Safe(featured.Title, "COSMOS pick")</h3>
+                        <p class="featured-card__meta">@MovieMeta(featured)</p>
+                        <p>@Clamp(featured.Synopsis, 190)</p>
+                        <div class="featured-card__actions">
+                            <a class="movie-btn movie-btn--primary" asp-controller="Home" asp-action="Details" asp-route-id="@featured.MovieId">
+                                <i class="fa-solid fa-play"></i>
+                                Xem chi tiết
+                            </a>
+                            <button type="button" class="movie-btn movie-btn--quiet">
+                                <i class="fa-regular fa-bookmark"></i>
+                                Yêu thích
+                            </button>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        }
+        else
+        {
+            <p class="movie-empty">Các bộ phim được đánh giá cao nhất sẽ xuất hiện sau khi có dữ liệu phim khả dụng.</p>
+        }
+    </section>
+
+    <section class="movie-shell ai-suggest" aria-labelledby="ai-suggest-title">
+        <div class="ai-suggest__panel">
+            <div class="ai-suggest__controls">
+                <p class="movie-eyebrow">COSMOS CINEMA</p>
+                <h2 id="ai-suggest-title">Gợi ý phim</h2>
+                <p>Hãy chọn tâm trạng của bạn và chúng tôi sẽ gợi ý bộ phim phù hợp cho tối nay.</p>
+
+                <div class="mood-grid" aria-label="Mood options">
+                    <button type="button" class="mood-chip is-active" data-mood="cozy"><i class="fa-solid fa-mug-hot"></i>Cozy</button>
+                    <button type="button" class="mood-chip" data-mood="thrilling"><i class="fa-solid fa-fire"></i>Thrilling</button>
+                    <button type="button" class="mood-chip" data-mood="funny"><i class="fa-regular fa-face-laugh"></i>Funny</button>
+                    <button type="button" class="mood-chip" data-mood="romantic"><i class="fa-regular fa-heart"></i>Romantic</button>
+                    <button type="button" class="mood-chip mood-chip--wide" data-mood="mind"><i class="fa-solid fa-brain"></i>Mind-bending</button>
+                </div>
+
+                <label class="mood-input" for="moodInput">
+                    <span>What are you in the mood for?</span>
+                    <span class="mood-input__box">
+                        <input id="moodInput" type="text" placeholder="E.g. feel good, adventure, family..." />
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+                </label>
+
+                <button type="button" class="movie-btn movie-btn--primary movie-btn--full" data-find-movie>
+                    Tìm kiếm phim
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <div class="ai-suggest__results">
+                <div class="movie-section__header">
+                    <div>
+                        <h3>Recommended for you</h3>
+                    </div>
+                    <a class="movie-section__link" href="#now-showing-title">See all <i class="fa-solid fa-chevron-right"></i></a>
+                </div>
+
+                <div class="suggestion-grid">
+                    @foreach (var movie in suggestions)
+                    {
+                        <article class="suggestion-card" data-suggestion-card data-genres="@GenreData(movie)">
+                            <a asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">
+                                <img src="@Poster(movie)" alt="@Safe(movie.Title, "Movie") poster" />
+                            </a>
+                            <div>
+                                <a class="suggestion-card__title" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">@Safe(movie.Title, "Untitled movie")</a>
+                                <p class="suggestion-card__label">Why it matches</p>
+                                <p>@MatchReason(movie)</p>
+                                <span><i class="fa-solid fa-star"></i>@CosmosScore(movie).ToString("0.0", CultureInfo.InvariantCulture)</span>
+                            </div>
+                        </article>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+
+    
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const slides = Array.from(document.querySelectorAll('.movie-hero__slide'));
+            const dots = Array.from(document.querySelectorAll('[data-hero-dot]'));
+            const previous = document.querySelector('[data-hero-prev]');
+            const next = document.querySelector('[data-hero-next]');
+            let current = 0;
+
+            if (!slides.length) return;
+
+            const showSlide = (index) => {
+                current = (index + slides.length) % slides.length;
+                slides.forEach((slide, slideIndex) => slide.classList.toggle('is-active', slideIndex === current));
+                dots.forEach((dot, dotIndex) => dot.classList.toggle('is-active', dotIndex === current));
+            };
+
+            previous?.addEventListener('click', () => showSlide(current - 1));
+            next?.addEventListener('click', () => showSlide(current + 1));
+            dots.forEach((dot) => dot.addEventListener('click', () => showSlide(Number(dot.dataset.heroDot))));
+
+            if (slides.length > 1) {
+                window.setInterval(() => showSlide(current + 1), 7000);
+            }
+        })();
+
+        (() => {
+            const chips = Array.from(document.querySelectorAll('.genre-chip'));
+            const search = document.querySelector('#movieSearch');
+            const cards = Array.from(document.querySelectorAll('[data-movie-card], .rank-row'));
+            let activeFilter = 'all';
+
+            const applyFilters = () => {
+                const query = (search?.value || '').trim().toLowerCase();
+
+                cards.forEach((card) => {
+                    const title = card.dataset.title || '';
+                    const genres = card.dataset.genres || '';
+                    const matchesGenre = activeFilter === 'all' || genres.includes(activeFilter);
+                    const matchesSearch = !query || title.includes(query) || genres.includes(query);
+                    card.classList.toggle('is-hidden', !(matchesGenre && matchesSearch));
+                });
+            };
+
+            chips.forEach((chip) => {
+                chip.addEventListener('click', () => {
+                    chips.forEach((item) => item.classList.remove('is-active'));
+                    chip.classList.add('is-active');
+                    activeFilter = chip.dataset.filter || 'all';
+                    applyFilters();
+                });
+            });
+
+            search?.addEventListener('input', applyFilters);
+        })();
+
+        (() => {
+            const moodButtons = Array.from(document.querySelectorAll('.mood-chip'));
+            const cards = Array.from(document.querySelectorAll('[data-suggestion-card]'));
+            const input = document.querySelector('#moodInput');
+            const findButton = document.querySelector('[data-find-movie]');
+
+            const moodMap = {
+                cozy: ['family', 'animation', 'comedy', 'romance'],
+                thrilling: ['action', 'thriller', 'horror'],
+                funny: ['comedy', 'animation', 'family'],
+                romantic: ['romance', 'drama'],
+                mind: ['sci-fi', 'mystery', 'thriller']
+            };
+
+            const applyMood = (mood) => {
+                const preferred = moodMap[mood] || [];
+                cards.forEach((card) => {
+                    const genres = card.dataset.genres || '';
+                    const isMatch = preferred.some((genre) => genres.includes(genre));
+                    card.classList.toggle('is-soft', preferred.length > 0 && !isMatch);
+                });
+            };
+
+            moodButtons.forEach((button) => {
+                button.addEventListener('click', () => {
+                    moodButtons.forEach((item) => item.classList.remove('is-active'));
+                    button.classList.add('is-active');
+                    applyMood(button.dataset.mood || 'cozy');
+                });
+            });
+
+            findButton?.addEventListener('click', () => {
+                const query = (input?.value || '').toLowerCase();
+                const keyword = query.includes('laugh') || query.includes('fun') ? 'funny'
+                    : query.includes('love') || query.includes('date') ? 'romantic'
+                    : query.includes('scary') || query.includes('thrill') ? 'thrilling'
+                    : query.includes('smart') || query.includes('mind') ? 'mind'
+                    : 'cozy';
+
+                const target = moodButtons.find((button) => button.dataset.mood === keyword);
+                target?.click();
+            });
+
+            applyMood('cozy');
+        })();
+    </script>
+}
+
+@functions {
+    private string Poster(MovieViewModel movie)
+    {
+        return string.IsNullOrWhiteSpace(movie?.PosterURL)
+            ? Url.Content("~/img/poster/poster1.png")
+            : movie.PosterURL;
+    }
+
+    private static string Safe(string value, string fallback)
+    {
+        return string.IsNullOrWhiteSpace(value) ? fallback : value;
+    }
+
+    private static string Clamp(string value, int maxLength)
+    {
+        var text = Safe(value, "A COSMOS pick selected for tonight's big-screen mood.");
+        return text.Length <= maxLength ? text : text.Substring(0, maxLength).TrimEnd() + "...";
+    }
+
+    private static string DurationLabel(MovieViewModel movie)
+    {
+        return movie.Duration > 0 ? $"{movie.Duration} min" : "Runtime TBA";
+    }
+
+    private static string MovieMeta(MovieViewModel movie)
+    {
+        var parts = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(movie.Genre))
+        {
+            parts.Add(movie.Genre);
+        }
+
+        if (movie.Duration > 0)
+        {
+            parts.Add($"{movie.Duration} min");
+        }
+
+        return parts.Any() ? string.Join(" / ", parts) : "Cinema pick";
+    }
+
+    private static string GenreData(MovieViewModel movie)
+    {
+        return Safe(movie.Genre, string.Empty)
+            .ToLowerInvariant()
+            .Replace("science fiction", "sci-fi");
+    }
+
+    private static decimal CosmosScore(MovieViewModel movie)
+    {
+        if (movie == null)
+        {
+            return 8.6m;
+        }
+
+        var seed = Math.Abs((movie.MovieId * 13) + movie.Duration);
+        return Math.Round(8.4m + (seed % 13) / 10m, 1);
+    }
+
+    private static string DateLabel(DateTime date)
+    {
+        return date == default
+            ? "Coming soon"
+            : date.ToString("MMM dd, yyyy", CultureInfo.InvariantCulture);
+    }
+
+    private static string MatchReason(MovieViewModel movie)
+    {
+        var genres = GenreData(movie);
+
+        if (genres.Contains("comedy") || genres.Contains("family") || genres.Contains("animation"))
+        {
+            return "Light, generous energy for an easy night out.";
+        }
+
+        if (genres.Contains("action") || genres.Contains("thriller") || genres.Contains("horror"))
+        {
+            return "High tension pacing with a big-screen pulse.";
+        }
+
+        if (genres.Contains("romance") || genres.Contains("drama"))
+        {
+            return "Character-led emotion with a slower afterglow.";
+        }
+
+        if (genres.Contains("sci-fi") || genres.Contains("mystery"))
+        {
+            return "A smart pick when you want the story to linger.";
+        }
+
+        return "Balanced tone, strong poster appeal, and a solid COSMOS score.";
+    }
+}
