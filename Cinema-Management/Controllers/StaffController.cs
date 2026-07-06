@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Cinema_Management.Data;
 using Cinema_Management.Models;
-using Microsoft.AspNetCore.Authorization;
 
 namespace Cinema_Management.Controllers;
 
@@ -16,7 +15,6 @@ public class StaffController : Controller
     private static readonly string[] AgeRatings = { "P", "K", "T13", "T16", "T18", "C" };
     
 
-    [Authorize(Roles = "Staff")]
     public async Task<IActionResult> Index()
     {
         ViewBag.ActiveTab = "scheduling";
@@ -28,14 +26,12 @@ public class StaffController : Controller
         return View(movies);
     }
 
-    [Authorize(Roles = "Staff")]
     public IActionResult Halls()
     {
         ViewBag.ActiveTab = "halls";
         return View();
     }
 
-    [Authorize(Roles = "Staff")]
     public IActionResult Concessions()
     {
         ViewBag.ActiveTab = "concessions";
@@ -43,7 +39,6 @@ public class StaffController : Controller
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    [Authorize(Roles = "Staff")]
     public async Task<IActionResult> CreateMovie(MovieViewModel movie)
     {
         if (!ModelState.IsValid) { return RedirectToAction(nameof(Index)); }
@@ -54,7 +49,6 @@ public class StaffController : Controller
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    [Authorize(Roles = "Staff")]
     public async Task<IActionResult> EditMovie(MovieViewModel movie)
     {
         if (!ModelState.IsValid) { return RedirectToAction(nameof(Index)); }
