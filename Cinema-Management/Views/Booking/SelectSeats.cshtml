@@ -1,0 +1,177 @@
+﻿@model BookingViewModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Chọn ghế | Cosmos Cinema";
+    var currentStep = 2;
+    var stepLabels = new[] { "Thông tin phim", "Ghế ngồi", "Đồ ăn/uống", "Thanh toán" };
+    var selectedSeats = Model.SelectedSeats.ToHashSet(StringComparer.OrdinalIgnoreCase);
+    var occupiedSeats = Model.OccupiedSeats.ToHashSet(StringComparer.OrdinalIgnoreCase);
+    
+    var regularRows = Model.SeatChoices
+    .Where(s => s.SeatType == "Regular")
+    .GroupBy(s => s.SeatCode.Substring(0, 1))
+    .OrderBy(g => g.Key);
+
+var vipRows = Model.SeatChoices
+    .Where(s => s.SeatType == "VIP")
+    .GroupBy(s => s.SeatCode.Substring(0, 1))
+    .OrderBy(g => g.Key);
+
+var coupleRows = Model.SeatChoices
+    .Where(s => s.SeatType == "Couple")
+    .GroupBy(s => s.SeatCode.Substring(0, 1))
+    .OrderBy(g => g.Key);
+}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/booking.css" asp-append-version="true" />
+</head>
+
+<body>
+    <header class="site-header">
+        <div class="shell header-row">
+            <div class="brand"><span class="brand-mark" aria-hidden="true"></span> Cosmos Cinema</div>
+            <div class="booking-header-actions">
+                <a class="cancel-button" asp-controller="Home" asp-action="Index"><span aria-hidden="true">✕</span>
+                    Huỷ</a>
+                </div>
+            </div>
+        </header>
+
+        <div class="stepper-wrap">
+            <nav class="shell stepper" aria-label="Booking progress">
+                @for (var step = 1; step <= 4; step++)
+                {
+                    var stepClass = step == currentStep ? "active" : step < currentStep ? "complete" : "";
+                    <button type="button" class="stepper-button @stepClass" disabled="@(step != currentStep)"
+                            aria-current="@(step == currentStep ? "step" : "false")">
+                        <span class="step-number">@step</span><span class="step-label">@stepLabels[step - 1]</span>
+                    </button>
+                }
+            </nav>
+        </div>
+
+        <main class="shell">
+            <div class="booking-step active" data-step="2">
+                <header class="step-heading">
+                    <div>
+                        <p class="eyebrow">Step 2 of 4 · Select seats</p>
+                        <h2>@Model.MovieTitle</h2>
+                        <div class="movie-meta">
+                            <span class="meta-pill">▣ @Model.SelectedDate</span>
+                            <span class="meta-pill">◷ @Model.SelectedTime</span>
+                            <span class="meta-pill">⌖ @Model.CinemaFormat</span>
+                        </div>
+                    </div>
+                </header>
+                <div class="content-summary-grid">
+                    <section class="card seat-card" aria-label="Seat map">
+                        <div class="screen-wrap">
+                            <div class="screen"></div>
+                            <div class="screen-label">MÀN HÌNH CHIẾU</div>
+                        </div>
+                        <div class="seat-matrix">
+
+                            @* Các hàng ghế thường *@
+                            @foreach (var row in regularRows)
+                            {
+                                <div class="seat-row">
+                                    <span class="row-label">@row.Key</span>
+
+                                    @foreach (var seat in row.OrderBy(s => s.SeatCode))
+                                    {
+                                        <button type="button" class="seat regular @(seat.IsOccupied ? "occupied" : "")"
+                                                disabled="@seat.IsOccupied" data-seat-id="@seat.SeatId" data-seat-code="@seat.SeatCode">
+                                            @seat.SeatCode
+                                        </button>
+                                    }
+                                </div>
+                            }
+
+                            @* Các hàng ghế Vip *@
+                            @foreach (var row in vipRows)
+                            {
+                                <div class="seat-row">
+                                    <span class="row-label">@row.Key</span>
+
+                                    @foreach (var seat in row.OrderBy(s => s.SeatCode))
+                                    {
+                                        <button type="button" class="seat vip @(seat.IsOccupied ? "occupied" : "")"
+                                                disabled="@seat.IsOccupied" data-seat-id="@seat.SeatId" data-seat-code="@seat.SeatCode">
+                                            @seat.SeatCode
+                                        </button>
+                                    }
+                                </div>
+                            }
+
+                            @foreach (var row in coupleRows)
+                            {
+                                <div class="seat-row sweetbox-row">
+                                    <span class="row-label">@row.Key</span>
+
+                                    @foreach (var seat in row.OrderBy(s => s.SeatCode))
+                                    {
+                                        <button type="button" class="seat couple sweetbox @(seat.IsOccupied ? "occupied" : "")"
+                                                disabled="@seat.IsOccupied" data-seat-id="@seat.SeatId" data-seat-code="@seat.SeatCode"
+                                                data-seat-type="@seat.SeatType">
+                                            @seat.SeatCode
+                                        </button>
+                                    }
+                                </div>
+                            }
+
+
+                        </div>
+                        <div class="legend">
+                            <span>
+                                <i>
+                                </i>
+                                Ghế thường
+                                </span><span><i
+                            class="vip-key"></i>VIP</span><span><i class="sweet-key"></i>Ghế đôi</span>
+                        </div>
+                    </section>
+                    <aside class="card summary-card">
+                        <h3 class="summary-title">Đặt Ghế</h3>
+                        <span class="summary-label">Ghế đã chọn</span>
+                        <div class="selected-list">
+                            @if (Model.SelectedSeats.Any())
+                            {
+                                @foreach (var seat in Model.SelectedSeats)
+                                {
+                                    <div class="selected-line"><span>@(seat.StartsWith('H') ? "Sweetbox" : "Seat")
+                                        @seat</span><span>@Model.SeatPrice(seat).ToString("C")</span></div>
+                                    }
+                                }
+                        else
+                                {
+                                    <div class="empty-state">Chọn ghế từ sơ đồ</div>
+                                }
+                            </div>
+                            <div class="totals">
+                                <div class="total-line"><span>Số lượng ghế
+                                    (@Model.SelectedSeats.Count)</span><span>@Model.TicketSubtotal.ToString("C")</span>
+                                </div>
+                                <div class="total-line"><span>Phí dịch vụ</span><span>@Model.ConvenienceFee.ToString("C")</span>
+                                </div>
+                                <div class="total-line grand"><span>Tổng</span><span>@Model.PreTaxTotal.ToString("C")</span>
+                                </div>
+                            </div>
+                            <div class="summary-actions">
+                                <button type="button" class="primary-button full" disabled>Xác nhận đặt ghế →</button>
+                                <a class="secondary-button full" asp-controller="Booking" asp-action="SelectShowtime"
+                                   asp-route-movieId="@Model.MovieId">← Thay đổi suất chiếu</a>
+                            </div>
+                            <p class="secure-note">▱ Giao dịch được bảo mật</p>
+                        </aside>
+                    </div>
+                </div>
+            </main>
+        </body>
+
+    </html>

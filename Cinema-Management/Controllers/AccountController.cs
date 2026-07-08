@@ -587,7 +587,6 @@ public async Task<IActionResult> GoogleCallback(CancellationToken cancellationTo
         }
         else
         {
-            // ✨ ĐÂY LÀ ĐOẠN ĐÃ SỬA ĐỔI: Email mới hoàn toàn, không tạo ngầm nữa!
             // Lưu thông tin từ Google vào Session để dùng ở Form đăng ký tiếp theo
             HttpContext.Session.SetString("Google_Email", email);
             HttpContext.Session.SetString("Google_FullName", fullName.Trim());

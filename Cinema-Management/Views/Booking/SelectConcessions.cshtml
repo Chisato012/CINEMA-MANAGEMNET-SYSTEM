@@ -1,0 +1,101 @@
+﻿@model BookingViewModel
+@using System.Globalization
+@{
+    Layout = null;
+    ViewData["Title"] = "Chọn đồ ăn/uống | Cosmos Cinema";
+    var currentStep = 3;
+    var stepLabels = new[] { "Thông tin phim", "Ghế ngồi", "Đồ ăn/uống", "Thanh toán" };
+    var selectedAddons = Model.Concessions.Where(item => item.Quantity > 0).ToList();
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/booking.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="site-header">
+        <div class="shell header-row">
+            <div class="brand"><span class="brand-mark" aria-hidden="true"></span> Cosmos Cinema</div>
+            <div class="booking-header-actions">
+                <a class="cancel-button" asp-controller="Home" asp-action="Index"><span aria-hidden="true">✕</span> Huỷ</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="stepper-wrap">
+        <nav class="shell stepper" aria-label="Booking progress">
+            @for (var step = 1; step <= 4; step++)
+            {
+                var stepClass = step == currentStep ? "active" : step < currentStep ? "complete" : "";
+                <button type="button" class="stepper-button @stepClass" disabled="@(step != currentStep)" aria-current="@(step == currentStep ? "step" : "false")">
+                    <span class="step-number">@step</span><span class="step-label">@stepLabels[step - 1]</span>
+                </button>
+            }
+        </nav>
+    </div>
+
+    <main class="shell">
+        <div class="booking-step active" data-step="3">
+            <header class="step-heading">
+                <div>
+                    <p class="eyebrow">Step 3 of 4 · Add-ons</p>
+                    <h2>Enhance Your Experience</h2>
+                    <p class="subtitle">Pre-order your cinema favorites now and skip the queue. Freshly prepared and waiting for you.</p>
+                </div>
+            </header>
+            <div class="content-summary-grid">
+                <section class="concession-grid" aria-label="Concessions">
+                    @foreach (var item in Model.Concessions)
+                    {
+                        <article class="card product-card" data-product="@item.Id">
+                            <div class="product-art" aria-hidden="true">@item.Icon</div>
+                            <div class="product-body">
+                                <h3>@item.Name</h3>
+                                <p class="product-description">@item.Description</p>
+                                <div class="product-footer">
+                                    <span class="price">@item.Price.ToString("C", CultureInfo.GetCultureInfo("en-US"))</span>
+                                    <div class="quantity" aria-label="Quantity for @item.Name">
+                                        <button type="button" aria-label="Remove one">−</button>
+                                        <span class="quantity-value">@item.Quantity</span>
+                                        <button type="button" class="plus" aria-label="Add one">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    }
+                </section>
+                <aside class="card summary-card">
+                    <h3>Booking Summary</h3>
+                    <span class="summary-label">@Model.MovieTitle</span>
+                    <div class="compact-list">
+                        <div class="compact-line"><span>Tickets<small>Seats: @(Model.SelectedSeats.Any() ? string.Join(", ", Model.SelectedSeats) : "None")</small></span><span>@(Model.TicketSubtotal + Model.ConvenienceFee).ToString("C")</span></div>
+                        @if (selectedAddons.Any())
+                        {
+                            @foreach (var item in selectedAddons)
+                            {
+                                <div class="compact-line"><span>@item.Quantity× @item.Name</span><span>@(item.Price * item.Quantity).ToString("C")</span></div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="empty-state">No concessions added</div>
+                        }
+                    </div>
+                    <div class="totals">
+                        <div class="total-line"><span>Tickets & fees</span><span>@(Model.TicketSubtotal + Model.ConvenienceFee).ToString("C")</span></div>
+                        <div class="total-line"><span>Concessions</span><span>@Model.ConcessionSubtotal.ToString("C")</span></div>
+                        <div class="total-line grand"><span>Total</span><span>@Model.PreTaxTotal.ToString("C")</span></div>
+                    </div>
+                    <div class="summary-actions">
+                        <button type="button" class="primary-button full" disabled>Proceed to payment →</button>
+                        <button type="button" class="secondary-button full" disabled>Skip add-ons</button>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

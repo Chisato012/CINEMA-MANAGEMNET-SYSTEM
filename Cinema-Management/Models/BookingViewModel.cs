@@ -40,6 +40,10 @@ public sealed class BookingViewModel
     public decimal ConvenienceFeePerTicket { get; set; } = 1.50m;
     public decimal TaxRate { get; set; } = 0.08m;
 
+
+//Lấy ra các ghế 
+    public List<SeatChoiceViewModel> SeatChoices { get; set; } = [];
+
     public List<ConcessionItemViewModel> Concessions { get; set; } =
     [
         new() { Id = "solo", Name = "Cinephile Solo", Description = "Large butter popcorn + 1L signature soda", Price = 14.00m, Icon = "🍿" },
@@ -72,6 +76,15 @@ public sealed class BookingViewModel
     public decimal SeatPrice(string seatId) =>
         seatId.StartsWith('H') ? SweetboxTicketPrice : StandardTicketPrice;
 }
+//Class lấy ra tất cả các ghế 
+public sealed class SeatChoiceViewModel
+{
+    public int SeatId { get; set; }
+    public string SeatCode { get; set; } = string.Empty;
+    public string SeatType { get; set; } = string.Empty;
+    public bool IsOccupied { get; set; }
+    public bool IsSelected { get; set; }
+}
 
 public sealed class ConcessionItemViewModel
 {
@@ -91,11 +104,12 @@ public sealed class ShowtimeChoiceViewModel
     public string Format { get; set; } = string.Empty;
 }
 
-public sealed class ScheduleRequest
+public sealed class SelectShowtimeRequest
 {
-    public string Date { get; init; } = string.Empty;
-    public string Time { get; init; } = string.Empty;
-    public string Format { get; init; } = string.Empty;
+    public int MovieId { get; init; }
+    public int ShowtimeId { get; init; }
+
+    public string Format { get; set; } = "2D";
 }
 
 public sealed class SeatRequest

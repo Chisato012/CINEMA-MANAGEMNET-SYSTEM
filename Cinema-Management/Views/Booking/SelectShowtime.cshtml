@@ -1,0 +1,216 @@
+﻿@model BookingViewModel
+@using System.Globalization
+@{
+    Layout = null;
+    ViewData["Title"] = "Chọn suất chiếu | Cosmos Cinema";
+    var currentStep = 1;
+    var stepLabels = new[] { "Thông tin phim", "Ghế ngồi", "Đồ ăn/uống", "Thanh toán" };
+    var formats = Model.AvailableFormats.Any() ? Model.AvailableFormats : new List<string> { Model.CinemaFormat };
+    var showtimeGroups = Model.ShowtimeChoices
+        .OrderBy(item => DateTime.ParseExact(item.Date, "yyyy-MM-dd", CultureInfo.InvariantCulture))
+        .ThenBy(item => item.Time)
+        .GroupBy(item => item.Date)
+        .ToList();
+    var availableDateValues = showtimeGroups.Select(group => group.Key).ToList();
+    var initialDate = availableDateValues.Contains(Model.SelectedDate)
+        ? Model.SelectedDate
+        : availableDateValues.FirstOrDefault() ?? DateTime.Today.ToString("yyyy-MM-dd");
+    var minDate = availableDateValues.FirstOrDefault() ?? DateTime.Today.ToString("yyyy-MM-dd");
+    var maxDate = availableDateValues.LastOrDefault() ?? DateTime.Today.ToString("yyyy-MM-dd");
+}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/booking.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+</head>
+
+<body>
+    <header class="site-header">
+        <div class="shell header-row">
+            <div class="brand"><span class="brand-mark" aria-hidden="true"></span> Cosmos Cinema</div>
+            <div class="booking-header-actions">
+                <a class="cancel-button" asp-controller="Home" asp-action="Index"><span aria-hidden="true">✕</span>
+                    Huỷ</a>
+                </div>
+            </div>
+        </header>
+
+        <div class="stepper-wrap">
+            <nav class="shell stepper" aria-label="Booking progress">
+                @for (var step = 1; step <= 4; step++)
+                {
+                    var stepClass = step == currentStep ? "active" : step < currentStep ? "complete" : "";
+                    <button type="button" class="stepper-button @stepClass" disabled="@(step != currentStep)"
+                            aria-current="@(step == currentStep ? "step" : "false")">
+                        <span class="step-number">@step</span><span class="step-label">@stepLabels[step - 1]</span>
+                    </button>
+                }
+            </nav>
+        </div>
+
+        <main class="shell">
+            <div class="booking-step active" data-step="1">
+                <p class="eyebrow">Step 1 of 4 · Choose a screening</p>
+                <div class="detail-grid">
+                    <section class="card movie-hero" aria-labelledby="movieTitle">
+                        <div class="movie-art" role="img" aria-label="@Model.MovieTitle poster">
+                            @if (!string.IsNullOrWhiteSpace(Model.PosterURL))
+                            {
+                                <img src="@Model.PosterURL" alt="@Model.MovieTitle poster" />
+                            }
+                        </div>
+                        <div class="movie-copy">
+                            <h1 id="movieTitle">@Model.MovieTitle</h1>
+                            <dl class="facts">
+                                <dt>Đạo diễn</dt>
+                                <dd>@Model.Director</dd>
+                                <dt>Diễn viên</dt>
+                                <dd>@Model.Cast</dd>
+                                <dt>Thời lượng</dt>
+                                <dd>@Model.DurationMinutes min@(string.IsNullOrWhiteSpace(Model.Genre) ? "" : $" ·                  {Model.Genre}")</dd>
+                                <dt>Độ tuổi</dt>
+                                <dd>@Model.AgeRating</dd>
+                            </dl>
+                            <p class="synopsis">@Model.Synopsis</p>
+                        </div>
+                    </section>
+
+                    <aside class="card schedule-card" aria-labelledby="scheduleTitle">
+                        <h3 id="scheduleTitle">Đặt Lịch Chiếu</h3>
+                        <form asp-controller="Booking" asp-action="SelectShowtime" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="MovieId" value="@Model.MovieId" />
+                            <input type="hidden" id="selectedDateValue" name="Date" value="@initialDate" />
+                            <input type="hidden" id="selectedTimeValue" name="Time" value="@Model.SelectedTime" />
+
+                            <label class="field-label" for="cinemaFormat">Định dạng rạp chiếu</label>
+                            <select id="cinemaFormat" class="dark-select" name="Format">
+                                @foreach (var format in formats)
+                                {
+                                    <option value="@format" selected="@(Model.CinemaFormat == format)">@format</option>
+                                }
+                            </select>
+
+                            <div class="date-picker-row">
+                                <label class="field-label" for="showDate">Ngày</label>
+                                <input id="showDate"
+                                       class="dark-date"
+                                       type="date"
+                                       value="@initialDate"
+                                       min="@minDate"
+                                       max="@maxDate" />
+                            </div>
+
+                            <span class="field-label">Suất chiếu</span>
+                            @if (showtimeGroups.Any())
+                            {
+                                @foreach (var group in showtimeGroups)
+                                {
+                                    var date = DateTime.ParseExact(group.Key, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+                                    <section class="showtime-group" data-date="@group.Key" hidden="@(group.Key != initialDate)">
+                                        <p class="showtime-date-title">@date.ToString("ddd, MMM dd", CultureInfo.InvariantCulture)</p>
+                                        <div class="time-options" role="group" aria-label="Show time @group.Key">
+                                            @foreach (var showtime in group)
+                                            {
+                                                var isSelected = group.Key == initialDate && showtime.Time == Model.SelectedTime;
+                                                <label class="choice time-choice @(isSelected ? "selected" : "")">
+                                                    <input type="radio"
+                                                           name="ShowtimeId"
+                                                           value="@showtime.ShowtimeId"
+                                                           data-date="@showtime.Date"
+                                                           data-time="@showtime.Time"
+                                                           data-format="@showtime.Format"
+                                                           checked="@isSelected"
+                                                           required />
+                                                    <strong>@showtime.Time</strong>
+                                                    <span>@showtime.Format</span>
+                                                </label>
+                                            }
+                                        </div>
+                                    </section>
+                                }
+                                <div class="empty-state" id="noShowtimesForDate" hidden>Chưa có suất chiếu trong ngày này.</div>
+                            }
+                            else
+                            {
+                                <div class="empty-state">Chưa có suất chiếu phù hợp.</div>
+                            }
+
+                            <button type="submit" class="primary-button full">
+                                <i class="fa-solid fa-ticket"></i>
+                                <span style="font-family: 'Archivo Narrow', sans-serif">Chọn Ghế →</span>
+                            </button>
+                        </form>
+                    </aside>
+                </div>
+            </div>
+        </main>
+        <script>
+            (() => {
+                const datePicker = document.getElementById('showDate');
+                const selectedDate = document.getElementById('selectedDateValue');
+                const selectedTime = document.getElementById('selectedTimeValue');
+                const emptyState = document.getElementById('noShowtimesForDate');
+                const submitButton = document.querySelector('.schedule-card .primary-button');
+                const groups = [...document.querySelectorAll('.showtime-group')];
+
+                function syncTimeSelection() {
+                    document.querySelectorAll('.time-choice').forEach(label => {
+                        const input = label.querySelector('input[type="radio"]');
+                        label.classList.toggle('selected', input.checked);
+                    });
+                }
+
+                function showDate(date) {
+                    selectedDate.value = date;
+
+                    let visibleGroup = null;
+                    groups.forEach(group => {
+                        const visible = group.dataset.date === date;
+                        group.hidden = !visible;
+                        if (visible) visibleGroup = group;
+                    });
+
+                    if (!visibleGroup) {
+                        emptyState.hidden = false;
+                        submitButton.disabled = true;
+                        selectedTime.value = '';
+                        return;
+                    }
+
+                    emptyState.hidden = true;
+                    const checked = visibleGroup.querySelector('input[type="radio"]:checked');
+                    const firstShowtime = visibleGroup.querySelector('input[type="radio"]');
+                    const currentShowtime = checked || firstShowtime;
+
+                    if (currentShowtime) {
+                        currentShowtime.checked = true;
+                        selectedTime.value = currentShowtime.dataset.time;
+                        submitButton.disabled = false;
+                    } else {
+                        selectedTime.value = '';
+                        submitButton.disabled = true;
+                    }
+
+                    syncTimeSelection();
+                }
+
+                datePicker?.addEventListener('change', event => showDate(event.target.value));
+                document.querySelectorAll('.time-choice input[type="radio"]').forEach(input => {
+                    input.addEventListener('change', () => {
+                        selectedTime.value = input.dataset.time;
+                        syncTimeSelection();
+                    });
+                });
+
+                showDate(datePicker.value);
+            })();
+        </script>
+    </body>
+
+</html>

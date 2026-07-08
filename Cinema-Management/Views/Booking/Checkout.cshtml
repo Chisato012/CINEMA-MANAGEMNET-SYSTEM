@@ -1,0 +1,93 @@
+﻿@model BookingViewModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Thanh toán | Cosmos Cinema";
+    var currentStep = 4;
+    var stepLabels = new[] { "Thông tin phim", "Ghế ngồi", "Đồ ăn/uống", "Thanh toán" };
+    var selectedAddons = Model.Concessions.Where(item => item.Quantity > 0).ToList();
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/booking.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="site-header">
+        <div class="shell header-row">
+            <div class="brand"><span class="brand-mark" aria-hidden="true"></span> Cosmos Cinema</div>
+            <div class="booking-header-actions">
+                <a class="cancel-button" asp-controller="Home" asp-action="Index"><span aria-hidden="true">✕</span> Huỷ</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="stepper-wrap">
+        <nav class="shell stepper" aria-label="Booking progress">
+            @for (var step = 1; step <= 4; step++)
+            {
+                var stepClass = step == currentStep ? "active" : step < currentStep ? "complete" : "";
+                <button type="button" class="stepper-button @stepClass" disabled="@(step != currentStep)" aria-current="@(step == currentStep ? "step" : "false")">
+                    <span class="step-number">@step</span><span class="step-label">@stepLabels[step - 1]</span>
+                </button>
+            }
+        </nav>
+    </div>
+
+    <main class="shell">
+        <div class="booking-step active" data-step="4">
+            <header class="step-heading">
+                <div>
+                    <p class="eyebrow">Step 4 of 4 · Checkout</p>
+                    <h2>Secure Checkout</h2>
+                    <p class="subtitle">Xem lại các lựa chọn của bạn và hoàn tất thanh toán một cách an toàn.</p>
+                </div>
+            </header>
+            <div class="checkout-grid">
+                <section class="checkout-stack">
+                    <article class="card checkout-card">
+                        <h3>🎟 Admission</h3>
+                        <div class="checkout-row">
+                            <div>
+                                <span>@Model.SelectedSeats.Count× Admission</span>
+                                <div class="checkout-detail">Seats: @string.Join(", ", Model.SelectedSeats)</div>
+                                <div class="checkout-detail">@Model.SelectedDate · @Model.SelectedTime · @Model.CinemaFormat</div>
+                            </div>
+                            <strong>@Model.TicketSubtotal.ToString("C")</strong>
+                        </div>
+                    </article>
+                    <article class="card checkout-card">
+                        <h3>🍿 Concessions</h3>
+                        @if (selectedAddons.Any())
+                        {
+                            @foreach (var item in selectedAddons)
+                            {
+                                <div class="checkout-row"><span>@item.Quantity× @item.Name</span><strong>@(item.Price * item.Quantity).ToString("C")</strong></div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="empty-state">No concessions selected</div>
+                        }
+                    </article>
+                    <p class="secure-note">▣ Các khoản thanh toán được xử lý bằng phương thức mã hóa an toàn.</p>
+                </section>
+                <aside class="card payment-card">
+                    <h3>Payment Summary</h3>
+                    <div class="totals">
+                        <div class="total-line"><span>Subtotal</span><span>@(Model.TicketSubtotal + Model.ConcessionSubtotal).ToString("C")</span></div>
+                        <div class="total-line"><span>Booking fee</span><span>@Model.ConvenienceFee.ToString("C")</span></div>
+                        <div class="total-line"><span>Tax (8%)</span><span>@Model.Tax.ToString("C")</span></div>
+                    </div>
+                    <div class="promo"><input type="text" placeholder="◇ ENTER PROMO CODE" aria-label="Promo code" /><button type="button">Apply</button></div>
+                    <div class="payment-due"><div class="total-line grand"><span>Total due</span><span><b>@Model.GrandTotal.ToString("C")</b><small class="currency">USD</small></span></div></div>
+                    <button type="button" class="primary-button full" disabled>Confirm payment →</button>
+                    <p class="secure-note">Bằng cách tiếp tục, bạn sẽ đồng ý với Điều khoản Dịch vụ của chúng tôi.</p>
+                </aside>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
