@@ -1,4 +1,5 @@
-﻿@model BookingViewModel
+﻿@using System.Globalization
+@model BookingViewModel
 @{
     Layout = null;
     ViewData["Title"] = "Chọn ghế | Cosmos Cinema";
@@ -6,21 +7,25 @@
     var stepLabels = new[] { "Thông tin phim", "Ghế ngồi", "Đồ ăn/uống", "Thanh toán" };
     var selectedSeats = Model.SelectedSeats.ToHashSet(StringComparer.OrdinalIgnoreCase);
     var occupiedSeats = Model.OccupiedSeats.ToHashSet(StringComparer.OrdinalIgnoreCase);
-    
+
+
+    //Các biến lấy ra các hàng ghế theo loại ghế và sắp xếp theo thứ tự chữ cái của hàng ghế
     var regularRows = Model.SeatChoices
-    .Where(s => s.SeatType == "Regular")
-    .GroupBy(s => s.SeatCode.Substring(0, 1))
-    .OrderBy(g => g.Key);
+        .Where(s => s.SeatType == "Regular")
+        .GroupBy(s => s.SeatCode.Substring(0, 1))
+        .OrderBy(g => g.Key);
 
-var vipRows = Model.SeatChoices
-    .Where(s => s.SeatType == "VIP")
-    .GroupBy(s => s.SeatCode.Substring(0, 1))
-    .OrderBy(g => g.Key);
+    var vipRows = Model.SeatChoices
+        .Where(s => s.SeatType == "VIP")
+        .GroupBy(s => s.SeatCode.Substring(0, 1))
+        .OrderBy(g => g.Key);
 
-var coupleRows = Model.SeatChoices
-    .Where(s => s.SeatType == "Couple")
-    .GroupBy(s => s.SeatCode.Substring(0, 1))
-    .OrderBy(g => g.Key);
+    var coupleRows = Model.SeatChoices
+        .Where(s => s.SeatType == "Couple")
+        .GroupBy(s => s.SeatCode.Substring(0, 1))
+        .OrderBy(g => g.Key);
+
+   
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -70,108 +75,233 @@ var coupleRows = Model.SeatChoices
                     </div>
                 </header>
                 <div class="content-summary-grid">
-                    <section class="card seat-card" aria-label="Seat map">
-                        <div class="screen-wrap">
-                            <div class="screen"></div>
-                            <div class="screen-label">MÀN HÌNH CHIẾU</div>
-                        </div>
-                        <div class="seat-matrix">
+                    <form asp-controller="Booking" asp-action="SelectSeats" method="post" id="seatForm">
+                        <section class="card seat-card" aria-label="Seat map">
+                            <div class="screen-wrap">
+                                <div class="screen"></div>
+                                <div class="screen-label">MÀN HÌNH CHIẾU</div>
+                            </div>
+                            <div class="seat-matrix">
 
-                            @* Các hàng ghế thường *@
-                            @foreach (var row in regularRows)
-                            {
-                                <div class="seat-row">
-                                    <span class="row-label">@row.Key</span>
-
-                                    @foreach (var seat in row.OrderBy(s => s.SeatCode))
-                                    {
-                                        <button type="button" class="seat regular @(seat.IsOccupied ? "occupied" : "")"
-                                                disabled="@seat.IsOccupied" data-seat-id="@seat.SeatId" data-seat-code="@seat.SeatCode">
-                                            @seat.SeatCode
-                                        </button>
-                                    }
-                                </div>
-                            }
-
-                            @* Các hàng ghế Vip *@
-                            @foreach (var row in vipRows)
-                            {
-                                <div class="seat-row">
-                                    <span class="row-label">@row.Key</span>
-
-                                    @foreach (var seat in row.OrderBy(s => s.SeatCode))
-                                    {
-                                        <button type="button" class="seat vip @(seat.IsOccupied ? "occupied" : "")"
-                                                disabled="@seat.IsOccupied" data-seat-id="@seat.SeatId" data-seat-code="@seat.SeatCode">
-                                            @seat.SeatCode
-                                        </button>
-                                    }
-                                </div>
-                            }
-
-                            @foreach (var row in coupleRows)
-                            {
-                                <div class="seat-row sweetbox-row">
-                                    <span class="row-label">@row.Key</span>
-
-                                    @foreach (var seat in row.OrderBy(s => s.SeatCode))
-                                    {
-                                        <button type="button" class="seat couple sweetbox @(seat.IsOccupied ? "occupied" : "")"
-                                                disabled="@seat.IsOccupied" data-seat-id="@seat.SeatId" data-seat-code="@seat.SeatCode"
-                                                data-seat-type="@seat.SeatType">
-                                            @seat.SeatCode
-                                        </button>
-                                    }
-                                </div>
-                            }
-
-
-                        </div>
-                        <div class="legend">
-                            <span>
-                                <i>
-                                </i>
-                                Ghế thường
-                                </span><span><i
-                            class="vip-key"></i>VIP</span><span><i class="sweet-key"></i>Ghế đôi</span>
-                        </div>
-                    </section>
-                    <aside class="card summary-card">
-                        <h3 class="summary-title">Đặt Ghế</h3>
-                        <span class="summary-label">Ghế đã chọn</span>
-                        <div class="selected-list">
-                            @if (Model.SelectedSeats.Any())
-                            {
-                                @foreach (var seat in Model.SelectedSeats)
+                                @* Các hàng ghế thường *@
+                                @foreach (var row in regularRows)
                                 {
-                                    <div class="selected-line"><span>@(seat.StartsWith('H') ? "Sweetbox" : "Seat")
-                                        @seat</span><span>@Model.SeatPrice(seat).ToString("C")</span></div>
+                                    <div class="seat-row">
+                                        <span class="row-label">@row.Key</span>
+
+                                        @foreach (var seat in row.OrderBy(s => s.SeatCode))
+                                        {
+                                            <button type="button"
+                                                    class="seat regular @(seat.IsOccupied ? "occupied" : "") @(seat.IsSelected ? "selected" : "")"
+                                                    disabled="@seat.IsOccupied" data-seat-id="@seat.SeatId"
+                                                    data-seat-code="@seat.SeatCode"
+                                                    data-price="@seat.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                                    data-seat-type="@seat.SeatType">
+                                                @seat.SeatCode
+                                            </button>
+                                        }
+                                    </div>
+                                }
+
+                                @* Các hàng ghế Vip *@
+                                @foreach (var row in vipRows) //Duyêth tưgf hàng ghế VIP
+                                {
+                                    <div class="seat-row">
+                                        <span class="row-label">@row.Key</span>
+
+                                        @foreach (var seat in row.OrderBy(s => s.SeatCode))
+                                        {
+                                            <button type="button"
+                                                    class="seat vip @(seat.IsOccupied ? "occupied" : "") @(seat.IsSelected ? "selected" : "")"
+                                                    disabled="@seat.IsOccupied" data-seat-id="@seat.SeatId"
+                                                    data-seat-code="@seat.SeatCode"
+                                                    data-price="@seat.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                                    data-seat-type="@seat.SeatType">
+                                                @seat.SeatCode
+                                            </button>
+                                        }
+                                    </div>
+                                }
+
+                                @foreach (var row in coupleRows)
+                                {
+                                    <div class="seat-row sweetbox-row">
+                                        <span class="row-label">@row.Key</span>
+
+                                        @foreach (var seat in row.OrderBy(s => s.SeatCode))
+                                        {
+                                            <button type="button"
+                                                    class="seat couple sweetbox @(seat.IsOccupied ? "occupied" : "") @(seat.IsSelected ? "selected" : "")"
+                                                    disabled="@seat.IsOccupied" data-seat-id="@seat.SeatId"
+                                                    data-seat-code="@seat.SeatCode" data-seat-type="@seat.SeatType"
+                                                    data-price="@seat.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+                                                @seat.SeatCode
+                                            </button>
+                                        }
+                                    </div>
+                                }
+
+
+                            </div>
+                            <div class="legend">
+                                <span>
+                                    <i>
+                                    </i>
+                                    Ghế thường
+                                </span><span><i class="vip-key"></i>VIP</span><span><i class="sweet-key"></i>Ghế đôi</span>
+                            </div>
+                        </section>
+                        @* Tổng quan đặt ghế *@
+                        <aside class="card summary-card">
+                            <h3 class="summary-title">Đặt Ghế</h3>
+                            <span class="summary-label">Ghế đã chọn</span>
+                            <div class="selected-list" id="selectedSeatsList">
+                                @if (Model.SelectedSeats.Any())
+                                {
+                                    //Duyêt qua danh sách ghế đã chọn và hiển thị thông tin ghế và giá vé
+                                    @foreach (var seat in Model.SelectedSeats)
+                                    {
+
+                                        var seatInfo = Model.SeatChoices.FirstOrDefault(s => s.SeatCode == seat);
+
+                                        var seatTypeLabel = seatInfo?.SeatType switch
+                                        {
+                                            "VIP" => "VIP",
+                                            "Couple" => "Couple",
+                                            _ => "Standard"
+                                        };
+                                        <div class="selected-line">
+                                            <span>@seatTypeLabel @seat</span>
+                                            <span>@Model.SeatPrice(seat).ToString("C")</span>
+                                        </div>
                                     }
                                 }
-                        else
+                                else
                                 {
                                     <div class="empty-state">Chọn ghế từ sơ đồ</div>
                                 }
                             </div>
                             <div class="totals">
-                                <div class="total-line"><span>Số lượng ghế
-                                    (@Model.SelectedSeats.Count)</span><span>@Model.TicketSubtotal.ToString("C")</span>
+                                <div class="total-line">
+                                    <span id="ticketCount">
+                                        Số lượng ghế
+                                        (@Model.SelectedSeats.Count)
+                                    </span>
+                                    <span id="ticketSubtotal">@Model.TicketSubtotal.ToString("C")
+                                    </span>
                                 </div>
-                                <div class="total-line"><span>Phí dịch vụ</span><span>@Model.ConvenienceFee.ToString("C")</span>
-                                </div>
-                                <div class="total-line grand"><span>Tổng</span><span>@Model.PreTaxTotal.ToString("C")</span>
+                                @* <div class="total-line">
+                                    <span>Phí dịch vụ</span>
+                                    <span id="seatFee">@Model.ConvenienceFee.ToString("C")</span>
+                                </div> *@
+                                <div class="total-line grand">
+                                    <span>Tổng</span>
+                                    <span id="seatTotal">@Model.PreTaxTotal.ToString("C")</span>
                                 </div>
                             </div>
                             <div class="summary-actions">
-                                <button type="button" class="primary-button full" disabled>Xác nhận đặt ghế →</button>
-                                <a class="secondary-button full" asp-controller="Booking" asp-action="SelectShowtime"
-                                   asp-route-movieId="@Model.MovieId">← Thay đổi suất chiếu</a>
-                            </div>
-                            <p class="secure-note">▱ Giao dịch được bảo mật</p>
-                        </aside>
+                                <button type="submit" class="primary-button full" id="confirmSeatButton" >Xác nhận
+                                    đặt ghế →</button>
+                                    <a class="secondary-button full" asp-controller="Booking" asp-action="SelectShowtime"
+                                       asp-route-movieId="@Model.MovieId">← Thay đổi suất chiếu</a>
+                                </div>
+                                <p class="secure-note">▱ Giao dịch được bảo mật</p>
+                            </aside>
+                            <div id="selectedSeatInputs"></div>
+                        </form>
                     </div>
                 </div>
             </main>
         </body>
 
     </html>
+
+    <script>
+        const seatButtons = document.querySelectorAll(".seat:not(.occupied)");
+        const selectedSeatInputs = document.getElementById("selectedSeatInputs");
+        const confirmButton = document.getElementById("confirmSeatButton");
+
+        //Lấy ra các biến chưa tiền
+        const selectedSeatsList = document.getElementById("selectedSeatsList");
+        const ticketCount = document.getElementById("ticketCount");
+        const ticketSubtotal = document.getElementById("ticketSubtotal");
+        const seatFee = document.getElementById("seatFee");
+        const seatTotal = document.getElementById("seatTotal");
+
+        const convenienceFeePerTicket = Number("@Model.ConvenienceFeePerTicket.ToString(CultureInfo.InvariantCulture)");
+        //Hàm format tiền
+        function money(value) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+        }
+
+        function syncSelectedSeats() {
+            // Xoá input cũ trước khi tạo lại
+            selectedSeatInputs.innerHTML = "";
+
+            const selectedSeats = [...document.querySelectorAll(".seat.selected")];
+
+            selectedSeats.forEach(seat => {
+                const input = document.createElement("input");
+
+                // Tên này phải trùng với parameter List<string> selectedSeats trong POST Action
+                input.type = "hidden";
+                input.name = "selectedSeats";
+                input.value = seat.dataset.seatCode;
+
+                selectedSeatInputs.appendChild(input);
+            });
+
+            // Bật/tắt nút xác nhận dựa trên số lượng ghế đã chọn
+            selectedSeatsList.innerHTML = selectedSeats.length
+                ? selectedSeats.map(seat => {
+                    const seatCode = seat.dataset.seatCode;
+                    const seatType = seat.dataset.seatType || "Regular";
+                    const seatPrice = Number(seat.dataset.price || 0);
+
+                    return `<div class="selected-line">
+                                        <span>${seatType} ${seatCode}</span>
+                                        <span>${money(seatPrice)}</span>
+                                    </div>`;
+
+                }).join("")
+                : '<div class="empty-state">Chọn ghế từ sơ đồ</div>';
+
+            const subtotal = selectedSeats.reduce((sum, seat) => {
+                return sum + Number(seat.dataset.price || 0);
+            }, 0);
+
+            const fee = selectedSeats.length * convenienceFeePerTicket;
+            const total = subtotal + fee;
+
+            //set các giá trị tiền vào các biến hiển thị
+            ticketCount.textContent = `Số lượng ghế (${selectedSeats.length})`;
+            ticketSubtotal.textContent = money(subtotal);
+            seatFee.textContent = money(fee);
+            seatTotal.textContent = money(total);
+
+            if(selectedSeats.length == 0){
+                confirmButton.disable = true;
+            }
+            else{
+                confirmButton.disable = false;
+            }
+        }
+
+        seatButtons.forEach(button => {
+            button.addEventListener("click", () => {
+                const isSelectingNewSeat = !button.classList.contains("selected");
+                const selectedCount = document.querySelectorAll(".seat.selected").length;
+
+                if (isSelectingNewSeat && selectedCount >= 5) {
+                    alert("Bạn chỉ được chọn tối đa 5 ghế.");
+                    return;
+                }
+
+                button.classList.toggle("selected");
+                syncSelectedSeats();
+            });
+        });
+
+        @* // Chạy lần đầu để giữ trạng thái nếu model đã có SelectedSeats
+        syncSelectedSeats(); *@
+    </script>

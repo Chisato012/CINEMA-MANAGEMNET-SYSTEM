@@ -28,10 +28,14 @@ public class StaffController : Controller
     }
 
     private static readonly string[] AgeRatings = { "P", "K", "T13", "T16", "T18", "C" };
-    private const decimal DefaultBasePrice = 90000m;
+    private const decimal StandardWeekdayBasePrice = 65000m;
+    private const decimal StandardWeekendBasePrice = 85000m;
+    private const decimal ImaxWeekdayBasePrice = 135000m;
+    private const decimal ImaxWeekendBasePrice = 165000m;
+    private const decimal DefaultBasePrice = StandardWeekdayBasePrice;
     private const string DefaultPosterUrl = "/img/poster/yourname400x600.png";
     private const string DefaultTrailerUrl = "#";
-    
+
 
     public async Task<IActionResult> Index()
     {
@@ -203,7 +207,9 @@ public class StaffController : Controller
         }
 
         var scheduleDate = request.Date.Date;
-        var roomIds = await LoadRoomIdsAsync();
+        var roomsById = await _context.Rooms
+            .Select(r => new { r.RoomID, r.RoomName })
+            .ToDictionaryAsync(r => r.RoomID, r => r.RoomName); //Lấy ra danh sách các phòng chiếu từ cơ sở dữ liệu và lưu vào từ điển để kiểm tra hợp lệ
         var invalidItems = request.Items
             .Select((item, index) => new { Item = item, Index = index })
             .Where(x => x.Item.MovieID <= 0 || x.Item.RoomID <= 0)
@@ -239,7 +245,7 @@ public class StaffController : Controller
         foreach (var item in request.Items)
         {
             var roomId = item.RoomID;
-            if (!roomIds.Contains(roomId))
+            if (!roomsById.TryGetValue(roomId, out var roomName))
             {
                 return BadRequest(new { message = "Phong chieu khong hop le." });
             }
@@ -267,7 +273,7 @@ public class StaffController : Controller
                 Date = scheduleDate,
                 StartTime = startTime,
                 EndTime = endTime,
-                BasePrice = item.BasePrice > 0 ? item.BasePrice : DefaultBasePrice
+                BasePrice = GetBasePriceByRoomAndDate(roomName, scheduleDate)
             });
         }
 
@@ -402,6 +408,24 @@ public class StaffController : Controller
             updated = parsedEntries.Count(item => item.ShowtimeID > 0),
             deleted = removableShowtimes.Count
         });
+    }
+
+    private static decimal GetBasePriceByRoomAndDate(string roomName, DateTime scheduleDate)
+    {
+        var isWeekend = scheduleDate.DayOfWeek == DayOfWeek.Saturday
+            || scheduleDate.DayOfWeek == DayOfWeek.Sunday;
+
+        if (roomName.Contains("IMAX", StringComparison.OrdinalIgnoreCase))
+        {
+            return isWeekend ? ImaxWeekendBasePrice : ImaxWeekdayBasePrice;
+        }
+
+        if (roomName.Contains("Standard", StringComparison.OrdinalIgnoreCase))
+        {
+            return isWeekend ? StandardWeekendBasePrice : StandardWeekdayBasePrice;
+        }
+
+        return DefaultBasePrice;
     }
 
     public async Task<IActionResult> Halls()
@@ -954,20 +978,20 @@ public class StaffController : Controller
             .ToListAsync();
 
         return rows.Select(row => new StaffReservationViewModel
-            {
-                BookingID = row.BookingID,
-                RoomID = row.RoomID,
-                RoomName = row.RoomName,
-                CustomerName = row.CustomerName,
-                CustomerEmail = row.CustomerEmail,
-                MovieTitle = row.MovieTitle,
-                BookingDate = row.BookingDate,
-                ShowtimeStart = row.ShowtimeStart,
-                SeatCodes = row.SeatCodes,
-                TicketCount = row.TicketCount,
-                TotalAmount = row.TotalAmount,
-                Status = row.Status
-            })
+        {
+            BookingID = row.BookingID,
+            RoomID = row.RoomID,
+            RoomName = row.RoomName,
+            CustomerName = row.CustomerName,
+            CustomerEmail = row.CustomerEmail,
+            MovieTitle = row.MovieTitle,
+            BookingDate = row.BookingDate,
+            ShowtimeStart = row.ShowtimeStart,
+            SeatCodes = row.SeatCodes,
+            TicketCount = row.TicketCount,
+            TotalAmount = row.TotalAmount,
+            Status = row.Status
+        })
             .ToList();
     }
 

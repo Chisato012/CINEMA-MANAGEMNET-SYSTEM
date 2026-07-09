@@ -667,6 +667,12 @@ h3 {
     letter-spacing: .18em;
 }
 
+#seatForm{
+    display: flex;
+    width: max-content;
+    gap: 50px;
+}
+
 .seat-matrix {
     min-width: 570px;
     display: flex;
@@ -791,7 +797,7 @@ h3 {
 }
 
 .summary-card {
-    padding: 25px;
+    padding: 30px 50px;
     position: sticky;
     top: 152px;
 }

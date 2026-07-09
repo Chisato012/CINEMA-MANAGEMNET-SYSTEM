@@ -36,6 +36,8 @@ public sealed class BookingViewModel
         ["A6", "A7", "B10", "C4", "D8", "D9", "F2", "G9"];
 
     public decimal StandardTicketPrice { get; set; } = 18.50m;
+
+    public decimal VipTicketPrice {get; set;}
     public decimal SweetboxTicketPrice { get; set; } = 30.00m;
     public decimal ConvenienceFeePerTicket { get; set; } = 1.50m;
     public decimal TaxRate { get; set; } = 0.08m;
@@ -73,8 +75,18 @@ public sealed class BookingViewModel
     [JsonIgnore]
     public decimal GrandTotal => PreTaxTotal + Tax;
 
-    public decimal SeatPrice(string seatId) =>
-        seatId.StartsWith('H') ? SweetboxTicketPrice : StandardTicketPrice;
+    public decimal SeatPrice(string seatCode)
+    {
+    var seat = SeatChoices.FirstOrDefault(s =>
+        string.Equals(s.SeatCode, seatCode, StringComparison.OrdinalIgnoreCase));
+
+    return seat?.SeatType switch
+    {
+        "VIP" => VipTicketPrice,
+        "Couple" => SweetboxTicketPrice,
+        _ => StandardTicketPrice
+    };
+    }
 }
 //Class lấy ra tất cả các ghế 
 public sealed class SeatChoiceViewModel
@@ -84,6 +96,8 @@ public sealed class SeatChoiceViewModel
     public string SeatType { get; set; } = string.Empty;
     public bool IsOccupied { get; set; }
     public bool IsSelected { get; set; }
+
+    public decimal Price { get; set; }
 }
 
 public sealed class ConcessionItemViewModel

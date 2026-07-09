@@ -138,7 +138,10 @@ public class BookingController : Controller
         .Select(t => t.Seat.SeatCode)
         .ToList();
 
-        //lấy ra thông tin gửi sang step 2
+
+        var seatTypePricing = _context.SeatTypePricings.ToDictionary(st => st.SeatType, st => st.Multiplier);
+
+        //lấy ra thông tin gửi sang step-2
         var model = _context.Movies.Where(m => m.MovieId == selectedMovieId.Value)
             .Select(m => new BookingViewModel
             {
@@ -155,6 +158,7 @@ public class BookingController : Controller
                     SeatCode = seats.SeatCode,
                     SeatType = seats.SeatType,
                     IsOccupied = occupiedSeatCodes.Contains(seats.SeatCode),
+                    Price = showtime.BasePrice * (seatTypePricing.ContainsKey(seats.SeatType) ? seatTypePricing[seats.SeatType] : 1.00m),
                     IsSelected = false
                 }).ToList(),
                 
@@ -165,14 +169,85 @@ public class BookingController : Controller
         {
             return NotFound();
         }
-
-
         return View(model);
-
-        
     }
 
-    
+    //Post: Booking/SelectSeats
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult SelectSeats(List<string> selectedSeats)
+    {
+        //lấy lại showtimeId và movieId từ session để xác nhận thông tin
+        var selectedShowtimeId = HttpContext.Session.GetInt32("SelectedShowtimeId");
+        var selectedMovieId = HttpContext.Session.GetInt32("SelectedMovieId");
+
+        //Lấy suất chiếu từ cơ sở dữ liệu dựa trên showtimeId và movieId
+        var showtime = _context.Showtimes.Include(s => s.Room).FirstOrDefault(s => s.ShowtimeID == selectedShowtimeId && s.MovieID == selectedMovieId);
+        //Lấy danh sách ghế trong phòng chiếu
+        var seats = _context.Seats.Where(s => s.RoomID == showtime.RoomID).OrderBy(s => s.SeatCode).ToList();
+        //Lấy danh sách ghế đã được đặt trong suất chiếu này
+        var occupiedSeatCodes = _context.Tickets
+            .Where(t => t.ShowtimeID == selectedShowtimeId.Value)
+            .Select(t => t.Seat.SeatCode)
+            .ToList();
+
+        //Ghế đc chọn
+        selectedSeats = selectedSeats
+        .Where(code => seats.Any(s => s.SeatCode == code))
+        .Where(code => !occupiedSeatCodes.Contains(code))
+        .Distinct()
+        .ToList();
+
+        //Lấy ra seatTypePricing để tính giá vé dựa trên loại ghế
+        var seatTypePricing = _context.SeatTypePricings.ToDictionary(st => st.SeatType, st => st.Multiplier);
+
+
+        var model = _context.Movies
+            .Where(m => m.MovieId == selectedMovieId.Value)
+            .Select(m => new BookingViewModel
+            {   
+                //Lấy ra các thông tin
+                MovieId = m.MovieId,
+                MovieTitle = m.Title,
+
+                SelectedDate = HttpContext.Session.GetString("SelectedDate"),
+                SelectedTime = HttpContext.Session.GetString("SelectedTime"),
+                CinemaFormat = HttpContext.Session.GetString("SelectedFormat"),
+                ShowtimeId = selectedShowtimeId,
+
+                //Gán ghế đã chọn
+                SelectedSeats = selectedSeats, 
+
+                //Gán giá vé
+                StandardTicketPrice = showtime.BasePrice * (seatTypePricing.ContainsKey("Regular") ? seatTypePricing["Regular"] : 1.00m),
+                VipTicketPrice = showtime.BasePrice * (seatTypePricing.ContainsKey("VIP") ? seatTypePricing["VIP"] : 1.00m),
+                SweetboxTicketPrice = showtime.BasePrice * (seatTypePricing.ContainsKey("Couple") ? seatTypePricing["Couple"] : 1.00m),
+
+                //Tạo ra các SeatChoices
+                SeatChoices = seats.Select(seat => new SeatChoiceViewModel
+                {
+                    SeatId = seat.SeatID,
+                    SeatCode = seat.SeatCode,
+                    SeatType = seat.SeatType,
+                    IsOccupied = occupiedSeatCodes.Contains(seat.SeatCode),
+                    Price = showtime.BasePrice * (seatTypePricing.ContainsKey(seat.SeatType) ? seatTypePricing[seat.SeatType] : 1.00m), //Lấy ra gia vé
+                    //
+                    IsSelected = selectedSeats.Contains(seat.SeatCode),
+
+                }).ToList(),
+
+                OccupiedSeats = occupiedSeatCodes
+
+            }).FirstOrDefault();
+
+        if(model == null)
+        {
+            return NotFound();
+        }
+
+        return View("SelectSeats", model);
+    }
+
 
 
 
