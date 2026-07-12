@@ -26,6 +26,7 @@ builder.Services.AddHttpClient();
 builder.Services.Configure<EmailSettings>(
     builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+builder.Services.AddSingleton<IOfferService, MockOfferService>();
 
 var googleClientId =
     builder.Configuration["Authentication:Google:ClientId"];

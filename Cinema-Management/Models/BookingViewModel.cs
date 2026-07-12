@@ -14,18 +14,19 @@ public sealed class BookingViewModel
 
     public int MovieId { get; set; } = 1;
     public int? ShowtimeId { get; set; }
-    public string MovieTitle { get; set; } 
-    public string Director { get; set; } 
-    public string Cast { get; set; } 
-    public string Synopsis { get; set; } 
+    public string MovieTitle { get; set; }
+    public string Director { get; set; }
+    public string Cast { get; set; }
+    public string Synopsis { get; set; }
     public string AgeRating { get; set; }
     public int DurationMinutes { get; set; } = 166;
     public string PosterURL { get; set; } = string.Empty;
     public string Genre { get; set; } = string.Empty;
 
     public string SelectedDate { get; set; } = DateTime.Today.AddDays(1).ToString("yyyy-MM-dd");
-    public string SelectedTime { get; set; } 
+    public string SelectedTime { get; set; }
     public string CinemaFormat { get; set; }
+    public string? OfferCode { get; set; }
     public List<string> AvailableDates { get; set; } = [];
     public List<string> AvailableTimes { get; set; } = [];
     public List<string> AvailableFormats { get; set; } = [];
@@ -37,13 +38,13 @@ public sealed class BookingViewModel
 
     public decimal StandardTicketPrice { get; set; } = 18.50m;
 
-    public decimal VipTicketPrice {get; set;}
+    public decimal VipTicketPrice { get; set; }
     public decimal SweetboxTicketPrice { get; set; } = 30.00m;
     public decimal ConvenienceFeePerTicket { get; set; } = 1.50m;
     public decimal TaxRate { get; set; } = 0.08m;
 
 
-//Lấy ra các ghế 
+    //Lấy ra các ghế 
     public List<SeatChoiceViewModel> SeatChoices { get; set; } = [];
 
     public List<ConcessionItemViewModel> Concessions { get; set; } =
@@ -77,15 +78,15 @@ public sealed class BookingViewModel
 
     public decimal SeatPrice(string seatCode)
     {
-    var seat = SeatChoices.FirstOrDefault(s =>
-        string.Equals(s.SeatCode, seatCode, StringComparison.OrdinalIgnoreCase));
+        var seat = SeatChoices.FirstOrDefault(s =>
+            string.Equals(s.SeatCode, seatCode, StringComparison.OrdinalIgnoreCase));
 
-    return seat?.SeatType switch
-    {
-        "VIP" => VipTicketPrice,
-        "Couple" => SweetboxTicketPrice,
-        _ => StandardTicketPrice
-    };
+        return seat?.SeatType switch
+        {
+            "VIP" => VipTicketPrice,
+            "Couple" => SweetboxTicketPrice,
+            _ => StandardTicketPrice
+        };
     }
 }
 //Class lấy ra tất cả các ghế 
@@ -124,6 +125,7 @@ public sealed class SelectShowtimeRequest
     public int ShowtimeId { get; init; }
 
     public string Format { get; set; } = "2D";
+    public string? OfferCode { get; init; }
 }
 
 public sealed class SeatRequest

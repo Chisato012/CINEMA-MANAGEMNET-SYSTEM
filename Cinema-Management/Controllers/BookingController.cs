@@ -191,7 +191,7 @@ public class BookingController : Controller
 
             })
             .FirstOrDefault();
-        
+
         if (movie == null)
         {
             return NotFound();
@@ -205,7 +205,7 @@ public class BookingController : Controller
             .ToList();
 
         movie.AvailableFormats = new List<string> { "2D" };
-        
+
         //Lưu vào model các suất chiếu có sẵn để hiển thị cho người dùng chọn
         movie.ShowtimeChoices = showtimes.Select(s => new ShowtimeChoiceViewModel
         {
@@ -225,7 +225,7 @@ public class BookingController : Controller
             .Select(s => s.Time)
             .Distinct()
             .ToList();
-        
+
         movie.SelectedTime = movie.AvailableTimes.FirstOrDefault() ?? string.Empty;
         movie.CinemaFormat = movie.AvailableFormats.FirstOrDefault() ?? string.Empty;
 
@@ -259,6 +259,14 @@ public class BookingController : Controller
         HttpContext.Session.SetString("SelectedFormat", request.Format);
         HttpContext.Session.SetString("SelectedDate", showtime.Date.ToString("yyyy-MM-dd"));
         HttpContext.Session.SetString("SelectedTime", showtime.StartTime.ToString("HH:mm"));
+        if (!string.IsNullOrWhiteSpace(request.OfferCode))
+        {
+            HttpContext.Session.SetString("SelectedOfferCode", request.OfferCode.Trim().ToUpperInvariant());
+        }
+        else
+        {
+            HttpContext.Session.Remove("SelectedOfferCode");
+        }
         return RedirectToAction("SelectSeats");
     }
 
@@ -272,6 +280,7 @@ public class BookingController : Controller
         var selectedFormat = HttpContext.Session.GetString("SelectedFormat");
         var selectedDate = HttpContext.Session.GetString("SelectedDate");
         var selectedTime = HttpContext.Session.GetString("SelectedTime");
+        var selectedOfferCode = HttpContext.Session.GetString("SelectedOfferCode");
 
         if (selectedShowtimeId == null || selectedMovieId == null || string.IsNullOrEmpty(selectedFormat) ||
             string.IsNullOrEmpty(selectedDate) || string.IsNullOrEmpty(selectedTime))
@@ -305,7 +314,8 @@ public class BookingController : Controller
                 SelectedDate = selectedDate,
                 SelectedTime = selectedTime,
                 CinemaFormat = selectedFormat,
-                ShowtimeId = selectedShowtimeId,     
+                ShowtimeId = selectedShowtimeId,
+                OfferCode = selectedOfferCode,
 
                 SeatChoices = seats.Select(seats => new SeatChoiceViewModel
                 {
@@ -316,11 +326,11 @@ public class BookingController : Controller
                     Price = showtime.BasePrice * (seatTypePricing.ContainsKey(seats.SeatType) ? seatTypePricing[seats.SeatType] : 1.00m),
                     IsSelected = false
                 }).ToList(),
-                
+
                 OccupiedSeats = occupiedSeatCodes
             }).FirstOrDefault();
-        
-        if(model == null)
+
+        if (model == null)
         {
             return NotFound();
         }
@@ -360,7 +370,7 @@ public class BookingController : Controller
         var model = _context.Movies
             .Where(m => m.MovieId == selectedMovieId.Value)
             .Select(m => new BookingViewModel
-            {   
+            {
                 //Lấy ra các thông tin
                 MovieId = m.MovieId,
                 MovieTitle = m.Title,
@@ -368,10 +378,11 @@ public class BookingController : Controller
                 SelectedDate = HttpContext.Session.GetString("SelectedDate"),
                 SelectedTime = HttpContext.Session.GetString("SelectedTime"),
                 CinemaFormat = HttpContext.Session.GetString("SelectedFormat"),
+                OfferCode = HttpContext.Session.GetString("SelectedOfferCode"),
                 ShowtimeId = selectedShowtimeId,
 
                 //Gán ghế đã chọn
-                SelectedSeats = selectedSeats, 
+                SelectedSeats = selectedSeats,
 
                 //Gán giá vé
                 StandardTicketPrice = showtime.BasePrice * (seatTypePricing.ContainsKey("Regular") ? seatTypePricing["Regular"] : 1.00m),
@@ -395,7 +406,7 @@ public class BookingController : Controller
 
             }).FirstOrDefault();
 
-        if(model == null)
+        if (model == null)
         {
             return NotFound();
         }
