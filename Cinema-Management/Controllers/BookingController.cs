@@ -2,6 +2,7 @@ using Cinema_Management.Data;
 using Cinema_Management.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace Cinema_Management.Controllers;
 
@@ -16,7 +17,161 @@ public class BookingController : Controller
         _context = context;
     }
 
+    public IActionResult Index(int? movieId, DateTime? date)
+    {
+        var today = DateTime.Today;
+        var selectedDate = (date ?? today).Date;
+        var lastDate = today.AddDays(13);
+
+        var showtimeQuery = _context.Showtimes
+            .AsNoTracking()
+            .AsSplitQuery()
+            .Include(s => s.Movie!)
+                .ThenInclude(m => m.MovieGenres)
+                    .ThenInclude(mg => mg.Genre)
+            .Include(s => s.Movie!)
+                .ThenInclude(m => m.Language)
+            .Include(s => s.Room!)
+                .ThenInclude(r => r.Seats)
+            .Include(s => s.Tickets)
+            .Where(s => s.Date >= today && s.Date <= lastDate);
+
+        if (movieId.HasValue)
+        {
+            showtimeQuery = showtimeQuery.Where(s => s.MovieID == movieId.Value);
+        }
+
+        var showtimes = showtimeQuery
+            .OrderBy(s => s.Movie!.Title)
+            .ThenBy(s => s.Date)
+            .ThenBy(s => s.StartTime)
+            .ToList();
+
+        var movieFilterTitle = movieId.HasValue
+            ? _context.Movies
+                .AsNoTracking()
+                .Where(movie => movie.MovieId == movieId.Value)
+                .Select(movie => movie.Title)
+                .FirstOrDefault()
+            : null;
+
+        if (movieId.HasValue && string.IsNullOrWhiteSpace(movieFilterTitle))
+        {
+            return NotFound();
+        }
+
+        var model = new BookingSchedulePageViewModel
+        {
+            Today = today,
+            SelectedDate = selectedDate,
+            MovieId = movieId,
+            MovieFilterTitle = movieFilterTitle,
+            DateOptions = Enumerable.Range(0, 14)
+                .Select(offset => BuildDateOption(today.AddDays(offset), today, selectedDate))
+                .ToList(),
+            Movies = showtimes
+                .Where(s => s.Movie != null)
+                .GroupBy(s => s.MovieID)
+                .Select(group =>
+                {
+                    var movie = group.First().Movie!;
+                    var scheduleItems = group.Select(BuildScheduleShowtime).ToList();
+
+                    return new BookingScheduleMovieViewModel
+                    {
+                        MovieId = movie.MovieId,
+                        Title = movie.Title,
+                        PosterUrl = string.IsNullOrWhiteSpace(movie.PosterURL)
+                            ? "/img/poster/poster1.png"
+                            : movie.PosterURL,
+                        Genres = string.Join(", ", movie.MovieGenres.Select(mg => mg.Genre.Name)),
+                        DurationMinutes = movie.Duration,
+                        AgeRating = movie.AgeRating,
+                        Formats = scheduleItems
+                            .Select(item => item.Format)
+                            .Distinct(StringComparer.OrdinalIgnoreCase)
+                            .ToList(),
+                        Showtimes = scheduleItems
+                    };
+                })
+                .OrderBy(movie => movie.Title)
+                .ToList()
+        };
+
+        return View(model);
+    }
+
     // GET: Booking/SelectShowtime dùng để fill dữ liệu lên UI
+    private static BookingScheduleDateOption BuildDateOption(DateTime date, DateTime today, DateTime selectedDate)
+    {
+        return new BookingScheduleDateOption
+        {
+            Date = date,
+            Value = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            DateLabel = date.ToString("dd/MM", CultureInfo.InvariantCulture),
+            WeekdayLabel = WeekdayLabel(date),
+            IsToday = date.Date == today.Date,
+            IsSelected = date.Date == selectedDate.Date
+        };
+    }
+
+    private static BookingScheduleShowtimeViewModel BuildScheduleShowtime(Showtimes showtime)
+    {
+        var totalSeats = showtime.Room?.Seats.Count ?? 0;
+        var remainingSeats = Math.Max(0, totalSeats - showtime.Tickets.Count);
+        var isLate = showtime.StartTime.TimeOfDay >= TimeSpan.FromHours(22);
+        var isLowAvailability = remainingSeats > 0 && (remainingSeats <= 20 || (totalSeats > 0 && remainingSeats <= totalSeats * 0.15));
+
+        return new BookingScheduleShowtimeViewModel
+        {
+            ShowtimeId = showtime.ShowtimeID,
+            MovieId = showtime.MovieID,
+            Date = showtime.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            DateLabel = showtime.Date.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture),
+            Time = showtime.StartTime.ToString("HH:mm", CultureInfo.InvariantCulture),
+            Format = ResolveFormat(showtime),
+            RoomName = showtime.Room?.RoomName ?? $"Phòng {showtime.RoomID}",
+            RemainingSeats = remainingSeats,
+            TotalSeats = totalSeats,
+            IsLate = isLate,
+            IsLowAvailability = isLowAvailability,
+            IsSoldOut = remainingSeats <= 0,
+            AvailabilityLabel = remainingSeats <= 0
+                ? "Hết vé"
+                : isLowAvailability
+                    ? "Còn ít ghế"
+                    : $"{remainingSeats} ghế trống"
+        };
+    }
+
+    private static string ResolveFormat(Showtimes showtime)
+    {
+        var roomName = showtime.Room?.RoomName ?? string.Empty;
+        var languageName = showtime.Movie?.Language?.LanguageName ?? string.Empty;
+        var presentation = roomName.Contains("IMAX", StringComparison.OrdinalIgnoreCase) ? "IMAX 2D" : "2D";
+        var voice = languageName.Contains("vi", StringComparison.OrdinalIgnoreCase)
+                    || languageName.Contains("viet", StringComparison.OrdinalIgnoreCase)
+                    || languageName.Contains("việt", StringComparison.OrdinalIgnoreCase)
+            ? "LỒNG TIẾNG"
+            : "PHỤ ĐỀ";
+
+        return $"{presentation} {voice}";
+    }
+
+    private static string WeekdayLabel(DateTime date)
+    {
+        return date.DayOfWeek switch
+        {
+            DayOfWeek.Monday => "T2",
+            DayOfWeek.Tuesday => "T3",
+            DayOfWeek.Wednesday => "T4",
+            DayOfWeek.Thursday => "T5",
+            DayOfWeek.Friday => "T6",
+            DayOfWeek.Saturday => "T7",
+            _ => "CN"
+        };
+    }
+
     public IActionResult SelectShowtime(int movieId)
     {
         // Truy vấn thông tin phim

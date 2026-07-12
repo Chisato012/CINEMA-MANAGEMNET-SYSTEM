@@ -32,12 +32,12 @@
 
 @if (TempData["AlertSuccess"] is string successMessage)
 {
-    <div class="staff-alert staff-alert-success">@successMessage</div>
+    <div class="staff-alert staff-alert-success" data-alert-duration="3200">@successMessage</div>
 }
 
 @if (TempData["AlertError"] is string errorMessage)
 {
-    <div class="staff-alert staff-alert-error">@errorMessage</div>
+    <div class="staff-alert staff-alert-error" data-alert-duration="5200">@errorMessage</div>
 }
 
 <div class="scheduling-layout">

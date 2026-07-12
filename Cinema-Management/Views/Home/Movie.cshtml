@@ -76,7 +76,7 @@
                             </div>
 
                             <div class="movie-hero__actions">
-                                <form asp-controller="Home" asp-action="Booking" method="get">
+                                <form asp-controller="Booking" asp-action="SelectShowtime" method="get">
                                     <input type="hidden" name="movieId" value="@slide.MovieId" />
                                     @if (firstFutureShowtime != null)
                                     {
@@ -194,7 +194,7 @@
                                     <span class="movie-age">@movie.AgeRating</span>
                                 }
                             </div>
-                            <form asp-controller="Home" asp-action="Booking" method="get">
+                            <form asp-controller="Booking" asp-action="SelectShowtime" method="get">
                                 <input type="hidden" name="movieId" value="@movie.MovieId" />
                                 @if (firstFutureShowtime != null)
                                 {
