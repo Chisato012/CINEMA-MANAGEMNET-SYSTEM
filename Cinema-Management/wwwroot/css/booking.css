@@ -976,6 +976,7 @@ h3 {
     display: flex;
     justify-content: space-between;
     color: #d5c8c0;
+    font-size: 13px;
 }
 
 .compact-line small {

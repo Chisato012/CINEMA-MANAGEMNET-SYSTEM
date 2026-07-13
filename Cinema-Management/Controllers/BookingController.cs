@@ -1,7 +1,9 @@
 using Cinema_Management.Data;
 using Cinema_Management.Models;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json; // Dùng để chuyển danh sách combo thành JSON khi lưu Session.
 
 namespace Cinema_Management.Controllers;
 
@@ -36,7 +38,7 @@ public class BookingController : Controller
 
             })
             .FirstOrDefault();
-        
+
         if (movie == null)
         {
             return NotFound();
@@ -50,7 +52,7 @@ public class BookingController : Controller
             .ToList();
 
         movie.AvailableFormats = new List<string> { "2D" };
-        
+
         //Lưu vào model các suất chiếu có sẵn để hiển thị cho người dùng chọn
         movie.ShowtimeChoices = showtimes.Select(s => new ShowtimeChoiceViewModel
         {
@@ -70,7 +72,7 @@ public class BookingController : Controller
             .Select(s => s.Time)
             .Distinct()
             .ToList();
-        
+
         movie.SelectedTime = movie.AvailableTimes.FirstOrDefault() ?? string.Empty;
         movie.CinemaFormat = movie.AvailableFormats.FirstOrDefault() ?? string.Empty;
 
@@ -150,7 +152,7 @@ public class BookingController : Controller
                 SelectedDate = selectedDate,
                 SelectedTime = selectedTime,
                 CinemaFormat = selectedFormat,
-                ShowtimeId = selectedShowtimeId,     
+                ShowtimeId = selectedShowtimeId,
 
                 SeatChoices = seats.Select(seats => new SeatChoiceViewModel
                 {
@@ -161,18 +163,18 @@ public class BookingController : Controller
                     Price = showtime.BasePrice * (seatTypePricing.ContainsKey(seats.SeatType) ? seatTypePricing[seats.SeatType] : 1.00m),
                     IsSelected = false
                 }).ToList(),
-                
+
                 OccupiedSeats = occupiedSeatCodes
             }).FirstOrDefault();
-        
-        if(model == null)
+
+        if (model == null)
         {
             return NotFound();
         }
         return View(model);
     }
 
-    //Post: Booking/SelectSeats
+    //Post: Booking/SelectSeats nhận các ghế đc chọn
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult SelectSeats(List<string> selectedSeats)
@@ -205,7 +207,7 @@ public class BookingController : Controller
         var model = _context.Movies
             .Where(m => m.MovieId == selectedMovieId.Value)
             .Select(m => new BookingViewModel
-            {   
+            {
                 //Lấy ra các thông tin
                 MovieId = m.MovieId,
                 MovieTitle = m.Title,
@@ -216,7 +218,7 @@ public class BookingController : Controller
                 ShowtimeId = selectedShowtimeId,
 
                 //Gán ghế đã chọn
-                SelectedSeats = selectedSeats, 
+                SelectedSeats = selectedSeats,
 
                 //Gán giá vé
                 StandardTicketPrice = showtime.BasePrice * (seatTypePricing.ContainsKey("Regular") ? seatTypePricing["Regular"] : 1.00m),
@@ -240,15 +242,178 @@ public class BookingController : Controller
 
             }).FirstOrDefault();
 
-        if(model == null)
+        if (model == null)
         {
             return NotFound();
         }
 
-        return View("SelectSeats", model);
+        HttpContext.Session.SetString("SelectedSeats", string.Join(",", selectedSeats));
+
+
+        return RedirectToAction("SelectConcessions");
     }
 
 
+    public IActionResult SelectConcessions()
+    {
+
+        //Lấy ra lại các thông tin từ session
+        var selectedMovieId = HttpContext.Session.GetInt32("SelectedMovieId");
+        var selectedShowtimeId = HttpContext.Session.GetInt32("SelectedShowtimeId");
+        var selectedDate = HttpContext.Session.GetString("SelectedDate");
+        var selectedTime = HttpContext.Session.GetString("SelectedTime");
+        var selectedFormat = HttpContext.Session.GetString("SelectedFormat");
+        var selectedSeatsRaw = HttpContext.Session.GetString("SelectedSeats");
+
+        //Nếu chưa chọn phim
+        if (!selectedMovieId.HasValue || !selectedShowtimeId.HasValue)
+        {
+            return RedirectToAction("Index", "Home");
+        }
+
+        //Nếu chưa chọn ghế
+        if (string.IsNullOrWhiteSpace(selectedSeatsRaw))
+        {
+            return RedirectToAction(nameof(SelectSeats));
+        }
+
+        //Chuyển chuỗi các Code ghế 
+        var selectedSeats = selectedSeatsRaw
+        .Split(',', StringSplitOptions.RemoveEmptyEntries)
+        .ToList();
+
+
+
+        //Lấy ra suất chiếu
+        var showtime = _context.Showtimes.Include(s => s.Room)
+            .FirstOrDefault(s => s.MovieID == selectedMovieId.Value && s.ShowtimeID == selectedShowtimeId.Value);
+
+        if (showtime == null)
+        {
+            return NotFound();
+        }
+
+        //Lấy ra các ghế
+        var seats = _context.Seats.Where(s => s.RoomID == showtime.RoomID)
+            .OrderBy(s => s.SeatCode).ToList();
+
+        //Các ghế đã chọn
+        var occupiedSeatCodes = _context.Tickets.Where(t => t.ShowtimeID == selectedShowtimeId.Value)
+            .Select(t => t.Seat.SeatCode)
+            .ToList();
+
+        //Giá x cho từng loại ghế
+        var seatTypePricing = _context.SeatTypePricings.ToDictionary(st => st.SeatType, st => st.Multiplier);
+
+        //Combo
+        // Đọc danh sách combo đã chọn trước đó từ Session, nếu người dùng quay lại Step 3.
+        var selectedComboJson = HttpContext.Session.GetString("SelectedConcessions");
+
+        // Chuyển JSON thành danh sách; nếu Session chưa có thì tạo danh sách rỗng.
+        var savedSelections = string.IsNullOrWhiteSpace(selectedComboJson)
+            ? new List<ConcessionRequest>()
+            : JsonSerializer.Deserialize<List<ConcessionRequest>>(selectedComboJson) ?? [];
+
+        // Tạo Dictionary để tìm số lượng đã chọn nhanh theo ComboId.
+        var savedQuantities = savedSelections
+            .GroupBy(item => item.ComboId)
+            .ToDictionary(group => group.Key, group => group.First().Quantity);
+
+        var concession = _context.Combos.AsNoTracking().OrderBy(c => c.ComboName)
+            .ToList().Select(combo => new ConcessionItemViewModel
+            {
+                Id = combo.ComboID,                     // Mã combo lấy từ DB.
+                Name = combo.ComboName,                 // Tên combo lấy từ DB.
+                Price = combo.ComboPrice,               // Giá luôn lấy từ DB.
+                SelectedQuantity = savedQuantities      // Khôi phục số lượng nếu đã chọn.
+                    .GetValueOrDefault(combo.ComboID, 0)
+            }).ToList();
+
+        var model = _context.Movies.Where(m => m.MovieId == selectedMovieId.Value)
+            .Select(s => new BookingViewModel
+            {
+                MovieId = s.MovieId,
+                MovieTitle = s.Title,
+
+                SelectedDate = selectedDate ?? "",
+                SelectedTime = selectedTime ?? "",
+                CinemaFormat = selectedFormat ?? "2D",
+                SelectedSeats = selectedSeats,
+                ShowtimeId = selectedShowtimeId,
+                OccupiedSeats = occupiedSeatCodes,
+
+                //Gán giá vé
+                StandardTicketPrice = showtime.BasePrice * (seatTypePricing.ContainsKey("Regular") ? seatTypePricing["Regular"] : 1.00m),
+                VipTicketPrice = showtime.BasePrice * (seatTypePricing.ContainsKey("VIP") ? seatTypePricing["VIP"] : 1.00m),
+                SweetboxTicketPrice = showtime.BasePrice * (seatTypePricing.ContainsKey("Couple") ? seatTypePricing["Couple"] : 1.00m),
+
+                SeatChoices = seats.Select(seat => new SeatChoiceViewModel
+                {
+                    SeatId = seat.SeatID,
+                    SeatCode = seat.SeatCode,
+                    SeatType = seat.SeatType,
+                    IsOccupied = occupiedSeatCodes.Contains(seat.SeatCode),
+                    IsSelected = selectedSeats.Contains(seat.SeatCode),
+                    //lấy ra giá dựa vào baseprice x với chỉ số ghế với seattype là 1 dictionary
+                    Price = showtime.BasePrice * (seatTypePricing.ContainsKey(seat.SeatType) ? seatTypePricing[seat.SeatType] : 1.00m),
+                }).ToList(),
+
+                Concessions = concession
+
+
+            }).FirstOrDefault();
+        if (model == null)
+        {
+            return NotFound();
+        }
+
+        return View(model);
+
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    //Post cho Chọn đồ ăn
+
+    public IActionResult SelectConcessions(SelectConcessionsRequest request)
+    {
+        // Kiểm tra hành trình đặt vé vẫn còn trong Session.
+        var selectedShowtimeId = HttpContext.Session.GetInt32("SelectedShowtimeId");
+        var selectedSeatsRaw = HttpContext.Session.GetString("SelectedSeats");
+
+        if (!selectedShowtimeId.HasValue || string.IsNullOrWhiteSpace(selectedSeatsRaw))
+        {
+            return RedirectToAction(nameof(SelectSeats));
+        }
+
+        //Chuẩn hoá dữ liệu và gửi lên combo
+        var requestedItems = request.Items
+            .Where(item => item.ComboId > 0 && item.Quantity > 0)
+            .GroupBy(item => item.ComboId)
+            .Select(item => new ConcessionRequest
+            {
+                ComboId = item.Key, //Bằng Key trong từ điển
+                Quantity = Math.Clamp(item.First().Quantity, 1, 10)
+
+            }).ToList();
+
+        // Chỉ chấp nhận những ComboId thật sự tồn tại trong DB.
+        var requestedIds = requestedItems.Select(item => item.ComboId).ToList(); //Lấy ra các ID
+        var validComboIds = _context.Combos
+            .Where(combo => requestedIds.Contains(combo.ComboID))
+            .Select(combo => combo.ComboID)
+            .ToHashSet();
+
+        var validSelections = requestedItems
+            .Where(item => validComboIds.Contains(item.ComboId))
+            .ToList();
+
+        // Chỉ lưu mã combo và số lượng vào Session
+        var selectedComboJson = JsonSerializer.Serialize(validSelections);
+        HttpContext.Session.SetString("SelectedConcessions", selectedComboJson);
+
+        return RedirectToAction("Checkout");
+    }
 
 
 }

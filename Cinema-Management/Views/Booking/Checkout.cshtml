@@ -4,7 +4,7 @@
     ViewData["Title"] = "Thanh toán | Cosmos Cinema";
     var currentStep = 4;
     var stepLabels = new[] { "Thông tin phim", "Ghế ngồi", "Đồ ăn/uống", "Thanh toán" };
-    var selectedAddons = Model.Concessions.Where(item => item.Quantity > 0).ToList();
+    var selectedAddons = Model.Concessions.ToList();
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -64,7 +64,6 @@
                         {
                             @foreach (var item in selectedAddons)
                             {
-                                <div class="checkout-row"><span>@item.Quantity× @item.Name</span><strong>@(item.Price * item.Quantity).ToString("C")</strong></div>
                             }
                         }
                         else
