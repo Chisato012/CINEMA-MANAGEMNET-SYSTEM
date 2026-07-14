@@ -18,6 +18,8 @@ public class Combo
     [Range(0.01, 999999999, ErrorMessage = "Gia mon phai lon hon 0.")]
     public decimal ComboPrice { get; set; }
 
+    public ICollection<BookingCombo> BookingCombos { get; set; } = new List<BookingCombo>();
+
     public int Quantity {get; set;}
 
 }

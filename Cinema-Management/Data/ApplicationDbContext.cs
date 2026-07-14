@@ -27,6 +27,8 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<Booking> Bookings { set; get; }
 
+    public DbSet<BookingCombo> BookingCombos { get; set; }
+
     public DbSet<Ticket> Tickets { get; set; }
     public DbSet<Seat> Seats { get; set; }
     public DbSet<Room> Rooms { get; set; }
@@ -80,6 +82,28 @@ public class ApplicationDbContext : DbContext
                  .WithMany(u => u.Bookings)
                  .HasForeignKey(e => e.UserID)
                  .HasConstraintName("FK_Bookings_Users");
+        });
+        modelBuilder.Entity<BookingCombo>(entity =>
+        {
+            entity.ToTable("BookingCombos");
+
+            // Khóa chính gồm BookingID và ComboID.
+            entity.HasKey(item => new
+            {
+                item.BookingID,
+                item.ComboID
+            });
+
+            entity.Property(item => item.UnitPrice)
+                .HasColumnType("decimal(10,2)");
+
+            entity.HasOne(item => item.Booking)
+                .WithMany(booking => booking.BookingCombos)
+                .HasForeignKey(item => item.BookingID);
+
+            entity.HasOne(item => item.Combo)
+                .WithMany(combo => combo.BookingCombos)
+                .HasForeignKey(item => item.ComboID);
         });
 
         // =========================

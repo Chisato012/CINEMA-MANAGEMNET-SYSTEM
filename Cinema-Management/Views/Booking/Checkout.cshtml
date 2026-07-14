@@ -4,7 +4,7 @@
     ViewData["Title"] = "Thanh toán | Cosmos Cinema";
     var currentStep = 4;
     var stepLabels = new[] { "Thông tin phim", "Ghế ngồi", "Đồ ăn/uống", "Thanh toán" };
-    var selectedAddons = Model.Concessions.ToList();
+    var selectedAddons = Model.Concessions.Where(i => i.SelectedQuantity>0).ToList();
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -41,7 +41,7 @@
             <header class="step-heading">
                 <div>
                     <p class="eyebrow">Step 4 of 4 · Checkout</p>
-                    <h2>Secure Checkout</h2>
+                    <h2>Checkout</h2>
                     <p class="subtitle">Xem lại các lựa chọn của bạn và hoàn tất thanh toán một cách an toàn.</p>
                 </div>
             </header>
@@ -51,38 +51,49 @@
                         <h3>🎟 Admission</h3>
                         <div class="checkout-row">
                             <div>
-                                <span>@Model.SelectedSeats.Count× Admission</span>
-                                <div class="checkout-detail">Seats: @string.Join(", ", Model.SelectedSeats)</div>
-                                <div class="checkout-detail">@Model.SelectedDate · @Model.SelectedTime · @Model.CinemaFormat</div>
+                                <span>@Model.SelectedSeats.Count × Ghế</span>
+                                <div class="checkout-detail"><strong>Ghế: </strong> @string.Join(", ", Model.SelectedSeats)</div>
+                                <div class="checkout-detail"><strong>Phim: </strong>@Model.MovieTitle</div>
+                                <div class="checkout-detail"><strong>Thời gian: </strong>@Model.SelectedDate · @Model.SelectedTime · @Model.CinemaFormat</div>
                             </div>
-                            <strong>@Model.TicketSubtotal.ToString("C")</strong>
                         </div>
                     </article>
                     <article class="card checkout-card">
-                        <h3>🍿 Concessions</h3>
+                        <h3>🍿 Combo</h3>
                         @if (selectedAddons.Any())
                         {
                             @foreach (var item in selectedAddons)
-                            {
+                                {
+                                    <div class="checkout-detail"><strong>Combo: </strong> @item.Name - Đơn giá @item.Price VNĐ- Số lượng: @item.SelectedQuantity</div>
+                                }
                             }
-                        }
                         else
                         {
-                            <div class="empty-state">No concessions selected</div>
+                            <div class="empty-state">Không có combo nào được chọn</div>
                         }
                     </article>
                     <p class="secure-note">▣ Các khoản thanh toán được xử lý bằng phương thức mã hóa an toàn.</p>
                 </section>
                 <aside class="card payment-card">
-                    <h3>Payment Summary</h3>
+                    <h3>Thanh toán</h3>
                     <div class="totals">
-                        <div class="total-line"><span>Subtotal</span><span>@(Model.TicketSubtotal + Model.ConcessionSubtotal).ToString("C")</span></div>
-                        <div class="total-line"><span>Booking fee</span><span>@Model.ConvenienceFee.ToString("C")</span></div>
-                        <div class="total-line"><span>Tax (8%)</span><span>@Model.Tax.ToString("C")</span></div>
+                        @{
+                            var AllTotal = Model.TicketSubtotal + Model.ConcessionSubtotal;
+                        }
+                        <div class="total-line"><span>Tổng Vé: </span><span>@Model.TicketSubtotal.ToString("C")</span></div>
+                        <div class="total-line"><span>Tổng Combo: </span><span>@Model.ConcessionSubtotal.ToString("C")</span></div>
+                        <div class="total-line"><span>Tổng: </span><span>@AllTotal.ToString("C")</span></div>
                     </div>
                     <div class="promo"><input type="text" placeholder="◇ ENTER PROMO CODE" aria-label="Promo code" /><button type="button">Apply</button></div>
-                    <div class="payment-due"><div class="total-line grand"><span>Total due</span><span><b>@Model.GrandTotal.ToString("C")</b><small class="currency">USD</small></span></div></div>
-                    <button type="button" class="primary-button full" disabled>Confirm payment →</button>
+                    @* <div class="payment-due"><div class="total-line grand"><span>Total due</span><span><b>@Model.GrandTotal.ToString("C")</b><small class="currency">USD</small></span></div></div> *@
+                    
+                    <form asp-controller="Booking" asp-action="StartPayment" method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="primary-button full">
+                            Tiếp tục thanh toán
+                        </button>
+
+                    </form>
                     <p class="secure-note">Bằng cách tiếp tục, bạn sẽ đồng ý với Điều khoản Dịch vụ của chúng tôi.</p>
                 </aside>
             </div>
