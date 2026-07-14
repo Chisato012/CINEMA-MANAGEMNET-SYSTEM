@@ -204,6 +204,7 @@ create table Combos (
   ComboName  nvarchar(150) NOT NULL,
   ComboPrice decimal(10,2) NOT NULL
 )
+ALTER TABLE Combos Add Quantity INT
 GO
 
 create table BookingCombos (
