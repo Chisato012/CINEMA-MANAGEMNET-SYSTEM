@@ -1,0 +1,225 @@
+@model BookingSchedulePageViewModel
+@{
+    ViewData["Title"] = "Đặt vé";
+    var selectedDateValue = Model.SelectedDate.ToString("yyyy-MM-dd");
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/booking.css" asp-append-version="true" />
+}
+
+<main class="booking-schedule-page" data-selected-date="@selectedDateValue">
+    <section class="booking-schedule-hero" aria-labelledby="bookingScheduleTitle">
+        <div class="booking-schedule-shell">
+            <p class="booking-kicker">COSMOS Cinema</p>
+            <h1 id="bookingScheduleTitle">Đặt vé xem phim</h1>
+            <p>Chọn ngày chiếu, suất chiếu và tiếp tục đặt vé tại COSMOS Cinema.</p>
+        </div>
+    </section>
+
+    <div class="booking-schedule-shell booking-schedule-workspace">
+        <section class="booking-date-panel" aria-label="Chọn ngày chiếu">
+            <button type="button" class="booking-date-nav" data-date-scroll="prev" aria-label="Ngày trước">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+            </button>
+
+            <div class="booking-date-strip" data-date-strip>
+                @foreach (var day in Model.DateOptions)
+                {
+                    <button type="button"
+                            class="booking-date-card @(day.IsSelected ? "is-selected" : "")"
+                            data-date-option
+                            data-date="@day.Value"
+                            aria-pressed="@(day.IsSelected ? "true" : "false")">
+                        <span class="booking-date-card__day">@day.DateLabel</span>
+                        <span class="booking-date-card__weekday">@day.WeekdayLabel</span>
+                        @if (day.IsToday)
+                        {
+                            <span class="booking-date-card__today">Hôm nay</span>
+                        }
+                    </button>
+                }
+            </div>
+
+            <button type="button" class="booking-date-nav" data-date-scroll="next" aria-label="Ngày tiếp theo">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+            </button>
+        </section>
+
+        @if (!string.IsNullOrWhiteSpace(Model.MovieFilterTitle))
+        {
+            <section class="booking-movie-filter-note" aria-label="Bộ lọc phim">
+                <span>Đang hiển thị lịch chiếu của: <strong>@Model.MovieFilterTitle</strong></span>
+                <a asp-controller="Booking" asp-action="Index">Xóa bộ lọc</a>
+            </section>
+        }
+
+        <section class="booking-toolbar" aria-label="Bộ lọc lịch chiếu">
+            <div class="booking-filter-list" role="group" aria-label="Bộ lọc suất chiếu">
+                <button type="button" class="booking-filter is-active" data-schedule-filter="all" aria-pressed="true">Tất cả</button>
+                <button type="button" class="booking-filter" data-schedule-filter="2d" aria-pressed="false">2D</button>
+                <button type="button" class="booking-filter" data-schedule-filter="3d" aria-pressed="false">3D</button>
+                <button type="button" class="booking-filter" data-schedule-filter="subtitle" aria-pressed="false">Phụ đề</button>
+                <button type="button" class="booking-filter" data-schedule-filter="dubbed" aria-pressed="false">Lồng tiếng</button>
+                <button type="button" class="booking-filter" data-schedule-filter="late" aria-pressed="false">Suất muộn</button>
+            </div>
+
+            <label class="booking-search">
+                <span class="visually-hidden">Tìm kiếm phim</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m16.5 16.5 4 4" /></svg>
+                <input type="search" data-schedule-search placeholder="Tìm kiếm phim..." autocomplete="off" />
+            </label>
+
+            <p class="booking-late-legend">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.2A8.2 8.2 0 0 1 8.8 4a7.2 7.2 0 1 0 11.2 11.2Z" /></svg>
+                Suất chiếu muộn từ 22h00
+            </p>
+        </section>
+
+        <div class="booking-schedule-layout">
+            <section class="booking-schedule-list" aria-live="polite">
+                <div class="schedule-loading-state" data-schedule-loading hidden>
+                    <span></span><span></span><span></span>
+                </div>
+
+                <div class="schedule-error-state" data-schedule-error hidden role="alert">
+                    <h2>Không thể tải lịch chiếu.</h2>
+                    <p>Vui lòng thử lại sau.</p>
+                </div>
+
+                @foreach (var movie in Model.Movies)
+                {
+                    var formatsText = string.Join(" ", movie.Formats).ToLowerInvariant();
+                    <article class="schedule-movie-card"
+                             data-movie-card
+                             data-title="@movie.Title.ToLowerInvariant()"
+                             data-formats="@formatsText">
+                        <a class="schedule-poster" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">
+                            <img src="@movie.PosterUrl" alt="Poster phim @movie.Title" loading="lazy" />
+                        </a>
+
+                        <div class="schedule-movie-main">
+                            <div class="schedule-movie-copy">
+                                <div class="schedule-title-row">
+                                    <h2>@movie.Title</h2>
+                                    @if (!string.IsNullOrWhiteSpace(movie.AgeRating))
+                                    {
+                                        <span class="schedule-age">@movie.AgeRating</span>
+                                    }
+                                </div>
+                                <p>@movie.Genres • @movie.DurationMinutes phút</p>
+                                <div class="schedule-format-list" aria-label="Định dạng">
+                                    @foreach (var format in movie.Formats)
+                                    {
+                                        <span>@format</span>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="schedule-showtime-list" aria-label="Suất chiếu của @movie.Title">
+                                @foreach (var showtime in movie.Showtimes)
+                                {
+                                    var disabled = showtime.IsSoldOut;
+                                    <button type="button"
+                                            class="showtime-button @(showtime.IsLate ? "is-late" : "") @(showtime.IsLowAvailability ? "is-low" : "")"
+                                            data-showtime-button
+                                            data-date="@showtime.Date"
+                                            data-showtime-id="@showtime.ShowtimeId"
+                                            data-movie-id="@showtime.MovieId"
+                                            data-movie-title="@movie.Title"
+                                            data-poster="@movie.PosterUrl"
+                                            data-format="@showtime.Format"
+                                            data-format-key="@showtime.Format.ToLowerInvariant()"
+                                            data-time="@showtime.Time"
+                                            data-date-label="@showtime.DateLabel"
+                                            data-room="@showtime.RoomName"
+                                            data-availability="@showtime.AvailabilityLabel"
+                                            data-late="@(showtime.IsLate ? "true" : "false")"
+                                            aria-pressed="false"
+                                            disabled="@disabled">
+                                        <span class="showtime-button__top">
+                                            <strong>@showtime.Time</strong>
+                                            @if (showtime.IsLate)
+                                            {
+                                                <svg viewBox="0 0 24 24" aria-label="Suất muộn"><path d="M20 15.2A8.2 8.2 0 0 1 8.8 4a7.2 7.2 0 1 0 11.2 11.2Z" /></svg>
+                                            }
+                                        </span>
+                                        <span class="showtime-button__seat">@showtime.AvailabilityLabel</span>
+                                        <span class="showtime-selected-label">Đã chọn</span>
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </article>
+                }
+
+                <div class="schedule-empty-state" data-empty-date hidden>
+                    <h2>Chưa có lịch chiếu cho ngày này.</h2>
+                    <p>Vui lòng chọn một ngày khác hoặc quay lại sau.</p>
+                    <button type="button" data-select-today>Chọn hôm nay</button>
+                </div>
+
+                <div class="schedule-empty-state" data-empty-search hidden>
+                    <h2>Không tìm thấy phim phù hợp.</h2>
+                    <p>Thử đổi từ khóa tìm kiếm hoặc bỏ bớt bộ lọc.</p>
+                </div>
+            </section>
+
+            <aside class="booking-summary" aria-labelledby="bookingSummaryTitle">
+                <div class="booking-summary__heading">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V5a1 1 0 0 1 1-1h4m6 0h4a1 1 0 0 1 1 1v4M4 15v4a1 1 0 0 0 1 1h4m6 0h4a1 1 0 0 0 1-1v-4" /><path d="M9 4v16M15 4v16" /></svg>
+                    <h2 id="bookingSummaryTitle">Vé của bạn</h2>
+                </div>
+
+                <div class="booking-summary-empty" data-summary-empty>
+                    <h3>Chưa chọn suất chiếu</h3>
+                    <p>Hãy chọn ngày và giờ chiếu để tiếp tục đặt vé.</p>
+                </div>
+
+                <div class="booking-summary-selected" data-summary-selected hidden>
+                    <div class="summary-movie">
+                        <img src="/img/poster/poster1.png" alt="" data-summary-poster />
+                        <div>
+                            <h3 data-summary-title></h3>
+                            <span data-summary-format></span>
+                        </div>
+                    </div>
+
+                    <dl class="summary-details">
+                        <div><dt>Ngày chiếu</dt><dd data-summary-date></dd></div>
+                        <div><dt>Suất chiếu</dt><dd data-summary-time></dd></div>
+                        <div><dt>Phòng chiếu</dt><dd data-summary-room></dd></div>
+                        <div><dt>Ghế</dt><dd>Chưa chọn</dd></div>
+                    </dl>
+
+                    <div class="summary-total">
+                        <span>Tạm tính</span>
+                        <strong>0 đ</strong>
+                    </div>
+                </div>
+
+                <form asp-controller="Booking" asp-action="SelectShowtime" method="post" id="bookingScheduleForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="MovieId" data-selected-movie />
+                    <input type="hidden" name="ShowtimeId" data-selected-showtime />
+                    <input type="hidden" name="Format" data-selected-format />
+
+                    <button type="submit" class="summary-primary" data-continue-button disabled>
+                        Tiếp tục chọn ghế
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
+                    </button>
+                    <a class="summary-secondary" asp-controller="Home" asp-action="Movie">Quay lại chọn phim</a>
+                </form>
+
+                <p class="summary-secure">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v6c0 4 3 7 7 9 4-2 7-5 7-9V6l-7-3Z" /><path d="m9 12 2 2 4-5" /></svg>
+                    Thông tin đặt vé được bảo mật tuyệt đối.
+                </p>
+            </aside>
+        </div>
+    </div>
+</main>
+
+@section Scripts {
+    <script src="~/js/booking-schedule.js" asp-append-version="true"></script>
+}

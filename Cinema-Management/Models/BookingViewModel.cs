@@ -148,3 +148,52 @@ public sealed class StepRequest
 {
     public int Step { get; init; }
 }
+
+public sealed class BookingSchedulePageViewModel
+{
+    public DateTime Today { get; init; }
+    public DateTime SelectedDate { get; init; }
+    public int? MovieId { get; init; }
+    public string? MovieFilterTitle { get; init; }
+    public IReadOnlyList<BookingScheduleDateOption> DateOptions { get; init; } = [];
+    public IReadOnlyList<BookingScheduleMovieViewModel> Movies { get; init; } = [];
+}
+
+public sealed class BookingScheduleDateOption
+{
+    public DateTime Date { get; init; }
+    public string Value { get; init; } = string.Empty;
+    public string DateLabel { get; init; } = string.Empty;
+    public string WeekdayLabel { get; init; } = string.Empty;
+    public bool IsToday { get; init; }
+    public bool IsSelected { get; init; }
+}
+
+public sealed class BookingScheduleMovieViewModel
+{
+    public int MovieId { get; init; }
+    public string Title { get; init; } = string.Empty;
+    public string PosterUrl { get; init; } = string.Empty;
+    public string Genres { get; init; } = string.Empty;
+    public int DurationMinutes { get; init; }
+    public string AgeRating { get; init; } = string.Empty;
+    public IReadOnlyList<string> Formats { get; init; } = [];
+    public IReadOnlyList<BookingScheduleShowtimeViewModel> Showtimes { get; init; } = [];
+}
+
+public sealed class BookingScheduleShowtimeViewModel
+{
+    public int ShowtimeId { get; init; }
+    public int MovieId { get; init; }
+    public string Date { get; init; } = string.Empty;
+    public string DateLabel { get; init; } = string.Empty;
+    public string Time { get; init; } = string.Empty;
+    public string Format { get; init; } = string.Empty;
+    public string RoomName { get; init; } = string.Empty;
+    public int RemainingSeats { get; init; }
+    public int TotalSeats { get; init; }
+    public bool IsLate { get; init; }
+    public bool IsLowAvailability { get; init; }
+    public bool IsSoldOut { get; init; }
+    public string AvailabilityLabel { get; init; } = string.Empty;
+}
