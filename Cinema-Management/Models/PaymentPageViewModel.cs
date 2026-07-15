@@ -1,5 +1,5 @@
 namespace Cinema_Management.Models;
-
+//Model cho page payement
 public sealed class PaymentPageViewModel
 {
     public string PaymentReference { get; set; } = string.Empty;
