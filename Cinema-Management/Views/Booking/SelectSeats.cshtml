@@ -1,4 +1,4 @@
-﻿@using System.Globalization
+@using System.Globalization
 @model BookingViewModel
 @{
     Layout = null;
@@ -71,6 +71,10 @@
                             <span class="meta-pill">▣ @Model.SelectedDate</span>
                             <span class="meta-pill">◷ @Model.SelectedTime</span>
                             <span class="meta-pill">⌖ @Model.CinemaFormat</span>
+                            @if (!string.IsNullOrWhiteSpace(Model.OfferCode))
+                            {
+                                <span class="meta-pill">Ưu đãi @Model.OfferCode</span>
+                            }
                         </div>
                     </div>
                 </header>

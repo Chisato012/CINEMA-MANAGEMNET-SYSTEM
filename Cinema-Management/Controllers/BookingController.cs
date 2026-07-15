@@ -266,6 +266,14 @@ public class BookingController : Controller
         HttpContext.Session.SetString("SelectedFormat", request.Format);
         HttpContext.Session.SetString("SelectedDate", showtime.Date.ToString("yyyy-MM-dd"));
         HttpContext.Session.SetString("SelectedTime", showtime.StartTime.ToString("HH:mm"));
+        if (!string.IsNullOrWhiteSpace(request.OfferCode))
+        {
+            HttpContext.Session.SetString("SelectedOfferCode", request.OfferCode.Trim().ToUpperInvariant());
+        }
+        else
+        {
+            HttpContext.Session.Remove("SelectedOfferCode");
+        }
         return RedirectToAction("SelectSeats");
     }
 
@@ -279,6 +287,7 @@ public class BookingController : Controller
         var selectedFormat = HttpContext.Session.GetString("SelectedFormat");
         var selectedDate = HttpContext.Session.GetString("SelectedDate");
         var selectedTime = HttpContext.Session.GetString("SelectedTime");
+        var selectedOfferCode = HttpContext.Session.GetString("SelectedOfferCode");
 
         if (selectedShowtimeId == null || selectedMovieId == null || string.IsNullOrEmpty(selectedFormat) ||
             string.IsNullOrEmpty(selectedDate) || string.IsNullOrEmpty(selectedTime))
@@ -313,6 +322,7 @@ public class BookingController : Controller
                 SelectedTime = selectedTime,
                 CinemaFormat = selectedFormat,
                 ShowtimeId = selectedShowtimeId,
+                OfferCode = selectedOfferCode,
 
                 SeatChoices = seats.Select(seats => new SeatChoiceViewModel
                 {
@@ -375,6 +385,7 @@ public class BookingController : Controller
                 SelectedDate = HttpContext.Session.GetString("SelectedDate"),
                 SelectedTime = HttpContext.Session.GetString("SelectedTime"),
                 CinemaFormat = HttpContext.Session.GetString("SelectedFormat"),
+                OfferCode = HttpContext.Session.GetString("SelectedOfferCode"),
                 ShowtimeId = selectedShowtimeId,
 
                 //Gán ghế đã chọn
