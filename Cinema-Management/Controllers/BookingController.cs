@@ -12,7 +12,9 @@ namespace Cinema_Management.Controllers;
 
 public class BookingController : Controller
 {
-    private static readonly Regex PaymentReferenceRegex = new(@"COSMOS[-A-Z0-9]+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex PaymentReferenceRegex = new(
+        @"(?<![A-Z0-9])COSMOS(?:\d{20}|[A-F0-9]{26})(?![A-Z0-9])",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly JsonSerializerOptions WebhookJsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly ApplicationDbContext _context;
