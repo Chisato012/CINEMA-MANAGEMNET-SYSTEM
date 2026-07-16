@@ -1382,17 +1382,17 @@ public class BookingController : Controller
     private string BuildVietQrImageUrl(decimal amount, string paymentReference)
     {
         var sePaySection = _configuration.GetSection("SePay");
-        var accountNumber = sePaySection["BankAccountNumber"];
-        var bankCode = sePaySection["BankCode"];
+        var accountNumber = sePaySection["BankAccountNumber"]?.Trim();
+        var bankCode = sePaySection["BankCode"]?.Trim();
 
         if (string.IsNullOrWhiteSpace(accountNumber) || string.IsNullOrWhiteSpace(bankCode))
         {
             return "/img/poster/QR.png";
         }
 
-        var template = sePaySection["QrTemplate"];
-        var accountHolder = sePaySection["AccountHolder"];
-        var storeName = sePaySection["StoreName"];
+        var template = sePaySection["QrTemplate"]?.Trim();
+        var accountHolder = sePaySection["AccountHolder"]?.Trim();
+        var storeName = sePaySection["StoreName"]?.Trim();
         var amountText = ((long)decimal.Truncate(amount)).ToString();
 
         var query = new List<string>
@@ -1554,4 +1554,3 @@ public class BookingController : Controller
 
    
 }
-
