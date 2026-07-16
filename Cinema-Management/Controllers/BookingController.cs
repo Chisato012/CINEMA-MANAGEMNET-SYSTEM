@@ -1001,7 +1001,7 @@ public class BookingController : Controller
             return Ok(new { success = true });
         }
 
-        if (request.TransferAmount != intent.ExpectedAmount)
+        if (request.TransferAmount != NormalizeVndAmount(intent.ExpectedAmount))
         {
             return BadRequest(new { success = false, message = "Transfer amount does not match expected amount" });
         }
@@ -1070,6 +1070,7 @@ public class BookingController : Controller
         var nowUtc = DateTime.UtcNow;
         var paymentReference = await GeneratePaymentReferenceAsync();
         var expiresAtUtc = nowUtc.AddMinutes(10);
+        var expectedAmount = NormalizeVndAmount(draft.TotalAmount);
 
         _context.PaymentIntents.Add(new PaymentIntent
         {
@@ -1077,7 +1078,7 @@ public class BookingController : Controller
             MovieID = movieId,
             ShowtimeID = showtimeId,
             PaymentReference = paymentReference,
-            ExpectedAmount = draft.TotalAmount,
+            ExpectedAmount = expectedAmount,
             Status = "Pending",
             SelectedSeatCodes = string.Join(",", draft.SelectedSeatCodes),
             SelectedCombosJson = selectedComboJson,
@@ -1148,7 +1149,9 @@ public class BookingController : Controller
                 return new PaymentCompletionResult(false, null, errorMessage ?? "Thong tin dat ve khong hop le.");
             }
 
-            if (draft.TotalAmount != intent.ExpectedAmount)
+            var paidAmount = NormalizeVndAmount(intent.ExpectedAmount);
+
+            if (NormalizeVndAmount(draft.TotalAmount) != paidAmount)
             {
                 await transaction.RollbackAsync();
                 return new PaymentCompletionResult(false, null, "So tien thanh toan khong con khop voi du lieu dat ve.");
@@ -1173,7 +1176,7 @@ public class BookingController : Controller
             {
                 UserID = intent.UserID,
                 BookingDate = nowUtc,
-                TotalAmount = draft.TotalAmount,
+                TotalAmount = paidAmount,
                 Status = "Confirmed"
             };
 
@@ -1202,7 +1205,7 @@ public class BookingController : Controller
             {
                 BookingID = booking.BookingID,
                 MethodID = paymentMethod.MethodID,
-                Amount = draft.TotalAmount,
+                Amount = paidAmount,
                 PaymentDate = nowUtc,
                 Status = "Success"
             });
@@ -1395,7 +1398,7 @@ public class BookingController : Controller
         var template = sePaySection["QrTemplate"]?.Trim();
         var accountHolder = sePaySection["AccountHolder"]?.Trim();
         var storeName = sePaySection["StoreName"]?.Trim();
-        var amountText = ((long)decimal.Truncate(amount)).ToString();
+        var amountText = ((long)NormalizeVndAmount(amount)).ToString();
 
         var query = new List<string>
         {
@@ -1421,6 +1424,11 @@ public class BookingController : Controller
         }
 
         return $"https://vietqr.app/img?{string.Join("&", query)}";
+    }
+
+    private static decimal NormalizeVndAmount(decimal amount)
+    {
+        return decimal.Truncate(amount);
     }
 
     private bool IsAuthorizedSePayWebhook()
