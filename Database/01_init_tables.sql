@@ -161,7 +161,7 @@ create table Users (
 
     ExternalProvider NVARCHAR(50) NULL,
 
-    ExternalProviderKey NVARCHAR(200) NULL;
+    ExternalProviderKey NVARCHAR(200) NULL,
 
 CONSTRAINT CK_Users_Role CHECK ([Role] IN ('Admin', 'Staff', 'KhachHang'))
 )
@@ -243,11 +243,47 @@ CONSTRAINT FK_Payments_PaymentMethods FOREIGN KEY (MethodID) REFERENCES PaymentM
 )
 GO
 
+create table PaymentIntents (
+  PaymentIntentID   int            PRIMARY KEY IDENTITY(1, 1),
+  UserID            int            NOT NULL,
+  MovieID           int            NOT NULL,
+  ShowtimeID        int            NOT NULL,
+  BookingID         int            NULL,
+  PaymentReference  nvarchar(100)  NOT NULL,
+  ExpectedAmount    decimal(10,2)  NOT NULL,
+  Status            nvarchar(20)   NOT NULL DEFAULT 'Pending',
+  SelectedSeatCodes nvarchar(500)  NOT NULL,
+  SelectedCombosJson nvarchar(max) NULL,
+  SePayTransactionID bigint        NULL,
+  SePayReferenceCode nvarchar(255) NULL,
+  SePayContent      nvarchar(max)  NULL,
+  WebhookPayload    nvarchar(max)  NULL,
+  CreatedAtUtc      datetime2      NOT NULL DEFAULT SYSUTCDATETIME(),
+  ExpiresAtUtc      datetime2      NOT NULL,
+  PaidAtUtc         datetime2      NULL,
+
+CONSTRAINT CK_PaymentIntents_Status CHECK (Status IN ('Pending', 'Processing', 'Success', 'Failed', 'Expired')),
+CONSTRAINT FK_PaymentIntents_Users FOREIGN KEY (UserID) REFERENCES Users (UserID),
+CONSTRAINT FK_PaymentIntents_Movies FOREIGN KEY (MovieID) REFERENCES Movies (MovieID),
+CONSTRAINT FK_PaymentIntents_Showtimes FOREIGN KEY (ShowtimeID) REFERENCES Showtimes (ShowtimeID),
+CONSTRAINT FK_PaymentIntents_Bookings FOREIGN KEY (BookingID) REFERENCES Bookings (BookingID)
+)
+GO
+
 -- ==========================================
 -- 9. INDEX
 -- ==========================================
 CREATE UNIQUE INDEX UQ_Tickets_Showtime_Seat
   ON Tickets (ShowtimeID, SeatID)
+GO
+
+CREATE UNIQUE INDEX UQ_PaymentIntents_PaymentReference
+  ON PaymentIntents (PaymentReference)
+GO
+
+CREATE UNIQUE INDEX UQ_PaymentIntents_SePayTransactionID
+  ON PaymentIntents (SePayTransactionID)
+  WHERE SePayTransactionID IS NOT NULL
 GO
 
 -- ==========================================

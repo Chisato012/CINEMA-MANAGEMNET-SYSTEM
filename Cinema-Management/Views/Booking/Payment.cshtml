@@ -83,5 +83,37 @@
             </aside>
         </div>
     </main>
+
+    <script>
+        (() => {
+            const reference = '@Model.PaymentReference';
+            const statusUrl = '@Url.Action("PaymentStatus", "Booking")';
+            const successUrl = '@Url.Action("PaymentSuccess", "Booking")';
+
+            if (!reference || !statusUrl || !successUrl) {
+                return;
+            }
+
+            const checkPaymentStatus = async () => {
+                const response = await fetch(`${statusUrl}?paymentReference=${encodeURIComponent(reference)}`, {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.status === 'Success' && data.bookingId) {
+                    window.location.href = `${successUrl}?bookingId=${encodeURIComponent(data.bookingId)}`;
+                }
+            };
+
+            window.setInterval(checkPaymentStatus, 5000);
+        })();
+    </script>
 </body>
 </html>
