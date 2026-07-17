@@ -25,6 +25,44 @@ jobs:
       - name: Publish
         run: dotnet publish Cinema-Management/Cinema-Management.csproj -c Release -o publish
 
+      - name: Create production SePay configuration
+        env:
+          SEPAY_BANK_ACCOUNT_NUMBER: ${{ secrets.SEPAY_BANK_ACCOUNT_NUMBER }}
+          SEPAY_BANK_CODE: ${{ secrets.SEPAY_BANK_CODE }}
+          SEPAY_ACCOUNT_HOLDER: ${{ secrets.SEPAY_ACCOUNT_HOLDER }}
+          SEPAY_STORE_NAME: ${{ secrets.SEPAY_STORE_NAME }}
+          SEPAY_WEBHOOK_API_KEY: ${{ secrets.SEPAY_WEBHOOK_API_KEY }}
+        run: |
+          for variable_name in \
+            SEPAY_BANK_ACCOUNT_NUMBER \
+            SEPAY_BANK_CODE \
+            SEPAY_ACCOUNT_HOLDER \
+            SEPAY_STORE_NAME \
+            SEPAY_WEBHOOK_API_KEY
+          do
+            if [ -z "${!variable_name}" ]; then
+              echo "Missing required GitHub secret: ${variable_name}"
+              exit 1
+            fi
+          done
+
+          jq -n \
+            --arg account "$SEPAY_BANK_ACCOUNT_NUMBER" \
+            --arg bank "$SEPAY_BANK_CODE" \
+            --arg holder "$SEPAY_ACCOUNT_HOLDER" \
+            --arg store "$SEPAY_STORE_NAME" \
+            --arg webhookKey "$SEPAY_WEBHOOK_API_KEY" \
+            '{
+              SePay: {
+                BankAccountNumber: $account,
+                BankCode: $bank,
+                AccountHolder: $holder,
+                StoreName: $store,
+                QrTemplate: "compact",
+                WebhookApiKey: $webhookKey
+              }
+            }' > publish/appsettings.Production.json
+
       - name: Take app offline
         env:
           FTP_SERVER: ${{ secrets.FTP_SERVER }}

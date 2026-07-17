@@ -16,7 +16,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cinema_Management.Controllers;
-
+// BE Bắc
 public class AccountController : Controller
 {
     private const string GoogleProvider = "Google";

@@ -7,7 +7,7 @@ namespace Cinema_Management.Models
     public class Booking        
     {
         [Key]
-        public int BookingID;
+        public int BookingID {get; set;}
 
         [Required]
         public int UserID { get; set; }
@@ -28,8 +28,10 @@ namespace Cinema_Management.Models
         public User? User { get; set; }
         
         public ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
-        // public ICollection<BookingCombo> BookingCombos { get; set; } = new List<BookingCombo>();
+        public ICollection<BookingCombo> BookingCombos { get; set; } = new List<BookingCombo>();
         public ICollection<Payment> Payments { get; set; } = new List<Payment>();
+
+        
     }
 }
 

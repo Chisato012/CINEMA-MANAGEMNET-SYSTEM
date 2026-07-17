@@ -576,26 +576,26 @@ VALUES
 GO
 
 
-INSERT INTO Combos (ComboName, ComboPrice)
+INSERT INTO Combos (ComboName, ComboPrice, Quantity)
 VALUES 
 -- BÁN LẺ
-(N'1 Bắp (Size M)', 49000.00),              -- ComboID: 1
-(N'1 Bắp (Size L)', 59000.00),              -- ComboID: 2
-(N'1 Nước ngọt (Size M)', 19000.00),        -- ComboID: 3
-(N'1 Nước ngọt (Size L)', 29000.00),        -- ComboID: 4
-(N'1 Nước suối / Trà', 25000.00),           -- ComboID: 5
+(N'1 Bắp (Size M)', 49000.00, 50),              -- ComboID: 1
+(N'1 Bắp (Size L)', 59000.00, 50),              -- ComboID: 2
+(N'1 Nước ngọt (Size M)', 19000.00, 50),        -- ComboID: 3
+(N'1 Nước ngọt (Size L)', 29000.00, 50),        -- ComboID: 4
+(N'1 Nước suối / Trà', 25000.00, 50),           -- ComboID: 5
 
 -- COMBO CƠ BẢN
-(N'Combo Solo M (1 Bắp M + 1 Nước M)', 59000.00),    -- ComboID: 6 (Tiết kiệm 9k)
-(N'Combo Solo L (1 Bắp L + 1 Nước L)', 79000.00),    -- ComboID: 7 (Tiết kiệm 9k)
-(N'Combo Couple M (1 Bắp M + 2 Nước M)', 79000.00),  -- ComboID: 8 (Tiết kiệm 8k)
-(N'Combo Couple L (1 Bắp L + 2 Nước L)', 99000.00),  -- ComboID: 9 (Tiết kiệm 18k - Đã sửa giá)
-(N'Combo Family M (2 Bắp M + 2 Nước M)', 119000.00), -- ComboID: 10 (Tiết kiệm 17k)
-(N'Combo Family L (2 Bắp L + 2 Nước L)', 149000.00), -- ComboID: 11 (Tiết kiệm 27k - Đã sửa giá)
+(N'Combo Solo M (1 Bắp M + 1 Nước M)', 59000.00, 50),    -- ComboID: 6 (Tiết kiệm 9k)
+(N'Combo Solo L (1 Bắp L + 1 Nước L)', 79000.00, 50),    -- ComboID: 7 (Tiết kiệm 9k)
+(N'Combo Couple M (1 Bắp M + 2 Nước M)', 79000.00, 50),  -- ComboID: 8 (Tiết kiệm 8k)
+(N'Combo Couple L (1 Bắp L + 2 Nước L)', 99000.00, 50),  -- ComboID: 9 (Tiết kiệm 18k - Đã sửa giá)
+(N'Combo Family M (2 Bắp M + 2 Nước M)', 119000.00, 50), -- ComboID: 10 (Tiết kiệm 17k)
+(N'Combo Family L (2 Bắp L + 2 Nước L)', 149000.00, 50), -- ComboID: 11 (Tiết kiệm 27k - Đã sửa giá)
 
 -- COMBO NÂNG CAO (UPSELL & MERCHANDISE)
-(N'Combo Snack (1 Bắp L + 2 Nước L + 1 Xúc xích)', 129000.00), -- ComboID: 12
-(N'Combo Doraemon (1 Bắp L + 1 Nước L + 1 Ly nhân vật)', 169000.00); -- ComboID: 13
+(N'Combo Snack (1 Bắp L + 2 Nước L + 1 Xúc xích)', 129000.00, 50), -- ComboID: 12
+(N'Combo Doraemon (1 Bắp L + 1 Nước L + 1 Ly nhân vật)', 169000.00, 50); -- ComboID: 13
 GO
 
 

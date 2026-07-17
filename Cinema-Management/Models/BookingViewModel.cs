@@ -14,18 +14,19 @@ public sealed class BookingViewModel
 
     public int MovieId { get; set; } = 1;
     public int? ShowtimeId { get; set; }
-    public string MovieTitle { get; set; } 
-    public string Director { get; set; } 
-    public string Cast { get; set; } 
-    public string Synopsis { get; set; } 
+    public string MovieTitle { get; set; }
+    public string Director { get; set; }
+    public string Cast { get; set; }
+    public string Synopsis { get; set; }
     public string AgeRating { get; set; }
     public int DurationMinutes { get; set; } = 166;
     public string PosterURL { get; set; } = string.Empty;
     public string Genre { get; set; } = string.Empty;
 
     public string SelectedDate { get; set; } = DateTime.Today.AddDays(1).ToString("yyyy-MM-dd");
-    public string SelectedTime { get; set; } 
+    public string SelectedTime { get; set; }
     public string CinemaFormat { get; set; }
+    public string? OfferCode { get; set; }
     public List<string> AvailableDates { get; set; } = [];
     public List<string> AvailableTimes { get; set; } = [];
     public List<string> AvailableFormats { get; set; } = [];
@@ -37,34 +38,35 @@ public sealed class BookingViewModel
 
     public decimal StandardTicketPrice { get; set; } = 18.50m;
 
-    public decimal VipTicketPrice {get; set;}
+    public decimal VipTicketPrice { get; set; }
     public decimal SweetboxTicketPrice { get; set; } = 30.00m;
     public decimal ConvenienceFeePerTicket { get; set; } = 1.50m;
     public decimal TaxRate { get; set; } = 0.08m;
 
 
 //Lấy ra các ghế 
-    public List<SeatChoiceViewModel> SeatChoices { get; set; } = [];
+    public List<SeatChoiceViewModel> SeatChoices { get; set; } = []; //là 1 list các ghế đc chọn
 
     public List<ConcessionItemViewModel> Concessions { get; set; } =
     [
-        new() { Id = "solo", Name = "Cinephile Solo", Description = "Large butter popcorn + 1L signature soda", Price = 14.00m, Icon = "🍿" },
-        new() { Id = "duo", Name = "Director's Duo", Description = "2 premium hot dogs + 2 large sodas", Price = 22.50m, Icon = "🌭" },
-        new() { Id = "popcorn", Name = "Classic Popcorn XL", Description = "Extra-large butter popcorn with free refill", Price = 9.50m, Icon = "🍿" },
-        new() { Id = "soda", Name = "Signature Soda 1L", Description = "Ice-cold fountain drink of your choice", Price = 6.00m, Icon = "🥤" }
+       
     ];
 
     public bool IsPaid { get; set; }
     public string? ConfirmationNumber { get; set; }
 
     [JsonIgnore]
-    public decimal TicketSubtotal => SelectedSeats.Sum(SeatPrice);
+    public decimal TicketSubtotal => SelectedSeats.Sum(SeatPrice);//tổng giá ghế đã chọn dựa vào SelectedSeats
+// SeatChoices
+// StandardTicketPrice
+// VipTicketPrice
+// SweetboxTicketPrice
 
     [JsonIgnore]
     public decimal ConvenienceFee => SelectedSeats.Count * ConvenienceFeePerTicket;
 
     [JsonIgnore]
-    public decimal ConcessionSubtotal => Concessions.Sum(item => item.Price * item.Quantity);
+    public decimal ConcessionSubtotal => Concessions.Sum(item => item.Price * item.SelectedQuantity); //Tính tổng combo
 
     [JsonIgnore]
     public decimal PreTaxTotal => TicketSubtotal + ConvenienceFee + ConcessionSubtotal;
@@ -77,15 +79,15 @@ public sealed class BookingViewModel
 
     public decimal SeatPrice(string seatCode)
     {
-    var seat = SeatChoices.FirstOrDefault(s =>
-        string.Equals(s.SeatCode, seatCode, StringComparison.OrdinalIgnoreCase));
+        var seat = SeatChoices.FirstOrDefault(s =>
+            string.Equals(s.SeatCode, seatCode, StringComparison.OrdinalIgnoreCase));
 
-    return seat?.SeatType switch
-    {
-        "VIP" => VipTicketPrice,
-        "Couple" => SweetboxTicketPrice,
-        _ => StandardTicketPrice
-    };
+        return seat?.SeatType switch
+        {
+            "VIP" => VipTicketPrice,
+            "Couple" => SweetboxTicketPrice,
+            _ => StandardTicketPrice
+        };
     }
 }
 //Class lấy ra tất cả các ghế 
@@ -102,12 +104,10 @@ public sealed class SeatChoiceViewModel
 
 public sealed class ConcessionItemViewModel
 {
-    public string Id { get; set; } = string.Empty;
+    public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public string Icon { get; set; } = string.Empty;
-    public decimal Price { get; set; }
-    public int Quantity { get; set; }
+    public decimal Price { get; set; } //Đơn giá combo
+    public int SelectedQuantity { get; set; } //Số lượng khách chọn 
 }
 
 public sealed class ShowtimeChoiceViewModel
@@ -124,6 +124,7 @@ public sealed class SelectShowtimeRequest
     public int ShowtimeId { get; init; }
 
     public string Format { get; set; } = "2D";
+    public string? OfferCode { get; init; }
 }
 
 public sealed class SeatRequest
@@ -131,10 +132,18 @@ public sealed class SeatRequest
     public string SeatId { get; init; } = string.Empty;
 }
 
+//1 combo gửi từ giao diện về controller
 public sealed class ConcessionRequest
 {
-    public string ProductId { get; init; } = string.Empty;
-    public int Quantity { get; init; }
+    public int ComboId { get;set;}
+    public int Quantity { get; set; }
+}
+
+
+//Danh sách combo trong 1lần post 
+public sealed class SelectConcessionsRequest
+{
+    public List<ConcessionRequest> Items {get; set;} =[]; 
 }
 
 public sealed class StepRequest

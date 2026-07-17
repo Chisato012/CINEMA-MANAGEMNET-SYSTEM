@@ -21,7 +21,9 @@ namespace Cinema_Management.Models
         [StringLength(10)]
         public string SeatType { get; set; } = string.Empty;
 
-        
+        [Required]
+        [StringLength(50)]
+        public string SeatStatus { get; set; } = "Not Order";
 
         public Room? Room { get; set; }
         public SeatTypePricing? SeatTypePricing { get; set; }

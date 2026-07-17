@@ -7,6 +7,7 @@ using System.Globalization;
 
 namespace Cinema_Management.Controllers;
 
+// BE của An
 public class AdminController : Controller
 {
     private readonly ApplicationDbContext _context;

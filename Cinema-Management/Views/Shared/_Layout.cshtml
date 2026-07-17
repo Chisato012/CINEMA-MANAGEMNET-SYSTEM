@@ -1,8 +1,9 @@
-﻿@{
+@{
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
     var movieNavActive = currentController == "Home" && currentAction == "Movie";
     var pricingNavActive = currentController == "Home" && currentAction == "TicketPricing";
+    var offersNavActive = currentController == "Home" && currentAction == "Offers";
     var bookingNavActive = currentController == "Booking";
 }
 <!DOCTYPE html>
@@ -37,7 +38,7 @@
                 <div class="d-none d-lg-flex gap-4 ms-5 me-auto ">
                     <a class="cosmos-nav-link @(movieNavActive ? "is-active" : "")" asp-area="" asp-controller="Home" asp-action="Movie">Phim</a>
                     <a class="cosmos-nav-link @(pricingNavActive ? "is-active" : "")" asp-area="" asp-controller="Home" asp-action="TicketPricing">Giá vé</a>
-                    <a href="#" class="cosmos-nav-link">Ưu đãi</a>
+                    <a class="cosmos-nav-link @(offersNavActive ? "is-active" : "")" asp-area="" asp-controller="Home" asp-action="Offers">Ưu đãi</a>
                     <a class="cosmos-nav-link @(bookingNavActive ? "is-active" : "")" asp-area="" asp-controller="Booking" asp-action="Index">Đặt vé</a>
                 </div>
 

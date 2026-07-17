@@ -24,8 +24,11 @@ public class ApplicationDbContext : DbContext
     public DbSet<Showtimes> Showtimes { get; set; }
     public DbSet<Combo> Combos { get; set; }
     public DbSet<Payment> Payments { get; set; } = null!;
+    public DbSet<PaymentIntent> PaymentIntents { get; set; } = null!;
 
     public DbSet<Booking> Bookings { set; get; }
+
+    public DbSet<BookingCombo> BookingCombos { get; set; }
 
     public DbSet<Ticket> Tickets { get; set; }
     public DbSet<Seat> Seats { get; set; }
@@ -80,6 +83,28 @@ public class ApplicationDbContext : DbContext
                  .WithMany(u => u.Bookings)
                  .HasForeignKey(e => e.UserID)
                  .HasConstraintName("FK_Bookings_Users");
+        });
+        modelBuilder.Entity<BookingCombo>(entity =>
+        {
+            entity.ToTable("BookingCombos");
+
+            // Khóa chính gồm BookingID và ComboID.
+            entity.HasKey(item => new
+            {
+                item.BookingID,
+                item.ComboID
+            });
+
+            entity.Property(item => item.UnitPrice)
+                .HasColumnType("decimal(10,2)");
+
+            entity.HasOne(item => item.Booking)
+                .WithMany(booking => booking.BookingCombos)
+                .HasForeignKey(item => item.BookingID);
+
+            entity.HasOne(item => item.Combo)
+                .WithMany(combo => combo.BookingCombos)
+                .HasForeignKey(item => item.ComboID);
         });
 
         // =========================
@@ -183,6 +208,53 @@ public class ApplicationDbContext : DbContext
                 .WithMany(e => e.Payments)
                 .HasForeignKey(e => e.MethodID)
                 .HasConstraintName("FK_Payments_PaymentMethods");
+        });
+
+        modelBuilder.Entity<PaymentIntent>(entity =>
+        {
+            entity.Property(e => e.ExpectedAmount).HasColumnType("decimal(10,2)");
+            entity.Property(e => e.PaymentReference).HasMaxLength(100);
+            entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Pending");
+            entity.Property(e => e.SelectedSeatCodes).HasMaxLength(500);
+            entity.Property(e => e.SePayReferenceCode).HasMaxLength(255);
+
+            entity.HasIndex(e => e.PaymentReference)
+                .IsUnique()
+                .HasDatabaseName("UQ_PaymentIntents_PaymentReference");
+
+            entity.HasIndex(e => e.SePayTransactionID)
+                .IsUnique()
+                .HasFilter("[SePayTransactionID] IS NOT NULL")
+                .HasDatabaseName("UQ_PaymentIntents_SePayTransactionID");
+
+            entity.HasCheckConstraint(
+                "CK_PaymentIntents_Status",
+                "[Status] IN ('Pending', 'Processing', 'Success', 'Failed', 'Expired')"
+            );
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserID)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_PaymentIntents_Users");
+
+            entity.HasOne(e => e.Movie)
+                .WithMany()
+                .HasForeignKey(e => e.MovieID)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_PaymentIntents_Movies");
+
+            entity.HasOne(e => e.Showtime)
+                .WithMany()
+                .HasForeignKey(e => e.ShowtimeID)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_PaymentIntents_Showtimes");
+
+            entity.HasOne(e => e.Booking)
+                .WithMany()
+                .HasForeignKey(e => e.BookingID)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_PaymentIntents_Bookings");
         });
 
 

@@ -1,4 +1,4 @@
-﻿@using System.Globalization
+@using System.Globalization
 @model BookingViewModel
 @{
     Layout = null;
@@ -71,6 +71,10 @@
                             <span class="meta-pill">▣ @Model.SelectedDate</span>
                             <span class="meta-pill">◷ @Model.SelectedTime</span>
                             <span class="meta-pill">⌖ @Model.CinemaFormat</span>
+                            @if (!string.IsNullOrWhiteSpace(Model.OfferCode))
+                            {
+                                <span class="meta-pill">Ưu đãi @Model.OfferCode</span>
+                            }
                         </div>
                     </div>
                 </header>
@@ -97,7 +101,7 @@
                                                     data-seat-code="@seat.SeatCode"
                                                     data-price="@seat.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                                                     data-seat-type="@seat.SeatType">
-                                                @seat.SeatCode
+                                                
                                             </button>
                                         }
                                     </div>
@@ -172,7 +176,8 @@
                                         };
                                         <div class="selected-line">
                                             <span>@seatTypeLabel @seat</span>
-                                            <span>@Model.SeatPrice(seat).ToString("C")</span>
+                                            <span>@Model.SeatPrice(seat).ToString("C")</span> 
+                                            @* Gán giá ghế *@
                                         </div>
                                     }
                                 }
@@ -194,10 +199,10 @@
                                     <span>Phí dịch vụ</span>
                                     <span id="seatFee">@Model.ConvenienceFee.ToString("C")</span>
                                 </div> *@
-                                <div class="total-line grand">
+                                @* <div class="total-line grand">
                                     <span>Tổng</span>
                                     <span id="seatTotal">@Model.PreTaxTotal.ToString("C")</span>
-                                </div>
+                                </div> *@
                             </div>
                             <div class="summary-actions">
                                 <button type="submit" class="primary-button full" id="confirmSeatButton" >Xác nhận
@@ -241,12 +246,13 @@
             const selectedSeats = [...document.querySelectorAll(".seat.selected")];
 
             selectedSeats.forEach(seat => {
+                //thêm element input cho từng ghế đc chọn
                 const input = document.createElement("input");
 
                 // Tên này phải trùng với parameter List<string> selectedSeats trong POST Action
                 input.type = "hidden";
                 input.name = "selectedSeats";
-                input.value = seat.dataset.seatCode;
+                input.value = seat.dataset.seatCode; //thông tin code của ghế
 
                 selectedSeatInputs.appendChild(input);
             });
@@ -266,12 +272,12 @@
                 }).join("")
                 : '<div class="empty-state">Chọn ghế từ sơ đồ</div>';
 
+            //Tính tổng tiền ghế
             const subtotal = selectedSeats.reduce((sum, seat) => {
                 return sum + Number(seat.dataset.price || 0);
             }, 0);
 
-            const fee = selectedSeats.length * convenienceFeePerTicket;
-            const total = subtotal + fee;
+            const total = subtotal ;
 
             //set các giá trị tiền vào các biến hiển thị
             ticketCount.textContent = `Số lượng ghế (${selectedSeats.length})`;
@@ -280,10 +286,10 @@
             seatTotal.textContent = money(total);
 
             if(selectedSeats.length == 0){
-                confirmButton.disable = true;
+                confirmButton.disabled = true;
             }
             else{
-                confirmButton.disable = false;
+                confirmButton.disabled = false;
             }
         }
 

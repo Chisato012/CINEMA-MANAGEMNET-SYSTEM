@@ -745,7 +745,6 @@ h3 {
 }
 
 .seat.occupied::after {
-    content: "Ã—";
     font-size: 16px;
 }
 
@@ -976,6 +975,7 @@ h3 {
     display: flex;
     justify-content: space-between;
     color: #d5c8c0;
+    font-size: 13px;
 }
 
 .compact-line small {
@@ -1023,8 +1023,12 @@ h3 {
 .checkout-detail {
     color: #8f847d;
     margin-top: 7px;
-    font: 500 9px var(--mono);
+    font: 500 12px var(--mono);
     line-height: 1.6;
+}
+
+.checkout-detail strong{
+    color: #f1bb93
 }
 
 .payment-card {

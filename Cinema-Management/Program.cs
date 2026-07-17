@@ -6,8 +6,13 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
+ //Định giá tiền cho cả local lẫn server
+var viCulture = new CultureInfo("vi-VN");
+CultureInfo.DefaultThreadCurrentCulture = viCulture;
+CultureInfo.DefaultThreadCurrentUICulture = viCulture;
 
 // Đăng ký MVC
 builder.Services.AddControllersWithViews();
@@ -26,6 +31,7 @@ builder.Services.AddHttpClient();
 builder.Services.Configure<EmailSettings>(
     builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+builder.Services.AddSingleton<IOfferService, MockOfferService>();
 
 var googleClientId =
     builder.Configuration["Authentication:Google:ClientId"];
