@@ -1513,6 +1513,43 @@ public class BookingController : Controller
         public decimal TotalAmount => TicketSubtotal + ConcessionSubtotal;
     }
 
+
+// POST: Booking/CancelBooking
+// Huỷ tiến trình đặt vé hiện tại và xóa dữ liệu Booking trong Session.
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> CancelBooking()
+{
+    // Lấy người dùng và mã thanh toán của tiến trình hiện tại.
+    var userId = HttpContext.Session.GetInt32("UserID");
+    var paymentReference = HttpContext.Session.GetString("PaymentReference");
+
+    // Chỉ cập nhật PaymentIntent khi đã đăng nhập và đã tạo phiên QR.
+    if (userId.HasValue && !string.IsNullOrWhiteSpace(paymentReference))
+    {
+        var paymentIntent = await _context.PaymentIntents.FirstOrDefaultAsync(intent => intent.PaymentReference == paymentReference && intent.UserID == userId.Value);
+
+        // Không được huỷ giao dịch đã thanh toán thành công.
+        if (paymentIntent != null && paymentIntent.Status == "Pending" && !paymentIntent.BookingID.HasValue)
+        {
+            // Dùng Expired
+            paymentIntent.Status = "Expired";
+
+            // Đặt thời hạn về hiện tại để webhook không hoàn tất intent này.
+            paymentIntent.ExpiresAtUtc = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    // Hàm này đã có sẵn trong BookingController.
+    // Chỉ xóa dữ liệu đặt vé, không xóa Session đăng nhập.
+    ClearBookingSession();
+
+    TempData["BookingMessage"] = "Đã huỷ quá trình đặt vé.";
+
+    return RedirectToAction("Index", "Home");
+}
     private void ClearBookingSession()
     {
         var bookingSessionKeys = new[]
