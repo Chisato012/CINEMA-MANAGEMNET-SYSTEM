@@ -33,7 +33,7 @@ public class BookingController : Controller
         _configuration = configuration;
 
     }
-
+    //===== CODE INDEX CỦA QUANG ==========
     public IActionResult Index(int? movieId, DateTime? date)
     {
         var today = DateTime.Today;
@@ -190,7 +190,7 @@ public class BookingController : Controller
     }
 
 
-//AN
+    //====== CODE CÁC BƯỚC THANH TOÁN CỦA AN =========
     public IActionResult SelectShowtime(int movieId)
     {
         // Truy vấn thông tin phim
@@ -667,7 +667,7 @@ public class BookingController : Controller
             }).ToList();
 
 
-//Tạo model gửi đến view check out
+        //Tạo model gửi đến view check out
         var model = _context.Movies.Where(m => m.MovieId == selectedMovieId)
             .Select(m => new BookingViewModel
             {
@@ -908,6 +908,8 @@ public class BookingController : Controller
 
     }
 
+
+    //========== CODE SEPAY CỦA HƯNG ========== 
     // POST: Booking/CompleteDevPayment
     // Action giả lập thanh toán thành công trong môi trường Development.
     [HttpPost]
@@ -1554,13 +1556,13 @@ public class BookingController : Controller
             .FirstOrDefaultAsync(item =>
                 item.BookingID == bookingId &&
                 item.UserID == userId.Value);
-        if(booking == null)
+        if (booking == null)
         {
             return NotFound();
         }
         return View(booking);
-                
+
     }
 
-   
+
 }
