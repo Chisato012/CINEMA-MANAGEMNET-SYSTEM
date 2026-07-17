@@ -1,5 +1,6 @@
 @model List<Cinema_Management.Models.MovieViewModel>
 @using System.Globalization
+@using System.Text
 
 
 @* Quang UI *@
@@ -510,9 +511,67 @@
 
     private static string GenreData(MovieViewModel movie)
     {
-        return Safe(movie.Genre, string.Empty)
-            .ToLowerInvariant()
-            .Replace("science fiction", "sci-fi");
+        var raw = Safe(movie.Genre, string.Empty).ToLowerInvariant();
+        var normalized = RemoveDiacritics(raw);
+        var tokens = new List<string> { raw, normalized };
+
+        if (normalized.Contains("hanh dong") || normalized.Contains("action"))
+        {
+            tokens.Add("action");
+        }
+
+        if (normalized.Contains("lang man") || normalized.Contains("romance"))
+        {
+            tokens.Add("romance");
+        }
+
+        if (normalized.Contains("khoa hoc") || normalized.Contains("vien tuong") || normalized.Contains("sci-fi") || normalized.Contains("science fiction"))
+        {
+            tokens.Add("sci-fi");
+        }
+
+        if (normalized.Contains("kinh di") || normalized.Contains("horror"))
+        {
+            tokens.Add("horror");
+        }
+
+        if (normalized.Contains("hoat hinh") || normalized.Contains("animation"))
+        {
+            tokens.Add("animation");
+        }
+
+        if (normalized.Contains("hai") || normalized.Contains("comedy"))
+        {
+            tokens.Add("comedy");
+        }
+
+        if (normalized.Contains("kich") || normalized.Contains("tam ly") || normalized.Contains("drama"))
+        {
+            tokens.Add("drama");
+        }
+
+        if (normalized.Contains("gia dinh") || normalized.Contains("family"))
+        {
+            tokens.Add("family");
+        }
+
+        return string.Join(" ", tokens.Where(token => !string.IsNullOrWhiteSpace(token)).Distinct());
+    }
+
+    private static string RemoveDiacritics(string text)
+    {
+        var normalized = text.Normalize(NormalizationForm.FormD);
+        var builder = new StringBuilder();
+
+        foreach (var character in normalized)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
+            {
+                builder.Append(character);
+            }
+        }
+
+        return builder.ToString().Normalize(NormalizationForm.FormC).Replace('đ', 'd').Replace('Đ', 'D');
     }
 
     private static decimal CosmosScore(MovieViewModel movie)

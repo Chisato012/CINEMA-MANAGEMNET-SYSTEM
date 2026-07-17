@@ -20,7 +20,7 @@ public class BookingController : Controller
     public IActionResult Index(int? movieId, DateTime? date)
     {
         var today = DateTime.Today;
-        var selectedDate = (date ?? today).Date;
+        var selectedDate = date?.Date;
         var lastDate = today.AddDays(13);
 
         var showtimeQuery = _context.Showtimes
@@ -102,7 +102,7 @@ public class BookingController : Controller
     }
 
     // GET: Booking/SelectShowtime dùng để fill dữ liệu lên UI
-    private static BookingScheduleDateOption BuildDateOption(DateTime date, DateTime today, DateTime selectedDate)
+    private static BookingScheduleDateOption BuildDateOption(DateTime date, DateTime today, DateTime? selectedDate)
     {
         return new BookingScheduleDateOption
         {
@@ -111,7 +111,7 @@ public class BookingController : Controller
             DateLabel = date.ToString("dd/MM", CultureInfo.InvariantCulture),
             WeekdayLabel = WeekdayLabel(date),
             IsToday = date.Date == today.Date,
-            IsSelected = date.Date == selectedDate.Date
+            IsSelected = selectedDate.HasValue && date.Date == selectedDate.Value.Date
         };
     }
 
@@ -217,25 +217,15 @@ public class BookingController : Controller
 
         //Các ngày có thể có suất chiếu của phim
         movie.AvailableDates = movie.ShowtimeChoices.Select(s => s.Date).Distinct().ToList();
-        movie.SelectedDate = movie.AvailableDates.FirstOrDefault() ?? DateTime.Today.ToString("yyyy-MM-dd");
+        movie.SelectedDate = string.Empty;
 
         //Các giờ có thể có suất chiếu của phim dựa trên ngày đã chọn
-        movie.AvailableTimes = movie.ShowtimeChoices
-            .Where(s => s.Date == movie.SelectedDate) //Lấy ra ngày đc chọn để lọc ra các suất chiếu có cùng ngày
-            .Select(s => s.Time)
-            .Distinct()
-            .ToList();
+        movie.AvailableTimes = new List<string>();
         
-        movie.SelectedTime = movie.AvailableTimes.FirstOrDefault() ?? string.Empty;
+        movie.SelectedTime = string.Empty;
         movie.CinemaFormat = movie.AvailableFormats.FirstOrDefault() ?? string.Empty;
 
-        //Tìm kiếm ShowTimeId dựa trên ngày, giờ và định dạng đã chọn
-        movie.ShowtimeId = movie.ShowtimeChoices
-            .FirstOrDefault(s =>
-                s.Date == movie.SelectedDate &&
-                s.Time == movie.SelectedTime &&
-                s.Format == movie.CinemaFormat)
-            ?.ShowtimeId;
+        movie.ShowtimeId = null;
 
         //Gửi thông tin phim đến view booking để hiển thị thông tin phim và cho phép người dùng đặt vé
         return View(movie);

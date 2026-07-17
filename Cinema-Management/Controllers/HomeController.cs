@@ -41,7 +41,20 @@ public class HomeController : Controller
     public IActionResult Movie()
     {
         var movies = _context.Movies
+            .AsNoTracking()
+            .AsSplitQuery()
+            .Include(m => m.MovieGenres)
+                .ThenInclude(mg => mg.Genre)
+            .Include(m => m.MovieDirectors)
+                .ThenInclude(md => md.Person)
+            .Include(m => m.MovieCasts)
+                .ThenInclude(mc => mc.Person)
+            .Include(m => m.Showtimes)
+                .ThenInclude(s => s.Room)
+            .Include(m => m.Language)
+            .Include(m => m.Country)
             .OrderBy(m => m.Title)
+            .ToList()
             .Select(m => new MovieViewModel
             {
                 MovieId = m.MovieId,
@@ -52,7 +65,10 @@ public class HomeController : Controller
                 AgeRating = m.AgeRating,
                 Synopsis = m.Synopsis,
                 Trailer = m.Trailer,
-                Showtimes = m.Showtimes,
+                Showtimes = m.Showtimes
+                    .OrderBy(showtime => showtime.Date)
+                    .ThenBy(showtime => showtime.StartTime)
+                    .ToList(),
                 Language = m.Language,
                 Country = m.Country,
                 Genre = string.Join(", ", m.MovieGenres.Select(mg => mg.Genre.Name)),

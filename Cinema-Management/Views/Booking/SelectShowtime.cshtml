@@ -12,9 +12,9 @@
         .GroupBy(item => item.Date)
         .ToList();
     var availableDateValues = showtimeGroups.Select(group => group.Key).ToList();
-    var initialDate = availableDateValues.Contains(Model.SelectedDate)
+    var initialDate = !string.IsNullOrWhiteSpace(Model.SelectedDate) && availableDateValues.Contains(Model.SelectedDate)
         ? Model.SelectedDate
-        : availableDateValues.FirstOrDefault() ?? DateTime.Today.ToString("yyyy-MM-dd");
+        : string.Empty;
     var minDate = availableDateValues.FirstOrDefault() ?? DateTime.Today.ToString("yyyy-MM-dd");
     var maxDate = availableDateValues.LastOrDefault() ?? DateTime.Today.ToString("yyyy-MM-dd");
 }
@@ -112,7 +112,7 @@
                                 @foreach (var group in showtimeGroups)
                                 {
                                     var date = DateTime.ParseExact(group.Key, "yyyy-MM-dd", CultureInfo.InvariantCulture);
-                                    <section class="showtime-group" data-date="@group.Key" hidden="@(group.Key != initialDate)">
+                                    <section class="showtime-group" data-date="@group.Key" hidden="@(string.IsNullOrWhiteSpace(initialDate) || group.Key != initialDate)">
                                         <p class="showtime-date-title">@date.ToString("ddd, MMM dd", CultureInfo.InvariantCulture)</p>
                                         <div class="time-options" role="group" aria-label="Show time @group.Key">
                                             @foreach (var showtime in group)
@@ -141,7 +141,7 @@
                                 <div class="empty-state">Chưa có suất chiếu phù hợp.</div>
                             }
 
-                            <button type="submit" class="primary-button full">
+                            <button type="submit" class="primary-button full" disabled="@(string.IsNullOrWhiteSpace(initialDate))">
                                 <i class="fa-solid fa-ticket"></i>
                                 <span style="font-family: 'Archivo Narrow', sans-serif">Chọn Ghế →</span>
                             </button>
@@ -171,12 +171,25 @@
 
                     let visibleGroup = null;
                     groups.forEach(group => {
-                        const visible = group.dataset.date === date;
+                        const visible = date && group.dataset.date === date;
                         group.hidden = !visible;
                         if (visible) visibleGroup = group;
                     });
 
+                    if (!date) {
+                        emptyState.textContent = 'Vui lòng chọn ngày chiếu để xem suất chiếu.';
+                        emptyState.hidden = false;
+                        submitButton.disabled = true;
+                        selectedTime.value = '';
+                        document.querySelectorAll('.time-choice input[type="radio"]').forEach(input => {
+                            input.checked = false;
+                        });
+                        syncTimeSelection();
+                        return;
+                    }
+
                     if (!visibleGroup) {
+                        emptyState.textContent = 'Chưa có suất chiếu trong ngày này.';
                         emptyState.hidden = false;
                         submitButton.disabled = true;
                         selectedTime.value = '';
