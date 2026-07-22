@@ -1,7 +1,7 @@
 @model BookingSchedulePageViewModel
 @{
     ViewData["Title"] = "Đặt vé";
-    var selectedDateValue = Model.SelectedDate.ToString("yyyy-MM-dd");
+    var selectedDateValue = Model.SelectedDate?.ToString("yyyy-MM-dd") ?? string.Empty;
 }
 
 @section Styles {
@@ -58,7 +58,7 @@
             <div class="booking-filter-list" role="group" aria-label="Bộ lọc suất chiếu">
                 <button type="button" class="booking-filter is-active" data-schedule-filter="all" aria-pressed="true">Tất cả</button>
                 <button type="button" class="booking-filter" data-schedule-filter="2d" aria-pressed="false">2D</button>
-                <button type="button" class="booking-filter" data-schedule-filter="3d" aria-pressed="false">3D</button>
+                <button type="button" class="booking-filter" data-schedule-filter="imax" aria-pressed="false">IMAX</button>
                 <button type="button" class="booking-filter" data-schedule-filter="subtitle" aria-pressed="false">Phụ đề</button>
                 <button type="button" class="booking-filter" data-schedule-filter="dubbed" aria-pressed="false">Lồng tiếng</button>
                 <button type="button" class="booking-filter" data-schedule-filter="late" aria-pressed="false">Suất muộn</button>
@@ -90,9 +90,11 @@
                 @foreach (var movie in Model.Movies)
                 {
                     var formatsText = string.Join(" ", movie.Formats).ToLowerInvariant();
+                    var genresText = movie.Genres.ToLowerInvariant();
                     <article class="schedule-movie-card"
                              data-movie-card
                              data-title="@movie.Title.ToLowerInvariant()"
+                             data-genres="@genresText"
                              data-formats="@formatsText">
                         <a class="schedule-poster" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">
                             <img src="@movie.PosterUrl" alt="Poster phim @movie.Title" loading="lazy" />
@@ -148,10 +150,18 @@
                                         <span class="showtime-selected-label">Đã chọn</span>
                                     </button>
                                 }
+                                <p class="schedule-showtime-placeholder" data-showtime-placeholder>
+                                    Chọn ngày chiếu để xem suất chiếu.
+                                </p>
                             </div>
                         </div>
                     </article>
                 }
+
+                <div class="schedule-empty-state" data-date-required>
+                    <h2>Chọn ngày chiếu</h2>
+                    <p>Suất chiếu chỉ hiển thị sau khi bạn chọn một ngày cụ thể.</p>
+                </div>
 
                 <div class="schedule-empty-state" data-empty-date hidden>
                     <h2>Chưa có lịch chiếu cho ngày này.</h2>
@@ -221,5 +231,5 @@
 </main>
 
 @section Scripts {
-    <script src="~/js/booking-schedule.js" asp-append-version="true"></script>
+    <script src="~/js/booking.js" asp-append-version="true"></script>
 }

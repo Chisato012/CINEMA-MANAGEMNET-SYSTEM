@@ -987,8 +987,58 @@ public async Task<IActionResult> GoogleCallback(CancellationToken cancellationTo
     }
 
 
+    //Get: Lấy ra thông tin tài khoản gửi đến profile
     public IActionResult Profile()
     {
-        return View();
+        var userID = HttpContext.Session.GetInt32("UserID");
+
+        var user = _context.Users
+        .Include(u => u.Bookings)
+            .ThenInclude(b => b.Tickets)
+                .ThenInclude(t => t.Showtime)
+                    .ThenInclude(s => s!.Movie)
+        .Include(u => u.Bookings)
+            .ThenInclude(b => b.Tickets)
+                .ThenInclude(t => t.Seat)
+        .FirstOrDefault(u => u.UserID == userID.Value);
+
+        return View(user);
+
+    }
+    //Post: Cập nhật tk
+    [HttpPost]
+    [ValidateAntiForgeryToken]  
+    public IActionResult Profile(User model)
+    {
+
+        ModelState.Remove(nameof(model.Role));
+        if(!ModelState.IsValid)
+        {
+            return View(model);
+        }
+        var UserID = HttpContext.Session.GetInt32("UserID");
+        if(UserID == null)
+        {
+            return RedirectToAction("Login");
+        }
+        //Lấy ra user
+        var user = _context.Users.Find(UserID.Value);
+
+        if(user == null)
+        {
+            return NotFound();
+        }
+
+        user.FullName = model.FullName;
+        user.Email = model.Email;
+        user.DOB = model.DOB;
+        user.PhoneNumber = model.PhoneNumber;
+
+        _context.SaveChanges();
+
+        TempData["SuccessMessage"] = "Cập nhật thông tin thành công";
+        return RedirectToAction(nameof(Profile));
+
+
     }
 }

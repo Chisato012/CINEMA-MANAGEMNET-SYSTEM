@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchInput = page.querySelector('[data-schedule-search]');
     const movieCards = [...page.querySelectorAll('[data-movie-card]')];
     const showtimeButtons = [...page.querySelectorAll('[data-showtime-button]')];
+    const dateRequired = page.querySelector('[data-date-required]');
     const emptyDate = page.querySelector('[data-empty-date]');
     const emptySearch = page.querySelector('[data-empty-search]');
     const selectTodayButton = page.querySelector('[data-select-today]');
@@ -19,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectedFormatInput = page.querySelector('[data-selected-format]');
     const bookingForm = document.getElementById('bookingScheduleForm');
     const todayButton = dateButtons.find(button => button.querySelector('.booking-date-card__today'));
-    let selectedDate = page.dataset.selectedDate || dateButtons[0]?.dataset.date || '';
+    let selectedDate = page.dataset.selectedDate || '';
     let activeFilters = new Set();
     let selectedShowtimeId = null;
 
@@ -28,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .toLowerCase()
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '')
-            .replace(/đ/g, 'd')
+            .replace(/[đĐ]/g, 'd')
             .trim();
     }
 
@@ -92,8 +93,25 @@ document.addEventListener('DOMContentLoaded', () => {
         let visibleMovieCount = 0;
         let hasScheduleForDate = false;
 
+        if (!selectedDate) {
+            movieCards.forEach(card => {
+                card.hidden = true;
+                card.querySelectorAll('[data-showtime-button]').forEach(button => {
+                    button.hidden = true;
+                });
+            });
+
+            if (dateRequired) dateRequired.hidden = false;
+            if (emptyDate) emptyDate.hidden = true;
+            if (emptySearch) emptySearch.hidden = true;
+            return;
+        }
+
+        if (dateRequired) dateRequired.hidden = true;
+
         movieCards.forEach(card => {
-            const titleMatches = !query || normalize(card.dataset.title).includes(query);
+            const searchableText = normalize(`${card.dataset.title || ''} ${card.dataset.genres || ''}`);
+            const titleMatches = !query || searchableText.includes(query);
             let visibleShowtimes = 0;
 
             card.querySelectorAll('[data-showtime-button]').forEach(button => {
@@ -101,10 +119,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const dateMatch = isOnDate;
                 if (isOnDate) hasScheduleForDate = true;
 
-                const visible = dateMatch && buttonMatchesFilters(button);
+                const visible = titleMatches && dateMatch && buttonMatchesFilters(button);
                 button.hidden = !visible;
                 if (visible) visibleShowtimes++;
             });
+
+            const placeholder = card.querySelector('[data-showtime-placeholder]');
+            if (placeholder) placeholder.hidden = visibleShowtimes > 0;
 
             const cardVisible = titleMatches && visibleShowtimes > 0;
             card.hidden = !cardVisible;
@@ -195,5 +216,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    setDate(selectedDate, false);
+    if (selectedDate) {
+        setDate(selectedDate, false);
+    } else {
+        clearSelectionState();
+        applyFilters();
+    }
 });

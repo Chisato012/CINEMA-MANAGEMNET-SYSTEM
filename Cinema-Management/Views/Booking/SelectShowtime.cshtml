@@ -12,9 +12,9 @@
         .GroupBy(item => item.Date)
         .ToList();
     var availableDateValues = showtimeGroups.Select(group => group.Key).ToList();
-    var initialDate = availableDateValues.Contains(Model.SelectedDate)
+    var initialDate = !string.IsNullOrWhiteSpace(Model.SelectedDate) && availableDateValues.Contains(Model.SelectedDate)
         ? Model.SelectedDate
-        : availableDateValues.FirstOrDefault() ?? DateTime.Today.ToString("yyyy-MM-dd");
+        : string.Empty;
     var minDate = availableDateValues.FirstOrDefault() ?? DateTime.Today.ToString("yyyy-MM-dd");
     var maxDate = availableDateValues.LastOrDefault() ?? DateTime.Today.ToString("yyyy-MM-dd");
 }
@@ -165,12 +165,25 @@
 
                     let visibleGroup = null;
                     groups.forEach(group => {
-                        const visible = group.dataset.date === date;
+                        const visible = date && group.dataset.date === date;
                         group.hidden = !visible;
                         if (visible) visibleGroup = group;
                     });
 
+                    if (!date) {
+                        emptyState.textContent = 'Vui lòng chọn ngày chiếu để xem suất chiếu.';
+                        emptyState.hidden = false;
+                        submitButton.disabled = true;
+                        selectedTime.value = '';
+                        document.querySelectorAll('.time-choice input[type="radio"]').forEach(input => {
+                            input.checked = false;
+                        });
+                        syncTimeSelection();
+                        return;
+                    }
+
                     if (!visibleGroup) {
+                        emptyState.textContent = 'Chưa có suất chiếu trong ngày này.';
                         emptyState.hidden = false;
                         submitButton.disabled = true;
                         selectedTime.value = '';

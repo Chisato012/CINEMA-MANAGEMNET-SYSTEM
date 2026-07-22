@@ -1,5 +1,6 @@
 @model List<Cinema_Management.Models.MovieViewModel>
 @using System.Globalization
+@using System.Text
 
 
 @* Quang UI *@
@@ -70,7 +71,6 @@
                             <p class="movie-hero__tagline">@Clamp(slide.Synopsis, 132)</p>
 
                             <div class="movie-hero__meta" aria-label="Movie metadata">
-                                <span><i class="fa-solid fa-star"></i>@CosmosScore(slide).ToString("0.0", CultureInfo.InvariantCulture)</span>
                                 <span><i class="fa-regular fa-clock"></i>@DurationLabel(slide)</span>
                                 <span>@Safe(slide.Genre, "Cinema pick")</span>
                             </div>
@@ -99,7 +99,7 @@
                                 {
                                     <a class="movie-btn movie-btn--ghost" asp-controller="Home" asp-action="Details" asp-route-id="@slide.MovieId">
                                         <i class="fa-solid fa-circle-info"></i>
-                                        View details
+                                        Chi tiết 
                                     </a>
                                 }
                             </div>
@@ -188,7 +188,6 @@
                             <a class="movie-card__title" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">@Safe(movie.Title, "Untitled movie")</a>
                             <p>@MovieMeta(movie)</p>
                             <div class="movie-card__rating">
-                                <span><i class="fa-solid fa-star"></i>@CosmosScore(movie).ToString("0.0", CultureInfo.InvariantCulture)</span>
                                 @if (!string.IsNullOrWhiteSpace(movie.AgeRating))
                                 {
                                     <span class="movie-age">@movie.AgeRating</span>
@@ -269,7 +268,6 @@
                                 <strong>@Safe(movie.Title, "Untitled movie")</strong>
                                 <small>@Safe(movie.Genre, "Cinema pick")</small>
                             </span>
-                            <span class="rank-row__score"><i class="fa-solid fa-star"></i>@CosmosScore(movie).ToString("0.0", CultureInfo.InvariantCulture)</span>
                         </a>
                     }
                 </div>
@@ -277,7 +275,6 @@
                 <article class="featured-card">
                     <div class="featured-card__media" style="--featured-poster: url('@Poster(featured)');">
                         <img src="@Poster(featured)" alt="@Safe(featured.Title, "Movie") poster" />
-                        <span class="featured-card__score"><i class="fa-solid fa-star"></i>@CosmosScore(featured).ToString("0.0", CultureInfo.InvariantCulture)<small>/10</small></span>
                     </div>
                     <div class="featured-card__body">
                         <h3>@Safe(featured.Title, "COSMOS pick")</h3>
@@ -351,7 +348,6 @@
                                 <a class="suggestion-card__title" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">@Safe(movie.Title, "Untitled movie")</a>
                                 <p class="suggestion-card__label">Why it matches</p>
                                 <p>@MatchReason(movie)</p>
-                                <span><i class="fa-solid fa-star"></i>@CosmosScore(movie).ToString("0.0", CultureInfo.InvariantCulture)</span>
                             </div>
                         </article>
                     }
@@ -510,9 +506,67 @@
 
     private static string GenreData(MovieViewModel movie)
     {
-        return Safe(movie.Genre, string.Empty)
-            .ToLowerInvariant()
-            .Replace("science fiction", "sci-fi");
+        var raw = Safe(movie.Genre, string.Empty).ToLowerInvariant();
+        var normalized = RemoveDiacritics(raw);
+        var tokens = new List<string> { raw, normalized };
+
+        if (normalized.Contains("hanh dong") || normalized.Contains("action"))
+        {
+            tokens.Add("action");
+        }
+
+        if (normalized.Contains("lang man") || normalized.Contains("romance"))
+        {
+            tokens.Add("romance");
+        }
+
+        if (normalized.Contains("khoa hoc") || normalized.Contains("vien tuong") || normalized.Contains("sci-fi") || normalized.Contains("science fiction"))
+        {
+            tokens.Add("sci-fi");
+        }
+
+        if (normalized.Contains("kinh di") || normalized.Contains("horror"))
+        {
+            tokens.Add("horror");
+        }
+
+        if (normalized.Contains("hoat hinh") || normalized.Contains("animation"))
+        {
+            tokens.Add("animation");
+        }
+
+        if (normalized.Contains("hai") || normalized.Contains("comedy"))
+        {
+            tokens.Add("comedy");
+        }
+
+        if (normalized.Contains("kich") || normalized.Contains("tam ly") || normalized.Contains("drama"))
+        {
+            tokens.Add("drama");
+        }
+
+        if (normalized.Contains("gia dinh") || normalized.Contains("family"))
+        {
+            tokens.Add("family");
+        }
+
+        return string.Join(" ", tokens.Where(token => !string.IsNullOrWhiteSpace(token)).Distinct());
+    }
+
+    private static string RemoveDiacritics(string text)
+    {
+        var normalized = text.Normalize(NormalizationForm.FormD);
+        var builder = new StringBuilder();
+
+        foreach (var character in normalized)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
+            {
+                builder.Append(character);
+            }
+        }
+
+        return builder.ToString().Normalize(NormalizationForm.FormC).Replace('đ', 'd').Replace('Đ', 'D');
     }
 
     private static decimal CosmosScore(MovieViewModel movie)

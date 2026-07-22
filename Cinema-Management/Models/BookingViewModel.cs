@@ -154,7 +154,7 @@ public sealed class StepRequest
 public sealed class BookingSchedulePageViewModel
 {
     public DateTime Today { get; init; }
-    public DateTime SelectedDate { get; init; }
+    public DateTime? SelectedDate { get; init; }
     public int? MovieId { get; init; }
     public string? MovieFilterTitle { get; init; }
     public IReadOnlyList<BookingScheduleDateOption> DateOptions { get; init; } = [];

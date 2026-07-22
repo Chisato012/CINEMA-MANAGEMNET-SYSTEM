@@ -1768,6 +1768,18 @@ h3 {
     text-decoration: line-through;
 }
 
+.schedule-showtime-placeholder {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 14px 16px;
+    border: 1px dashed rgba(212, 163, 115, 0.34);
+    border-radius: 8px;
+    background: rgba(18, 18, 18, 0.38);
+    color: var(--booking-muted);
+    font-size: 0.9rem;
+    line-height: 1.45;
+}
+
 .booking-summary {
     position: sticky;
     top: 104px;

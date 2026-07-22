@@ -6,32 +6,282 @@
     var avatarInitial = !string.IsNullOrWhiteSpace(fullName)
         ? fullName.Trim()[0].ToString().ToUpperInvariant()
         : "C";
+
 }
 
-<section class="cosmos-profile-page">
-    <div class="cosmos-profile-shell">
-        <div class="cosmos-profile-identity">
-            <span class="cosmos-profile-large-avatar" aria-hidden="true">@avatarInitial</span>
-            <div>
-                <p class="cosmos-profile-kicker">Hồ sơ cá nhân</p>
-                <h1>@fullName</h1>
+@model User
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+            :root {
+                --home-bg: #121210;
+                --home-bg-soft: #191816;
+                --home-surface: #20201d;
+                --home-surface-strong: #292723;
+                --home-line: rgba(232, 205, 166, 0.16);
+                --home-text: #fff7ea;
+                --home-muted: #b7aa9b;
+                --home-faint: #81776c;
+                --home-accent: #c99a6a;
+                --font-color: #d5a373;
+                --home-accent-strong: #9C6D49;
+                --home-accent-dark: #7a5235;
+                --home-green: #8b9a74;
+            }
+
+            .profile-page {
+                margin: 100px 150px
+            }
+
+            .profile-navbar {
+                display: flex;
+                flex-direction: row;
+                border-bottom: #c99a6a 0.5px solid;
+                margin-bottom: 2px;
+            }
+
+            .profile-navbar-item {
+                padding: 10px;
+                color: var(--font-color);
+                font-family: 'Segoe UI', sans-serif;
+                font-weight: 600;
+                width: 50%;
+                align-items: center;
+                justify-content: center;
+                display: flex;
+            }
+
+            .profile-navbar-item.active {
+                background-color: var(--home-accent);
+                color: white;
+            }
+
+            .profile-navbar-item:hover {
+                opacity: 0.9;
+                cursor: pointer;
+            }
+
+
+            .profile-infomation {
+                display: flex;
+                flex-direction: column;
+                padding: 20px;
+                background-color: rgba(255, 220, 197, 0.06);
+                font-family: 'Segoe UI', sans-serif;
+                border-bottom-left-radius: 8px;
+                border-bottom-right-radius: 8px;
+            }
+
+            
+            .profile-item:nth-child(1) {
+                margin-right: 15px;
+            }
+
+            .profile-item:nth-child(3) {
+                margin-right: 15px;
+            }
+
+            .profile-row {
+                width: 100%;
+                margin-bottom: 20px;
+                display: flex;
+                flex-direction: row;
+            }
+
+            .w50 {
+                width: 50%;
+            }
+
+            input {
+                width: 100%;
+                padding: 10px;
+                align-items: stretch;
+                background-color: rgba(255, 220, 197, 0.06);
+                border: 1px solid rgba(255, 220, 197, 0.13);
+                border-radius: 8px;
+                min-height: 3.35rem;
+                overflow: hidden;
+                transition: background-color 0.24s var(--auth-ease), border-color 0.24s var(--auth-ease), box-shadow 0.24s var(--auth-ease);
+            }
+
+            button {
+                padding: 17px 20px;
+                background-color: var(--home-accent);
+                border-radius: 8px;
+                font-size: 18px;
+                font-weight: bold;
+            }
+
+            .booking-history {
+                padding: 20px;
+                color: var(--home-text);
+                background-color: rgba(255, 220, 197, 0.06);
+            }
+
+            .history-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            .history-table th,
+            .history-table td {
+                padding: 14px;
+                border-bottom: 1px solid var(--home-line);
+                text-align: left;
+            }
+
+            .history-table th {
+                color: var(--home-accent);
+            }
+    </style>
+</head>
+
+<body>
+    <section class="profile-page">
+        <div class="profile-navbar">
+            <div class="profile-navbar-item active" data-target="profile-information">
+                Thông tin tài khoản
+            </div>
+
+            <div class="profile-navbar-item" data-target="booking-history">
+                Hành trình điện ảnh
             </div>
         </div>
-
-        <dl class="cosmos-profile-details">
-            <div>
-                <dt>Email</dt>
-                <dd>@(email ?? "Chưa đăng nhập")</dd>
+        @if (TempData["SuccessMessage"] is string successMessage)
+        {
+            <script>
+                        alert(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(successMessage)));
+            </script>
+        }
+        <form class="profile-infomation profile-content" id="profile-information" asp-action="Profile"
+              asp-controller="Account" method="post">
+            @Html.AntiForgeryToken()
+            <div class="profile-row">
+                <div class="profile-item w50">
+                    <h6>Họ và tên</h6>
+                    <input type="text" asp-for="FullName">
+                </div>
+                <div class="profile-item w50">
+                    <h6>Email</h6>
+                    <input type="text" asp-for="Email">
+                </div>
             </div>
-            <div>
-                <dt>Vai trò</dt>
-                <dd>@role</dd>
+            <div class="profile-row">
+                <div class="profile-item w50">
+                    <h6>Số điện thoại</h6>
+                    <input type="text" asp-for="PhoneNumber">
+                </div>
+                <div class="profile-item w50">
+                    <h6>Ngày sinh</h6>
+                    <input type="date" asp-for="DOB">
+                </div>
             </div>
-        </dl>
+            <button type="submit">
+                Cập nhật
+            </button>
+        </form>
 
-        <div class="cosmos-profile-actions">
-            <a asp-controller="Home" asp-action="Index" class="cosmos-profile-secondary-action">Về trang chủ</a>
-            <a asp-controller="Account" asp-action="Logout" class="cosmos-profile-danger-action">Đăng xuất</a>
+        <div id="booking-history" class="profile-content booking-history" style="display: none;">
+
+            <h3>Lịch sử giao dịch</h3>
+
+            @if (Model.Bookings != null && Model.Bookings.Any())
+            {
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Mã đặt vé</th>
+                            <th>Phim</th>
+                            <th>Ngày chiếu</th>
+                            <th>Giờ chiếu</th>
+                            <th>Ngày đặt</th>
+                            <th>Tổng tiền</th>
+                            <th>Ghế</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var booking in Model.Bookings
+                            .OrderByDescending(b => b.BookingDate))
+                        {
+                            var showtime = booking.Tickets
+                                .Select(t => t.Showtime)
+                                .FirstOrDefault(s => s != null);
+                            var seatCodes = booking.Tickets.Where(t => t.Seat != null)
+                                .Select(t => t.Seat!.SeatCode)
+                                .Where(code => !string.IsNullOrWhiteSpace(code))
+                                .Distinct()
+                                .OrderBy(code => code)
+                                .ToList();
+
+                            <tr>
+                                <td>#@booking.BookingID</td>
+
+                                <td>
+                                    @(showtime?.Movie?.Title ?? "Không xác định")
+                                </td>
+
+                                <td>
+                                    @(showtime != null
+                                        ? showtime.Date.ToString("dd/MM/yyyy")
+                                        : "Không xác định")
+                                </td>
+
+                                <td>
+                                    @(showtime != null
+                                        ? showtime.StartTime.ToString("HH:mm")
+                                        : "Không xác định")
+                                </td>
+
+                                <td>
+                                    @booking.BookingDate.ToString("dd/MM/yyyy HH:mm")
+                                </td>
+
+                                <td>
+                                    @booking.TotalAmount.ToString("N0") đ
+                                </td>
+
+                                <td>
+                                    @(seatCodes.Any() ? string.Join(",", seatCodes) : "Không xác định")
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p>Bạn chưa có giao dịch nào.</p>
+            }
         </div>
-    </div>
-</section>
+    </section>
+</body>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const tabs = document.querySelectorAll(".profile-navbar-item");
+        const profileForm = document.getElementById("profile-information");
+        const history = document.getElementById("booking-history");
+
+        tabs.forEach(tab => {
+            tab.addEventListener("click", function () {
+                tabs.forEach(item => item.classList.remove("active"));
+                this.classList.add("active");
+
+                const showHistory =
+                    this.dataset.target === "booking-history";
+
+                profileForm.style.display = showHistory ? "none" : "flex";
+                history.style.display = showHistory ? "block" : "none";
+            });
+        });
+    });
+</script>
+
+</html>
+
+
