@@ -7,6 +7,7 @@
     var formMode = ViewBag.ConcessionFormMode as string;
     var showForm = formMode == "create" || formMode == "edit";
     var isEdit = formMode == "edit";
+    var formPrice = decimal.Truncate(Model.Form.ComboPrice).ToString("0", CultureInfo.InvariantCulture);
 }
 
 <header class="staff-header">
@@ -61,8 +62,9 @@
 
             @foreach (var item in Model.Items)
             {
-                var price = item.ComboPrice.ToString("N0", culture) + " VND";
-                var dataPrice = item.ComboPrice.ToString(CultureInfo.InvariantCulture);
+                var wholePrice = decimal.Truncate(item.ComboPrice);
+                var price = wholePrice.ToString("N0", culture) + " VND";
+                var dataPrice = wholePrice.ToString("0", CultureInfo.InvariantCulture);
 
                 <div class="concession-item concession-card"
                      draggable="true"
@@ -143,7 +145,7 @@
                     </div>
                     <div class="form-group">
                         <label for="ComboPrice">Gia mon</label>
-                        <input id="ComboPrice" name="ComboPrice" value="@Model.Form.ComboPrice" type="number" min="0.01" step="1000" />
+                        <input id="ComboPrice" name="ComboPrice" value="@formPrice" type="number" min="0" step="1" inputmode="numeric" pattern="[0-9]*" data-whole-vnd-input />
                         @Html.ValidationMessage("ComboPrice", null, new { @class = "text-danger" })
                     </div>
                 </div>
@@ -196,6 +198,25 @@
         const cartItems = document.getElementById('cartItems');
         const cartTotal = document.getElementById('cartTotal');
         const resetCartButton = document.getElementById('resetCartButton');
+        const wholeVndPriceInput = document.querySelector('[data-whole-vnd-input]');
+
+        if (wholeVndPriceInput) {
+            wholeVndPriceInput.addEventListener('keydown', function (event) {
+                if (['.', ',', 'e', 'E', '+', '-'].includes(event.key)) {
+                    event.preventDefault();
+                }
+            });
+
+            wholeVndPriceInput.addEventListener('paste', function (event) {
+                event.preventDefault();
+                const pastedText = event.clipboardData.getData('text') || '';
+                wholeVndPriceInput.value = getWholeVndInputValue(pastedText);
+            });
+
+            wholeVndPriceInput.addEventListener('input', function () {
+                wholeVndPriceInput.value = getWholeVndInputValue(wholeVndPriceInput.value);
+            });
+        }
 
         cards.forEach(function (card) {
             const comboId = Number(card.dataset.comboId);
@@ -288,7 +309,7 @@
             return {
                 comboId: Number(card.dataset.comboId),
                 comboName: card.dataset.comboName || '',
-                comboPrice: Number(card.dataset.comboPrice)
+                comboPrice: Math.trunc(Number(card.dataset.comboPrice) || 0)
             };
         }
 
@@ -410,7 +431,12 @@
         }
 
         function formatVnd(value) {
-            return new Intl.NumberFormat('vi-VN').format(value) + ' VND';
+            return new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(Math.trunc(Number(value) || 0)) + ' VND';
+        }
+
+        function getWholeVndInputValue(value) {
+            const wholePart = value.toString().split(/[.,]/)[0];
+            return wholePart.replace(/\D/g, '');
         }
 
         renderCart();

@@ -458,6 +458,7 @@ public class StaffController : Controller
     public async Task<IActionResult> CreateConcession(Combo model)
     {
         model.ComboName = model.ComboName?.Trim() ?? string.Empty;
+        ValidateWholeVndComboPrice(model);
 
         if (!ModelState.IsValid)
         {
@@ -499,6 +500,7 @@ public class StaffController : Controller
     public async Task<IActionResult> EditConcession(Combo model)
     {
         model.ComboName = model.ComboName?.Trim() ?? string.Empty;
+        ValidateWholeVndComboPrice(model);
 
         if (!ModelState.IsValid)
         {
@@ -521,6 +523,23 @@ public class StaffController : Controller
 
         TempData["AlertSuccess"] = "Cap nhat mon thanh cong.";
         return RedirectToAction(nameof(Concessions));
+    }
+
+    private void ValidateWholeVndComboPrice(Combo model)
+    {
+        if (model.ComboPrice < 0)
+        {
+            ModelState.AddModelError(nameof(Combo.ComboPrice), "Gia mon khong duoc am.");
+            return;
+        }
+
+        if (model.ComboPrice != decimal.Truncate(model.ComboPrice))
+        {
+            ModelState.AddModelError(nameof(Combo.ComboPrice), "Gia mon phai la so VND nguyen.");
+            return;
+        }
+
+        model.ComboPrice = decimal.Truncate(model.ComboPrice);
     }
 
     private async Task<ConcessionsViewModel> LoadConcessionsViewModelAsync(Combo? form = null)

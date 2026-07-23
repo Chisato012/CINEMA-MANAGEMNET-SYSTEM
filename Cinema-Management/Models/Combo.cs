@@ -15,7 +15,7 @@ public class Combo
     public string ComboName { get; set; } = string.Empty;
 
     [Column(TypeName = "decimal(10,2)")]
-    [Range(0.01, 999999999, ErrorMessage = "Gia mon phai lon hon 0.")]
+    [Range(0, 999999999, ErrorMessage = "Gia mon khong duoc am.")]
     public decimal ComboPrice { get; set; }
 
     public ICollection<BookingCombo> BookingCombos { get; set; } = new List<BookingCombo>();
