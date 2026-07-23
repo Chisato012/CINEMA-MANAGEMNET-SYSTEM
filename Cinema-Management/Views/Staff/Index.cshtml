@@ -3,6 +3,20 @@
     ViewData["Title"] = "Movie Scheduling";
     var scheduleDate = DateTime.Today.ToString("yyyy-MM-dd");
     var renderStaticRooms = false;
+    var movieForm = ViewBag.MovieForm as Cinema_Management.Controllers.StaffController.StaffMovieForm;
+    var movieFormMode = ViewBag.MovieFormMode as string;
+    var movieSynopsisError = ViewBag.MovieSynopsisError as string;
+    var showCreateMovieForm = movieFormMode == "create";
+    var showEditMovieForm = movieFormMode == "edit";
+    var createTitle = showCreateMovieForm ? movieForm?.Title ?? string.Empty : string.Empty;
+    var createSynopsis = showCreateMovieForm ? movieForm?.Synopsis ?? string.Empty : string.Empty;
+    var createTrailer = showCreateMovieForm ? movieForm?.Trailer ?? string.Empty : string.Empty;
+    var createPoster = showCreateMovieForm ? movieForm?.PosterURL ?? string.Empty : string.Empty;
+    var createReleaseDate = showCreateMovieForm ? movieForm?.ReleaseDate?.ToString("yyyy-MM-dd") ?? string.Empty : string.Empty;
+    var createDuration = showCreateMovieForm && movieForm?.Duration > 0 ? movieForm.Duration.ToString() : "120";
+    var createAgeRating = showCreateMovieForm ? movieForm?.AgeRating ?? "T13" : "T13";
+    var createGenre = showCreateMovieForm ? movieForm?.Genre ?? string.Empty : string.Empty;
+    var editReleaseDate = showEditMovieForm ? movieForm?.ReleaseDate?.ToString("yyyy-MM-dd") ?? string.Empty : string.Empty;
 }
 @* Quang UI Bắc BE *@
 
@@ -168,7 +182,7 @@
 </div>
 
 <!-- Modal Background: Add Movie -->
-<div id="movieCreateModal" class="modal-backdrop">
+<div id="movieCreateModal" class="modal-backdrop @(showCreateMovieForm ? "show" : "")">
     <form class="modal-dialog modal-lg" method="post" action="/Staff/CreateMovie">
         @Html.AntiForgeryToken()
         <div class="modal-header">
@@ -185,19 +199,23 @@
             <div style="display: flex; flex-direction: column; gap: 16px;">
                 <div class="form-group">
                     <label>TIÊU ĐỀ PHIM</label>
-                    <input type="text" name="Title" placeholder="vd: Conan,..." required />
+                    <input type="text" name="Title" value="@createTitle" placeholder="vd: Conan,..." required />
                 </div>
                 <div class="form-group" style="flex: 1; display: flex; flex-direction: column;">
                     <label>MÔ TẢ NGẮN / TÓM TẮT</label>
-                    <textarea name="Synopsis" style="flex: 1; min-height: 80px; resize: none;" placeholder="Nhập tóm tắt nội dung phim..."></textarea>
+                    <textarea name="Synopsis" maxlength="1000" data-synopsis-counter="createSynopsisCounter" style="flex: 1; min-height: 80px; resize: none;" placeholder="Nhập tóm tắt nội dung phim...">@createSynopsis</textarea>
+                    <div style="display:flex;justify-content:space-between;gap:12px;margin-top:4px;font-size:0.75rem;color:var(--color-neutral-500);">
+                        <span class="text-danger">@(showCreateMovieForm ? movieSynopsisError : null)</span>
+                        <span id="createSynopsisCounter">0/1000</span>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>TRAILER URL</label>
-                    <input type="text" name="Trailer" placeholder="https://..." />
+                    <input type="text" name="Trailer" value="@createTrailer" placeholder="https://..." />
                 </div>
                 <div class="form-group">
                     <label>POSTER PHIM URL</label>
-                    <input type="text" name="PosterURL" id="createPosterInput" placeholder="Vui lòng dán link ảnh poster phim..." />
+                    <input type="text" name="PosterURL" id="createPosterInput" value="@createPoster" placeholder="Vui lòng dán link ảnh poster phim..." />
                 </div>
                 <div class="form-group">
                     <label>ĐỊNH DẠNG CHIẾU KHẢ DỤNG</label>
@@ -213,28 +231,28 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>NGÀY KHỞI CHIẾU</label>
-                        <input type="date" name="ReleaseDate" />
+                        <input type="date" name="ReleaseDate" value="@createReleaseDate" />
                     </div>
                     <div class="form-group">
                         <label>THỜI LƯỢNG (PHÚT)</label>
-                        <input type="number" name="Duration" value="120" required />
+                        <input type="number" name="Duration" value="@createDuration" required />
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>XẾP HẠNG</label>
                         <select name="AgeRating">
-                            <option value="P">P - Mọi độ tuổi</option>
-                            <option value="K">K - Dưới 13 tuổi</option>
-                            <option value="T13" selected>T13 - 13 tuổi trở lên</option>
-                            <option value="T16">T16 - 16 tuổi trở lên</option>
-                            <option value="T18">T18 - 18 tuổi trở lên</option>
-                            <option value="C">C - Không phổ biến</option>
+                            <option value="P" selected="@(createAgeRating == "P")">P - Mọi độ tuổi</option>
+                            <option value="K" selected="@(createAgeRating == "K")">K - Dưới 13 tuổi</option>
+                            <option value="T13" selected="@(createAgeRating == "T13")">T13 - 13 tuổi trở lên</option>
+                            <option value="T16" selected="@(createAgeRating == "T16")">T16 - 16 tuổi trở lên</option>
+                            <option value="T18" selected="@(createAgeRating == "T18")">T18 - 18 tuổi trở lên</option>
+                            <option value="C" selected="@(createAgeRating == "C")">C - Không phổ biến</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label>THỂ LOẠI</label>
-                        <input type="text" name="Genre" placeholder="vd: Hành động, Hài,..." />
+                        <input type="text" name="Genre" value="@createGenre" placeholder="vd: Hành động, Hài,..." />
                     </div>
                 </div>
                 <div class="form-group" style="flex: 1; display: flex; flex-direction: column;">
@@ -256,10 +274,10 @@
 </div>
 
 <!-- Edit movie -->
-<div id="movieEditorModal" class="modal-backdrop">
+<div id="movieEditorModal" class="modal-backdrop @(showEditMovieForm ? "show" : "")">
     <form class="modal-dialog modal-lg" method="post" action="/Staff/EditMovie">
         @Html.AntiForgeryToken()
-        <input type="hidden" name="MovieId" id="editMovieID" />
+        <input type="hidden" name="MovieId" id="editMovieID" value="@(showEditMovieForm ? movieForm?.MovieId : null)" />
         <div class="modal-header">
             <div>
                 <p class="modal-pretitle">CẬP NHẬT PHIM</p>
@@ -274,19 +292,23 @@
             <div style="display: flex; flex-direction: column; gap: 16px;">
                 <div class="form-group">
                     <label>TIÊU ĐỀ PHIM</label>
-                    <input type="text" id="editTitle" name="Title" required />
+                    <input type="text" id="editTitle" name="Title" value="@(showEditMovieForm ? movieForm?.Title : null)" required />
                 </div>
                 <div class="form-group" style="flex: 1; display: flex; flex-direction: column;">
                     <label>MÔ TẢ NGẮN / TÓM TẮT</label>
-                    <textarea id="editSynopsis" name="Synopsis" style="flex: 1; min-height: 80px; resize: none;"></textarea>
+                    <textarea id="editSynopsis" name="Synopsis" maxlength="1000" data-synopsis-counter="editSynopsisCounter" style="flex: 1; min-height: 80px; resize: none;">@(showEditMovieForm ? movieForm?.Synopsis : null)</textarea>
+                    <div style="display:flex;justify-content:space-between;gap:12px;margin-top:4px;font-size:0.75rem;color:var(--color-neutral-500);">
+                        <span class="text-danger">@(showEditMovieForm ? movieSynopsisError : null)</span>
+                        <span id="editSynopsisCounter">0/1000</span>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>TRAILER URL</label>
-                    <input type="text" id="editTrailer" name="Trailer" />
+                    <input type="text" id="editTrailer" name="Trailer" value="@(showEditMovieForm ? movieForm?.Trailer : null)" />
                 </div>
                 <div class="form-group">
                     <label>POSTER PHIM URL</label>
-                    <input type="text" id="editPoster" name="PosterURL" />
+                    <input type="text" id="editPoster" name="PosterURL" value="@(showEditMovieForm ? movieForm?.PosterURL : null)" />
                 </div>
                 <div class="form-group">
                     <label>ĐỊNH DẠNG CHIẾU KHẢ DỤNG</label>
@@ -302,28 +324,28 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>NGÀY KHỞI CHIẾU</label>
-                        <input type="date" id="editReleaseDate" name="ReleaseDate" />
+                        <input type="date" id="editReleaseDate" name="ReleaseDate" value="@editReleaseDate" />
                     </div>
                     <div class="form-group">
                         <label>THỜI LƯỢNG (PHÚT)</label>
-                        <input type="number" id="editDuration" name="Duration" required />
+                        <input type="number" id="editDuration" name="Duration" value="@(showEditMovieForm && movieForm?.Duration > 0 ? movieForm.Duration : null)" required />
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>XẾP HẠNG</label>
                         <select id="editRating" name="AgeRating">
-                            <option value="P">P - Mọi độ tuổi</option>
-                            <option value="K">K - Dưới 13 tuổi</option>
-                            <option value="T13">T13 - 13 tuổi trở lên</option>
-                            <option value="T16">T16 - 16 tuổi trở lên</option>
-                            <option value="T18">T18 - 18 tuổi trở lên</option>
-                            <option value="C">C - Không phổ biến</option>
+                            <option value="P" selected="@(showEditMovieForm && movieForm?.AgeRating == "P")">P - Mọi độ tuổi</option>
+                            <option value="K" selected="@(showEditMovieForm && movieForm?.AgeRating == "K")">K - Dưới 13 tuổi</option>
+                            <option value="T13" selected="@(showEditMovieForm && movieForm?.AgeRating == "T13")">T13 - 13 tuổi trở lên</option>
+                            <option value="T16" selected="@(showEditMovieForm && movieForm?.AgeRating == "T16")">T16 - 16 tuổi trở lên</option>
+                            <option value="T18" selected="@(showEditMovieForm && movieForm?.AgeRating == "T18")">T18 - 18 tuổi trở lên</option>
+                            <option value="C" selected="@(showEditMovieForm && movieForm?.AgeRating == "C")">C - Không phổ biến</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label>THỂ LOẠI</label>
-                        <input type="text" id="editGenre" name="Genre" />
+                        <input type="text" id="editGenre" name="Genre" value="@(showEditMovieForm ? movieForm?.Genre : null)" />
                     </div>
                 </div>
                 <div class="form-group" style="flex: 1; display: flex; flex-direction: column;">
@@ -362,6 +384,19 @@
         const closeBtns = document.querySelectorAll('.btn-close-modal');
         const editBtns = document.querySelectorAll('.edit-movie-btn');
         const telemetryText = document.querySelector('.telemetry p');
+        const movieSynopsisMaxLength = 1000;
+
+        function updateSynopsisCounter(textarea) {
+            const counter = document.getElementById(textarea.dataset.synopsisCounter);
+            if (counter) {
+                counter.textContent = `${textarea.value.length}/${movieSynopsisMaxLength}`;
+            }
+        }
+
+        document.querySelectorAll('[data-synopsis-counter]').forEach(textarea => {
+            updateSynopsisCounter(textarea);
+            textarea.addEventListener('input', () => updateSynopsisCounter(textarea));
+        });
 
         function setTelemetry(message) {
             if (telemetryText) {
@@ -732,6 +767,7 @@
                     document.getElementById('editTitle').value = item.dataset.title || '';
                     document.getElementById('editDuration').value = item.dataset.duration || '';
                     document.getElementById('editSynopsis').value = item.dataset.synopsis || '';
+                    document.getElementById('editSynopsis').dispatchEvent(new Event('input'));
                     document.getElementById('editTrailer').value = item.dataset.trailer || '';
                     document.getElementById('editPoster').value = item.dataset.poster || '';
                     document.getElementById('editGenre').value = item.dataset.genre || '';
@@ -765,5 +801,8 @@
                 this.classList.toggle('active');
             });
         });
+
+        document.getElementById('createPosterInput').dispatchEvent(new Event('input'));
+        document.getElementById('editPoster').dispatchEvent(new Event('input'));
     </script>
 }

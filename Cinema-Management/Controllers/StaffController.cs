@@ -35,11 +35,18 @@ public class StaffController : Controller
     private const decimal DefaultBasePrice = StandardWeekdayBasePrice;
     private const string DefaultPosterUrl = "/img/poster/yourname400x600.png";
     private const string DefaultTrailerUrl = "#";
+    private const int MovieSynopsisMaxLength = 1000;
+    private const string MovieSynopsisLengthError = "Mô tả phim không được vượt quá 1000 ký tự.";
 
 
     public async Task<IActionResult> Index()
     {
         ViewBag.ActiveTab = "scheduling";
+        return View(await LoadStaffScheduleViewModelAsync());
+    }
+
+    private async Task<StaffScheduleViewModel> LoadStaffScheduleViewModelAsync()
+    {
         var movies = await _context.Movies
             .Include(m => m.MovieGenres)
                 .ThenInclude(mg => mg.Genre)
@@ -52,7 +59,7 @@ public class StaffController : Controller
             Rooms = await LoadRoomSummariesAsync()
         };
 
-        return View(viewModel);
+        return viewModel;
     }
 
     [HttpGet]
@@ -595,6 +602,12 @@ public class StaffController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateMovie(StaffMovieForm form)
     {
+        form.Synopsis = form.Synopsis?.Trim() ?? string.Empty;
+        if (form.Synopsis.Length > MovieSynopsisMaxLength)
+        {
+            return await ReturnMovieFormValidationErrorAsync(form, "create", MovieSynopsisLengthError);
+        }
+
         if (!IsMovieFormValid(form))
         {
             TempData["AlertError"] = "Du lieu phim khong hop le.";
@@ -606,9 +619,9 @@ public class StaffController : Controller
             Title = form.Title.Trim(),
             Duration = form.Duration,
             PosterURL = GetPosterUrl(form),
-            Synopsis = string.IsNullOrWhiteSpace(form.Synopsis)
+            Synopsis = string.IsNullOrEmpty(form.Synopsis)
                 ? "Chua co tom tat"
-                : form.Synopsis.Trim(),
+                : form.Synopsis,
             Trailer = GetTrailerUrl(form),
             ReleaseDate = form.ReleaseDate ?? DateTime.Today,
             AgeRating = string.IsNullOrWhiteSpace(form.AgeRating)
@@ -632,6 +645,12 @@ public class StaffController : Controller
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> EditMovie(StaffMovieForm form)
     {
+        form.Synopsis = form.Synopsis?.Trim() ?? string.Empty;
+        if (form.Synopsis.Length > MovieSynopsisMaxLength)
+        {
+            return await ReturnMovieFormValidationErrorAsync(form, "edit", MovieSynopsisLengthError);
+        }
+
         if (form.MovieId <= 0 || !IsMovieFormValid(form))
         {
             TempData["AlertError"] = "Du lieu phim khong hop le.";
@@ -652,9 +671,9 @@ public class StaffController : Controller
         existing.AgeRating = string.IsNullOrWhiteSpace(form.AgeRating)
             ? "T13"
             : form.AgeRating.Trim();
-        existing.Synopsis = string.IsNullOrWhiteSpace(form.Synopsis)
+        existing.Synopsis = string.IsNullOrEmpty(form.Synopsis)
             ? "Chua co tom tat"
-            : form.Synopsis.Trim();
+            : form.Synopsis;
         existing.PosterURL = GetPosterUrl(form);
         existing.Trailer = GetTrailerUrl(form);
         existing.ReleaseDate = form.ReleaseDate ?? existing.ReleaseDate;
@@ -664,6 +683,20 @@ public class StaffController : Controller
 
         TempData["AlertSuccess"] = "Da cap nhat phim.";
         return RedirectToAction(nameof(Index));
+    }
+
+    private async Task<IActionResult> ReturnMovieFormValidationErrorAsync(
+        StaffMovieForm form,
+        string formMode,
+        string errorMessage)
+    {
+        ViewBag.ActiveTab = "scheduling";
+        ViewBag.MovieFormMode = formMode;
+        ViewBag.MovieForm = form;
+        ViewBag.MovieSynopsisError = errorMessage;
+        TempData["AlertError"] = errorMessage;
+
+        return View("Index", await LoadStaffScheduleViewModelAsync());
     }
 
     [HttpPost, ValidateAntiForgeryToken]
