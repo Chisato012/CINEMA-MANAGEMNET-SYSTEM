@@ -37,7 +37,7 @@ public class BookingController : Controller
     public IActionResult Index(int? movieId, DateTime? date)
     {
         var today = DateTime.Today;
-        var selectedDate = date?.Date;
+        var selectedDate = (date ?? today).Date;
         var lastDate = today.AddDays(13);
 
         var showtimeQuery = _context.Showtimes
@@ -51,7 +51,7 @@ public class BookingController : Controller
             .Include(s => s.Room!)
                 .ThenInclude(r => r.Seats)
             .Include(s => s.Tickets)
-            .Where(s => s.Date == today);
+            .Where(s => s.Date >= today && s.Date <= lastDate);
 
         if (movieId.HasValue)
         {
