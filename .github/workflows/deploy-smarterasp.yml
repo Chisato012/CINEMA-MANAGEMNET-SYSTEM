@@ -1,0 +1,145 @@
+name: Deploy to SmarterASP
+
+on:
+  push:
+    branches:
+      - sprint-4
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore Cinema-Management/Cinema-Management.csproj
+
+      - name: Publish
+        run: dotnet publish Cinema-Management/Cinema-Management.csproj -c Release -o publish
+
+      - name: Create production SePay configuration
+        env:
+          SEPAY_BANK_ACCOUNT_NUMBER: ${{ secrets.SEPAY_BANK_ACCOUNT_NUMBER }}
+          SEPAY_BANK_CODE: ${{ secrets.SEPAY_BANK_CODE }}
+          SEPAY_ACCOUNT_HOLDER: ${{ secrets.SEPAY_ACCOUNT_HOLDER }}
+          SEPAY_STORE_NAME: ${{ secrets.SEPAY_STORE_NAME }}
+          SEPAY_WEBHOOK_API_KEY: ${{ secrets.SEPAY_WEBHOOK_API_KEY }}
+        run: |
+          for variable_name in \
+            SEPAY_BANK_ACCOUNT_NUMBER \
+            SEPAY_BANK_CODE \
+            SEPAY_ACCOUNT_HOLDER \
+            SEPAY_STORE_NAME \
+            SEPAY_WEBHOOK_API_KEY
+          do
+            if [ -z "${!variable_name}" ]; then
+              echo "Missing required GitHub secret: ${variable_name}"
+              exit 1
+            fi
+          done
+
+          jq -n \
+            --arg account "$SEPAY_BANK_ACCOUNT_NUMBER" \
+            --arg bank "$SEPAY_BANK_CODE" \
+            --arg holder "$SEPAY_ACCOUNT_HOLDER" \
+            --arg store "$SEPAY_STORE_NAME" \
+            --arg webhookKey "$SEPAY_WEBHOOK_API_KEY" \
+            '{
+              SePay: {
+                BankAccountNumber: $account,
+                BankCode: $bank,
+                AccountHolder: $holder,
+                StoreName: $store,
+                QrTemplate: "compact",
+                WebhookApiKey: $webhookKey
+              }
+            }' > publish/appsettings.Production.json
+
+      - name: Take app offline
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_SERVER_DIR: ${{ secrets.FTP_SERVER_DIR }}
+        run: |
+          cat > app_offline.htm <<'EOF'
+          <!doctype html>
+          <html>
+          <head><meta charset="utf-8"><title>Deploying</title></head>
+          <body style="font-family:Arial,sans-serif;padding:40px;">
+            <h1>COSMOS Cinema is updating</h1>
+            <p>Please refresh in a minute.</p>
+          </body>
+          </html>
+          EOF
+          python - <<'PY'
+          import ftplib
+          import os
+          import time
+
+          server = os.environ["FTP_SERVER"]
+          username = os.environ["FTP_USERNAME"]
+          password = os.environ["FTP_PASSWORD"]
+          server_dir = os.environ["FTP_SERVER_DIR"].strip("/")
+
+          with ftplib.FTP(server, timeout=60) as ftp:
+              ftp.login(username, password)
+              if server_dir:
+                  ftp.cwd(server_dir)
+              with open("app_offline.htm", "rb") as file:
+                  ftp.storbinary("STOR app_offline.htm", file)
+
+          time.sleep(20)
+          PY
+
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: publish/
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.DS_Store
+            **/appsettings.json
+            **/appsettings.Development.json
+            **/*.pdb
+
+      - name: Bring app online
+        if: always()
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_SERVER_DIR: ${{ secrets.FTP_SERVER_DIR }}
+        run: |
+          python - <<'PY'
+          import ftplib
+          import os
+
+          server = os.environ["FTP_SERVER"]
+          username = os.environ["FTP_USERNAME"]
+          password = os.environ["FTP_PASSWORD"]
+          server_dir = os.environ["FTP_SERVER_DIR"].strip("/")
+
+          with ftplib.FTP(server, timeout=60) as ftp:
+              ftp.login(username, password)
+              if server_dir:
+                  ftp.cwd(server_dir)
+              try:
+                  ftp.delete("app_offline.htm")
+              except ftplib.error_perm as error:
+                  if not str(error).startswith("550"):
+                      raise
+          PY

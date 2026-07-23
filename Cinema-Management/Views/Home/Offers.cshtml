@@ -1,0 +1,228 @@
+@using System.Text.Json
+@model OffersPageViewModel
+
+@{
+    ViewData["Title"] = "Ưu đãi";
+    var quickBookingJson = JsonSerializer.Serialize(Model.QuickBookingMovies);
+    var offersJson = JsonSerializer.Serialize(Model.Offers);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/offers.css" asp-append-version="true" />
+}
+
+<main class="offers-page" data-offers-page>
+    <section class="offer-shell offer-section-head">
+        <div>
+            <span class="offer-eyebrow">COSMOS Cinema</span>
+            <h1>Khám phá ưu đãi</h1>
+            <p>Ưu đãi độc quyền khi đặt vé trực tuyến tại COSMOS Cinema.</p>
+        </div>
+    </section>
+
+    <section class="offer-shell offer-toolbar" aria-label="Bộ lọc ưu đãi">
+        <div class="offer-filters" role="group" aria-label="Danh mục ưu đãi">
+            <button type="button" class="is-active" data-offer-filter="all" aria-pressed="true">Tất cả</button>
+            <button type="button" data-offer-filter="ticket" aria-pressed="false">Giảm giá vé</button>
+            <button type="button" data-offer-filter="combo" aria-pressed="false">Combo</button>
+            <button type="button" data-offer-filter="member" aria-pressed="false">Thành viên</button>
+            <button type="button" data-offer-filter="payment" aria-pressed="false">Thanh toán</button>
+            <button type="button" data-offer-filter="expiring" aria-pressed="false">Sắp hết hạn</button>
+        </div>
+
+        <label class="offer-search">
+            <span class="visually-hidden">Tìm kiếm ưu đãi</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m16.5 16.5 4 4" /></svg>
+            <input type="search" data-offer-search placeholder="Tìm kiếm ưu đãi..." autocomplete="off" />
+        </label>
+    </section>
+
+    <div class="offer-shell offer-layout">
+        <section class="offer-main" aria-live="polite">
+            <div class="offer-grid" data-offer-grid>
+                @foreach (var offer in Model.Offers)
+                {
+                    <article class="offer-card @(offer.Status != "active" ? "is-disabled" : "")"
+                             data-offer-card
+                             data-offer-id="@offer.Id"
+                             data-category="@offer.Category"
+                             data-status="@offer.Status"
+                             data-expiring="@offer.IsExpiringSoon.ToString().ToLowerInvariant()"
+                             data-search="@($"{offer.Title} {offer.Code} {offer.Summary} {offer.Description}".ToLowerInvariant())">
+                        <div class="offer-card__body">
+                            <div class="offer-card__meta">
+                                <span class="offer-card__status">@offer.StatusLabel</span>
+                                <span>@offer.CategoryLabel</span>
+                            </div>
+                            <strong class="offer-card__value">@offer.DisplayValue</strong>
+                            <h2>@offer.Title</h2>
+                            <p>@offer.Summary</p>
+
+                            <div class="offer-card__foot">
+                                <span>@offer.ValidityLabel</span>
+                                @if (!string.IsNullOrWhiteSpace(offer.Code))
+                                {
+                                    <button type="button" data-copy-code="@offer.Code">Sao chép mã</button>
+                                }
+                            </div>
+
+                            <div class="offer-card__actions">
+                                <button type="button" class="offer-btn offer-btn--ghost" data-open-offer="@offer.Id">Xem chi tiết</button>
+                                <button type="button"
+                                        class="offer-btn offer-btn--primary"
+                                        data-select-offer="@offer.Id"
+                                        @(offer.CanApply ? null : "disabled")>
+                                    Dùng ngay
+                                </button>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+
+            <div class="offer-empty" data-offer-empty hidden>
+                <h2>Không tìm thấy ưu đãi phù hợp.</h2>
+                <p>Thử thay đổi từ khóa hoặc bộ lọc.</p>
+                <button type="button" data-reset-offers>Xóa bộ lọc</button>
+            </div>
+        </section>
+
+        <aside class="offer-sidebar" aria-label="Mua vé và ưu đãi đang chọn">
+            <section class="offer-side-card quick-booking-card">
+                <h2>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3" /><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" /><path d="M9 4v16M15 4v16" /></svg>
+                    Mua vé nhanh
+                </h2>
+                <form asp-controller="Booking" asp-action="SelectShowtime" method="post" data-quick-booking-form>
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="MovieId" data-booking-movie-id />
+                    <input type="hidden" name="ShowtimeId" data-booking-showtime-id />
+                    <input type="hidden" name="Format" value="2D" data-booking-format />
+                    <input type="hidden" name="OfferCode" data-booking-offer-code />
+
+                    <label>
+                        <span>Chọn phim</span>
+                        <select data-quick-movie>
+                            <option value="">Chọn phim</option>
+                            @foreach (var movie in Model.QuickBookingMovies)
+                            {
+                                <option value="@movie.MovieId">@movie.Title</option>
+                            }
+                        </select>
+                    </label>
+                    <label>
+                        <span>Chọn ngày</span>
+                        <select data-quick-date disabled>
+                            <option value="">Chọn ngày</option>
+                        </select>
+                    </label>
+                    <label>
+                        <span>Chọn suất chiếu</span>
+                        <select data-quick-showtime disabled>
+                            <option value="">Chọn suất chiếu</option>
+                        </select>
+                    </label>
+                    <button type="submit" class="offer-btn offer-btn--primary" data-quick-submit disabled>Tiếp tục</button>
+                </form>
+            </section>
+
+            <section class="offer-side-card selected-offer-card" data-selected-panel>
+                <h2>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 8 8-4 8 4-8 4-8-4Z" /><path d="m4 12 8 4 8-4" /><path d="m4 16 8 4 8-4" /></svg>
+                    Ưu đãi đang chọn
+                </h2>
+                <div class="selected-offer-empty" data-selected-empty>
+                    <span aria-hidden="true">%</span>
+                    <h3>Chưa chọn ưu đãi</h3>
+                    <p>Chọn ưu đãi bên trái để áp dụng cho đơn hàng của bạn.</p>
+                </div>
+                <div class="selected-offer-detail" data-selected-detail hidden>
+                    <span class="selected-offer-value" data-selected-value></span>
+                    <h3 data-selected-title></h3>
+                    <p data-selected-summary></p>
+                    <dl>
+                        <div><dt>Mã ưu đãi</dt><dd data-selected-code></dd></div>
+                        <div><dt>Hiệu lực</dt><dd data-selected-validity></dd></div>
+                    </dl>
+                    <div class="selected-offer-actions">
+                        <button type="button" data-selected-details>Xem điều kiện</button>
+                        <button type="button" data-clear-offer>Xóa ưu đãi</button>
+                    </div>
+                </div>
+            </section>
+        </aside>
+    </div>
+
+    @if (Model.ExpiringSoonOffers.Any())
+    {
+        <section class="offer-shell expiring-section">
+            <h2>Sắp hết hạn</h2>
+            <div class="expiring-list">
+                @foreach (var offer in Model.ExpiringSoonOffers)
+                {
+                    <article class="expiring-card" data-offer-id="@offer.Id">
+                        <div>
+                            <h3>@offer.Title</h3>
+                            <p>@offer.Summary</p>
+                            @if (!string.IsNullOrWhiteSpace(offer.Code))
+                            {
+                                <code>@offer.Code</code>
+                            }
+                        </div>
+                        <span>@offer.RemainingLabel</span>
+                        <button type="button" data-select-offer="@offer.Id">Dùng ngay</button>
+                    </article>
+                }
+            </div>
+        </section>
+    }
+
+    <section class="offer-shell code-checker" aria-labelledby="offerCodeTitle">
+        <div>
+            <h2 id="offerCodeTitle">Bạn đã có mã ưu đãi?</h2>
+            <p>Nhập mã vào ô bên cạnh để kiểm tra và áp dụng cho đơn hàng của bạn.</p>
+        </div>
+        <form data-code-form>
+            <label class="visually-hidden" for="offerCodeInput">Nhập mã giảm giá</label>
+            <input id="offerCodeInput" type="text" placeholder="Nhập mã giảm giá..." data-code-input />
+            <button type="submit" class="offer-btn offer-btn--primary" data-code-submit>Kiểm tra</button>
+        </form>
+        <div class="code-result" data-code-result hidden></div>
+    </section>
+</main>
+
+<div class="offer-toast" data-offer-toast role="status" aria-live="polite"></div>
+
+<div class="offer-modal" data-offer-modal hidden>
+    <div class="offer-modal__backdrop" data-close-modal></div>
+    <section class="offer-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="offerModalTitle">
+        <button type="button" class="offer-modal__close" data-close-modal aria-label="Đóng chi tiết ưu đãi">×</button>
+        <div class="offer-modal__body">
+            <span class="offer-eyebrow" data-modal-badge></span>
+            <strong class="offer-modal__value" data-modal-value></strong>
+            <h2 id="offerModalTitle" data-modal-title></h2>
+            <p data-modal-description></p>
+            <dl class="offer-modal__facts">
+                <div><dt>Mã ưu đãi</dt><dd data-modal-code></dd></div>
+                <div><dt>Thời gian áp dụng</dt><dd data-modal-date></dd></div>
+                <div><dt>Đối tượng áp dụng</dt><dd data-modal-users></dd></div>
+                <div><dt>Đơn tối thiểu</dt><dd data-modal-minimum></dd></div>
+            </dl>
+            <div>
+                <h3>Điều kiện áp dụng</h3>
+                <ul data-modal-terms></ul>
+            </div>
+            <div class="offer-modal__actions">
+                <button type="button" class="offer-btn offer-btn--ghost" data-close-modal>Đóng</button>
+                <button type="button" class="offer-btn offer-btn--primary" data-modal-use>Dùng ưu đãi ngay</button>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script type="application/json" id="offerData">@Html.Raw(offersJson)</script>
+<script type="application/json" id="quickBookingData">@Html.Raw(quickBookingJson)</script>
+
+@section Scripts {
+    <script src="~/js/offers.js" asp-append-version="true"></script>
+}
