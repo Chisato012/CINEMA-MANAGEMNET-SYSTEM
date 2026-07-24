@@ -1,4 +1,4 @@
-if not exists (select * from sys.databases where name = 'MovieTicketDB')
+fif not exists (select * from sys.databases where name = 'MovieTicketDB')
 begin
     create database MovieTicketDB;
     print N'Đã tạo mới database';
@@ -124,18 +124,25 @@ GO
 -- ==========================================
 -- 4. SUẤT CHIẾU
 -- ==========================================
-create table Showtimes (
-  ShowtimeID int          PRIMARY KEY IDENTITY(1, 1),
-  MovieID    int          NOT NULL,
-  RoomID     int          NOT NULL,
-  [Date]     date         NOT NULL,
-  StartTime  datetime     NOT NULL,
-  EndTime    datetime     NOT NULL,
-  BasePrice  decimal(10,2) NOT NULL,
+CREATE TABLE Showtimes (
+    ShowtimeID int PRIMARY KEY IDENTITY(1, 1),
+    MovieID    int NOT NULL,
+    RoomID     int NOT NULL,
+    [Date]     date NOT NULL,
+    StartTime  datetime NOT NULL,
+    EndTime    datetime NOT NULL,
+    BasePrice  decimal(10, 2) NOT NULL,
 
-CONSTRAINT FK_Showtimes_Movies FOREIGN KEY (MovieID) REFERENCES Movies (MovieID),
-CONSTRAINT FK_Showtimes_Rooms FOREIGN KEY (RoomID) REFERENCES Rooms (RoomID)
-)
+
+    CONSTRAINT FK_Showtimes_Movies FOREIGN KEY (MovieID) REFERENCES Movies (MovieID),
+    CONSTRAINT FK_Showtimes_Rooms FOREIGN KEY (RoomID) REFERENCES Rooms (RoomID),
+
+    CONSTRAINT UQ_Showtimes_Room_StartTime UNIQUE (RoomID, StartTime),
+
+    CONSTRAINT CK_Showtimes_Time CHECK (EndTime > StartTime),
+    CONSTRAINT CK_Showtimes_BasePrice CHECK (BasePrice >= 0),
+    CONSTRAINT CK_Showtimes_Date CHECK ([Date] = CAST(StartTime AS date))
+);
 GO
 
 -- ==========================================
