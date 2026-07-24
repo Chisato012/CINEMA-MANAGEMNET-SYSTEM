@@ -462,6 +462,116 @@ public class StaffController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Staff,Admin")]
+    public async Task<IActionResult> CheckoutConcessions([FromBody] ConcessionSaleRequest request)
+    {
+        var userId = HttpContext.Session.GetInt32("UserID");
+        if (!userId.HasValue)
+        {
+            return Unauthorized(new { message = "Vui lòng đăng nhập để thanh toán." });
+        }
+
+        if (request?.Items == null || request.Items.Count == 0)
+        {
+            return BadRequest(new { message = "Giỏ hàng đang trống." });
+        }
+
+        var cartItems = request.Items
+            .Where(item => item.ComboID > 0 && item.Quantity > 0)
+            .GroupBy(item => item.ComboID)
+            .Select(group => new ConcessionSaleItem
+            {
+                ComboID = group.Key,
+                Quantity = group.Sum(item => item.Quantity)
+            })
+            .ToList();
+
+        if (cartItems.Count == 0)
+        {
+            return BadRequest(new { message = "Giỏ hàng không hợp lệ." });
+        }
+
+        var comboIds = cartItems.Select(item => item.ComboID).ToList();
+        var combos = await _context.Combos
+            .Where(combo => comboIds.Contains(combo.ComboID))
+            .ToDictionaryAsync(combo => combo.ComboID);
+
+        if (combos.Count != cartItems.Count)
+        {
+            return BadRequest(new { message = "Một hoặc nhiều món không còn tồn tại." });
+        }
+
+        var checkoutTotal = cartItems.Sum(item =>
+            decimal.Truncate(combos[item.ComboID].ComboPrice) * item.Quantity);
+
+        if (checkoutTotal <= 0)
+        {
+            return BadRequest(new { message = "Tổng thanh toán không hợp lệ." });
+        }
+
+        var paymentMethod = await _context.PaymentMethods
+            .OrderBy(method => method.MethodID)
+            .FirstOrDefaultAsync();
+
+        if (paymentMethod == null)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Chưa có phương thức thanh toán hợp lệ." });
+        }
+
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var now = DateTime.Now;
+            var booking = new Booking
+            {
+                UserID = userId.Value,
+                BookingDate = now,
+                TotalAmount = checkoutTotal,
+                Status = "Confirmed"
+            };
+
+            _context.Bookings.Add(booking);
+            await _context.SaveChangesAsync();
+
+            _context.BookingCombos.AddRange(cartItems.Select(item => new BookingCombo
+            {
+                BookingID = booking.BookingID,
+                ComboID = item.ComboID,
+                Quantity = item.Quantity,
+                UnitPrice = decimal.Truncate(combos[item.ComboID].ComboPrice)
+            }));
+
+            _context.Payments.Add(new Payment
+            {
+                BookingID = booking.BookingID,
+                MethodID = paymentMethod.MethodID,
+                Amount = checkoutTotal,
+                PaymentDate = now,
+                Status = "Success"
+            });
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            var stats = await LoadConcessionStatsAsync();
+            return Ok(new
+            {
+                message = "Thanh toán thành công",
+                total = checkoutTotal,
+                monthlyRevenue = stats.MonthlyRevenue,
+                totalTransactions = stats.TotalTransactions,
+                averageOrderValue = stats.AverageOrderValue
+            });
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Staff,Admin")]
     public async Task<IActionResult> CreateConcession(Combo model)
     {
         model.ComboName = model.ComboName?.Trim() ?? string.Empty;
@@ -551,38 +661,43 @@ public class StaffController : Controller
 
     private async Task<ConcessionsViewModel> LoadConcessionsViewModelAsync(Combo? form = null)
     {
-        var now = DateTime.Now;
-        var startOfMonth = new DateTime(now.Year, now.Month, 1);
-        var startOfNextMonth = startOfMonth.AddMonths(1);
-
         var items = await _context.Combos
             .AsNoTracking()
             .OrderBy(c => c.ComboName)
             .ToListAsync();
 
-        var paymentStatistics = await _context.Payments
-            .AsNoTracking()
-            .Where(p =>
-                p.Status == "Success" &&
-                p.PaymentDate >= startOfMonth &&
-                p.PaymentDate < startOfNextMonth)
-            .GroupBy(_ => 1)
-            .Select(group => new
-            {
-                MonthlyRevenue = group.Sum(p => p.Amount),
-                TotalTransactions = group.Count(),
-                AverageOrderValue = group.Average(p => p.Amount)
-            })
-            .FirstOrDefaultAsync();
+        var stats = await LoadConcessionStatsAsync();
 
         return new ConcessionsViewModel
         {
             Items = items,
             Form = form ?? new Combo(),
-            MonthlyRevenue = paymentStatistics?.MonthlyRevenue ?? 0m,
-            TotalTransactions = paymentStatistics?.TotalTransactions ?? 0,
-            AverageOrderValue = paymentStatistics?.AverageOrderValue ?? 0m
+            MonthlyRevenue = stats.MonthlyRevenue,
+            TotalTransactions = stats.TotalTransactions,
+            AverageOrderValue = stats.AverageOrderValue
         };
+    }
+
+    private async Task<ConcessionStats> LoadConcessionStatsAsync()
+    {
+        var now = DateTime.Now;
+        var startOfMonth = new DateTime(now.Year, now.Month, 1);
+        var startOfNextMonth = startOfMonth.AddMonths(1);
+
+        var paymentStatistics = await _context.Bookings
+            .AsNoTracking()
+            .Where(booking =>
+                booking.Status == "Confirmed" &&
+                booking.BookingDate >= startOfMonth &&
+                booking.BookingDate < startOfNextMonth &&
+                booking.BookingCombos.Any())
+            .GroupBy(_ => 1)
+            .Select(group => new ConcessionStats(
+                group.Sum(booking => booking.TotalAmount),
+                group.Count()))
+            .FirstOrDefaultAsync();
+
+        return paymentStatistics ?? new ConcessionStats(0m, 0);
     }
 
     private void LogConcessionDatabaseInfoInDevelopment()
@@ -797,6 +912,13 @@ public class StaffController : Controller
         public DateTime EndTime { get; set; }
 
         public decimal BasePrice { get; set; }
+    }
+
+    private sealed record ConcessionStats(decimal MonthlyRevenue, int TotalTransactions)
+    {
+        public decimal AverageOrderValue => TotalTransactions > 0
+            ? MonthlyRevenue / TotalTransactions
+            : 0m;
     }
 
     public sealed class StaffMovieForm

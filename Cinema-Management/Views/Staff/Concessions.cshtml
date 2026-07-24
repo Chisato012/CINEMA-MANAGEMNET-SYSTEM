@@ -27,12 +27,16 @@
     </div>
 </header>
 
+<form id="concessionCheckoutTokenForm" style="display:none">
+    @Html.AntiForgeryToken()
+</form>
+
 <div class="concessions-layout">
     <div class="concessions-main">
         <div class="pos-stats">
             <div class="stat-card">
                 <p class="stat-label">DOANH THU THÁNG NÀY</p>
-                <h3>@Model.MonthlyRevenue.ToString("N0", culture) VND</h3>
+                <h3 id="monthlyRevenueStat" data-stat-value="@decimal.Truncate(Model.MonthlyRevenue).ToString("0", CultureInfo.InvariantCulture)">@Model.MonthlyRevenue.ToString("N0", culture) VND</h3>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
             </div>
             <div class="stat-card">
@@ -198,7 +202,15 @@
         const cartItems = document.getElementById('cartItems');
         const cartTotal = document.getElementById('cartTotal');
         const resetCartButton = document.getElementById('resetCartButton');
+        const checkoutButton = document.querySelector('.receipt-actions .btn-primary');
+        const statValues = document.querySelectorAll('.pos-stats .stat-card h3');
+        const monthlyRevenueStat = statValues[0];
+        const totalTransactionsStat = statValues[1];
+        const averageOrderValueStat = statValues[2];
         const wholeVndPriceInput = document.querySelector('[data-whole-vnd-input]');
+        const checkoutToken = document.querySelector('#concessionCheckoutTokenForm input[name="__RequestVerificationToken"]')?.value || '';
+        let monthlyRevenue = getNumericStatValue(monthlyRevenueStat);
+        let totalTransactions = getNumericStatValue(totalTransactionsStat);
 
         if (wholeVndPriceInput) {
             wholeVndPriceInput.addEventListener('keydown', function (event) {
@@ -304,6 +316,68 @@
             cart = [];
             renderCart();
         });
+
+        checkoutButton.addEventListener('click', async function () {
+            if (checkoutButton.disabled) {
+                return;
+            }
+
+            if (cart.length === 0) {
+                showConcessionMessage('Giỏ hàng đang trống. Vui lòng thêm món trước khi thanh toán.', 'warning');
+                return;
+            }
+
+            checkoutButton.disabled = true;
+
+            try {
+                const response = await fetch('/Staff/CheckoutConcessions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': checkoutToken
+                    },
+                    body: JSON.stringify({
+                        items: cart.map(function (item) {
+                            return {
+                                comboID: item.comboId,
+                                quantity: item.quantity
+                            };
+                        })
+                    })
+                });
+
+                const result = await readCheckoutResponse(response);
+                if (!response.ok) {
+                    showConcessionMessage(result.message || 'Không thể thanh toán. Vui lòng thử lại.', 'warning');
+                    return;
+                }
+
+                monthlyRevenue = Math.trunc(Number(result.monthlyRevenue) || 0);
+                totalTransactions = Math.trunc(Number(result.totalTransactions) || 0);
+                updateConcessionStats();
+                showConcessionMessage('Thanh toán thành công - Tổng tiền: ' + formatVnd(result.total), 'success');
+
+                cart = [];
+                renderCart();
+            } catch {
+                showConcessionMessage('Không thể thanh toán. Vui lòng thử lại.', 'warning');
+            } finally {
+                checkoutButton.disabled = false;
+            }
+        });
+
+        async function readCheckoutResponse(response) {
+            const text = await response.text();
+            if (!text) {
+                return {};
+            }
+
+            try {
+                return JSON.parse(text);
+            } catch {
+                return {};
+            }
+        }
 
         function getProductFromCard(card) {
             return {
@@ -430,8 +504,54 @@
             }, 0);
         }
 
+        function updateConcessionStats() {
+            if (monthlyRevenueStat) {
+                monthlyRevenueStat.textContent = formatVnd(monthlyRevenue);
+            }
+
+            if (totalTransactionsStat) {
+                totalTransactionsStat.textContent = totalTransactions.toString() + ' GIAO DỊCH';
+            }
+
+            if (averageOrderValueStat) {
+                const averageOrderValue = totalTransactions > 0 ? monthlyRevenue / totalTransactions : 0;
+                averageOrderValueStat.textContent = formatVnd(averageOrderValue);
+            }
+        }
+
+        function showConcessionMessage(message, type) {
+            const existingMessage = document.querySelector('[data-concession-message]');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+
+            const messageBox = document.createElement('div');
+            messageBox.dataset.concessionMessage = 'true';
+            messageBox.className = type === 'success'
+                ? 'staff-alert staff-alert-success'
+                : 'staff-alert staff-alert-error';
+            messageBox.style.margin = '0 0 16px';
+            messageBox.textContent = message;
+
+            document.querySelector('.concessions-layout').before(messageBox);
+
+            window.setTimeout(function () {
+                messageBox.remove();
+            }, 3200);
+        }
+
         function formatVnd(value) {
             return new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(Math.trunc(Number(value) || 0)) + ' VND';
+        }
+
+        function getNumericStatValue(element) {
+            if (!element) {
+                return 0;
+            }
+
+            const rawValue = element.dataset.statValue || element.textContent || '0';
+            const numericValue = Number(rawValue.toString().replace(/\D/g, ''));
+            return Number.isFinite(numericValue) ? numericValue : 0;
         }
 
         function getWholeVndInputValue(value) {
