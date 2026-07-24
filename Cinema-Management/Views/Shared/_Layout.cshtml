@@ -1,3 +1,11 @@
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+    var movieNavActive = currentController == "Home" && currentAction == "Movie";
+    var pricingNavActive = currentController == "Home" && currentAction == "TicketPricing";
+    var offersNavActive = currentController == "Home" && currentAction == "Offers";
+    var bookingNavActive = currentController == "Booking";
+}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -5,9 +13,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Cinema_Management</title>
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico" asp-append-version="true" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/movie.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/ticketprice.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Cinema_Management.styles.css" asp-append-version="true" />
+    <script src="https://cdn.jsdelivr.net/npm/@@tailwindcss/browser@@4"></script>
     @await RenderSectionAsync("Styles", required: false)
 </head>
 
@@ -20,50 +32,53 @@
         <nav class="navbar navbar-expand-sm navbar-dark custom-navbar">
             <div class="container-fluid px-4 py-2">
 
-                <a class="navbar-brand fw-bold m-0 cosmos-logo"
-                   style="color: #D4A373; font-size: 1.5rem; letter-spacing: 0.5px; font-family: JetBrains Mono, monospace;"
-                   asp-area="" asp-controller="Home" asp-action="Index">
-                    COSMOS
+                <a class="navbar-brand fw-bold m-0 cosmos-logo" asp-area="" asp-controller="Home" asp-action="Index">
+                    <img src="/img/poster/logo.png" alt="">
                 </a>
 
                 <div class="d-none d-lg-flex gap-4 ms-5 me-auto ">
-                    <a href="#" class="cosmos-nav-link">Phim</a>
-                    <a href="#" class="cosmos-nav-link">Giá vé</a>
-                    <a href="#" class="cosmos-nav-link">Ưu đãi</a>
-                    <a href="#" class="cosmos-nav-link">Đặt vé</a>
+                    <a class="cosmos-nav-link @(movieNavActive ? "is-active" : "")" asp-area="" asp-controller="Home" asp-action="Movie">Phim</a>
+                    <a class="cosmos-nav-link @(pricingNavActive ? "is-active" : "")" asp-area="" asp-controller="Home" asp-action="TicketPricing">Giá vé</a>
+                    <a class="cosmos-nav-link @(offersNavActive ? "is-active" : "")" asp-area="" asp-controller="Home" asp-action="Offers">Ưu đãi</a>
+                    <a class="cosmos-nav-link @(bookingNavActive ? "is-active" : "")" asp-area="" asp-controller="Booking" asp-action="Index">Đặt vé</a>
                 </div>
 
                 <div class="d-flex align-items-center gap-2">
                     @if (Context.Session.GetString("UserEmail") != null)
                     {
-                        <span style="color: #D4A373; font-size: 0.85rem; font-family: 'Manrope', sans-serif;">
-                            Welcome @Context.Session.GetString("UserEmail")
-                            @* hiện chào mừng *@
-                        </span>
-                        <div class="user-dropdown">
-                            <a asp-controller="Account" asp-action="Login" class="cosmos-nav-link p-1"
-                               style="color: #D4A373; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.7'"
-                               onmouseout="this.style.opacity='1'">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor"
-                                     viewBox="0 0 16 16">
-                                    <path
-                                    d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0Zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4Zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10Z" />
-                                </svg>
+                        var displayName = Context.Session.GetString("UserFullName")
+                            ?? Context.Session.GetString("UserEmail");
+                        var avatarInitial = !string.IsNullOrWhiteSpace(displayName)
+                            ? displayName.Trim()[0].ToString().ToUpperInvariant()
+                            : "C";
+
+                        <div class="navbar-account d-flex align-items-center gap-2">
+                            <span class="cosmos-welcome">
+                                <span class="cosmos-welcome-label">Chào mừng</span>
+                                <span class="cosmos-welcome-name">@displayName</span>
+                            </span>
+
+                            <a asp-controller="Account" asp-action="Profile" class="cosmos-profile-button"
+                               aria-label="Trang cá nhân" title="Trang cá nhân">
+                                <span class="cosmos-profile-avatar" aria-hidden="true">@avatarInitial</span>
                             </a>
 
-                            <div class="user-dropdown-content">
-                                <a asp-controller="Account" asp-action="Profile">Trang cá nhân</a>
-                                <a asp-controller="Account" asp-action="Logout" class="text-danger">Đăng xuất</a>
-                            </div>
+                            <a asp-controller="Account" asp-action="Logout" class="cosmos-icon-button cosmos-logout-button"
+                               aria-label="Đăng xuất" title="Đăng xuất">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path
+                                    d="M10 4.75A2.75 2.75 0 0 0 7.25 7.5v9A2.75 2.75 0 0 0 10 19.25h2a.75.75 0 0 1 0 1.5h-2a4.25 4.25 0 0 1-4.25-4.25v-9A4.25 4.25 0 0 1 10 3.25h2a.75.75 0 0 1 0 1.5h-2Z" />
+                                    <path
+                                    d="M15.47 7.47a.75.75 0 0 1 1.06 0l4 4a.75.75 0 0 1 0 1.06l-4 4a.75.75 0 1 1-1.06-1.06l2.72-2.72H10.5a.75.75 0 0 1 0-1.5h7.69l-2.72-2.72a.75.75 0 0 1 0-1.06Z" />
+                                </svg>
+                            </a>
                         </div>
                     }
                     else
                     {
-                        <a asp-controller="Account" asp-action="Login" class="cosmos-nav-link p-1"
-                           style="color: #D4A373; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.7'"
-                           onmouseout="this.style.opacity='1'">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor"
-                                 viewBox="0 0 16 16">
+                        <a asp-controller="Account" asp-action="Login" class="cosmos-icon-button cosmos-login-button"
+                           aria-label="Đăng nhập" title="Đăng nhập">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" aria-hidden="true">
                                 <path
                                 d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0Zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4Zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10Z" />
                             </svg>
@@ -80,18 +95,48 @@
         </main>
     </div>
 
-    <footer>
-        <div class="container-fluid py-4" style="background-color: #121212; color: #888; font-size: 0.85rem;">
-            <div class="row">
-                <div class="col-md-6">
-                    <p>&copy; 2023 COSMOS CINEMA. All rights reserved.</p>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <p>Contact us: info@cosmoscinema.com</p>
-                </div>
+    
+        <footer class="cosmos-movie-footer">
+        <div class="cosmos-movie-footer__brand">
+            <a class="cosmos-movie-footer__logo" asp-controller="Home" asp-action="Index">COSMOS<br>CINEMA</a>
+            <p>Cinema nights, curated beautifully.</p>
+        </div>
+
+        <nav class="cosmos-movie-footer__links" aria-label="Footer navigation">
+            <div>
+                <h3>About COSMOS</h3>
+                <a href="#">About Us</a>
+                <a href="#">Our Cinemas</a>
+                <a href="#">Careers</a>
+                <a href="#">News & Events</a>
             </div>
+            <div>
+                <h3>Support</h3>
+                <a href="#">FAQs</a>
+                <a href="#">Help Center</a>
+                <a href="#">Booking Guide</a>
+                <a href="#">Contact Us</a>
+            </div>
+        </nav>
+
+        <div class="cosmos-movie-footer__signup">
+            <h3>Luôn cập nhật thông tin</h3>
+            <p>Nhận thông tin về các bộ phim và ưu đãi mới nhất ngay trong hộp thư đến của bạn.</p>
+            <form>
+                <label for="footerEmail" class="visually-hidden">Email address</label>
+                <input id="footerEmail" type="email" placeholder="Enter your email" />
+                <button type="submit">Subscribe</button>
+            </form>
+        </div>
+
+        <div class="cosmos-movie-footer__bottom">
+            <span>&copy; @DateTime.Now.Year COSMOS CINEMA. All rights reserved.</span>
+            <span>Terms of Use</span>
+            <span>Privacy Policy</span>
+            <span>Cookie Policy</span>
         </div>
     </footer>
+    
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
@@ -106,7 +151,7 @@
                  style="background: linear-gradient(135deg, #28a745, #218838); min-width: 350px; border-radius: 12px; box-shadow: 0 8px 32px rgba(40,167,69,0.3);">
                 <div class="d-flex">
                     <div class="toast-body" style="font-size: 0.95rem; padding: 16px 20px;">
-                        ✅ @TempData["AlertSuccess"]
+                        @TempData["AlertSuccess"]
                     </div>
                     <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
                 </div>
@@ -118,7 +163,7 @@
                  style="background: linear-gradient(135deg, #dc3545, #c82333); min-width: 350px; border-radius: 12px; box-shadow: 0 8px 32px rgba(220,53,69,0.3);">
                 <div class="d-flex">
                     <div class="toast-body" style="font-size: 0.95rem; padding: 16px 20px;">
-                        ❌ @TempData["AlertError"]
+                        @TempData["AlertError"]
                     </div>
                     <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
                 </div>
@@ -143,3 +188,4 @@
 </body>
 
 </html>
+

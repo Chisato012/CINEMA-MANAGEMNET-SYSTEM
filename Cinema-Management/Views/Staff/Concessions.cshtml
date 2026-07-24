@@ -1,11 +1,25 @@
-@{ ViewData["Title"] = "POS Concessions Register"; }
+@using System.Globalization
+@model Cinema_Management.Models.ConcessionsViewModel
+@* Quang UI Bắc BE *@
+@{
+    ViewData["Title"] = "POS Concessions Register";
+    var culture = new CultureInfo("vi-VN");
+    var formMode = ViewBag.ConcessionFormMode as string;
+    var showForm = formMode == "create" || formMode == "edit";
+    var isEdit = formMode == "edit";
+    var formPrice = decimal.Truncate(Model.Form.ComboPrice).ToString("0", CultureInfo.InvariantCulture);
+}
 
 <header class="staff-header">
     <div style="display:flex;align-items:center;gap:16px;">
-        <h2>QUẢN LÝ BẮP NƯỚC</h2>
-        <span class="badge badge-outline">ĐANG KẾT NỐI</span>
+        <h2>QUẢN LÝ ĐỒ ĂN/UỐNG</h2>
+        <span class="badge badge-outline">
+            <i class="status-dot"></i>
+            ĐANG KẾT NỐI
+        </span>
     </div>
     <div style="display:flex;gap:12px;">
+        <a class="btn-primary" asp-controller="Staff" asp-action="CreateConcession" title="Them mon">+ THÊM MÓN</a>
         <button class="btn-secondary" style="border:none;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
             LƯU
@@ -13,96 +27,75 @@
     </div>
 </header>
 
+<form id="concessionCheckoutTokenForm" style="display:none">
+    @Html.AntiForgeryToken()
+</form>
+
 <div class="concessions-layout">
     <div class="concessions-main">
         <div class="pos-stats">
             <div class="stat-card">
-                <p class="stat-label">LỢI NHUẬN DOANH THU HÀNG NGÀY</p>
-                <h3>0 VND</h3>
+                <p class="stat-label">DOANH THU THÁNG NÀY</p>
+                <h3 id="monthlyRevenueStat" data-stat-value="@decimal.Truncate(Model.MonthlyRevenue).ToString("0", CultureInfo.InvariantCulture)">@Model.MonthlyRevenue.ToString("N0", culture) VND</h3>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
             </div>
             <div class="stat-card">
                 <p class="stat-label">TỔNG SỐ GIAO DỊCH</p>
-                <h3>0 GIAO DỊCH</h3>
+                <h3>@Model.TotalTransactions GIAO DỊCH</h3>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
             </div>
             <div class="stat-card">
                 <p class="stat-label">GIÁ TRỊ TRUNG BÌNH MỖI ĐƠN</p>
-                <h3>0 VND</h3>
+                <h3>@Model.AverageOrderValue.ToString("N0", culture) VND</h3>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
             </div>
         </div>
 
-        <div class="category-tabs">
-            <button class="tab-btn active">TẤT CẢ</button>
-            <button class="tab-btn">DRINKS</button>
-            <button class="tab-btn">POPCORN</button>
-            <button class="tab-btn">COMBOS</button>
+        <div class="category-tabs" data-concession-tabs>
+            <button class="tab-btn active" type="button" data-category="all">Tất cả</button>
+            <button class="tab-btn" type="button" data-category="Drinks">Drinks</button>
+            <button class="tab-btn" type="button" data-category="Popcorn">Popcorn</button>
+            <button class="tab-btn" type="button" data-category="Combos">Combos</button>
         </div>
 
         <div class="concessions-grid">
-            <!-- Item -->
-            <div class="concession-item">
-                <div class="item-img-wrap">
-                    <span class="item-tag">BEST SELLER</span>
-                    <img src="~/image/popcorn.png" alt="Popcorn" />
-                </div>
-                <div class="item-info">
-                    <div class="item-header">
-                        <h4> Popcorn (XL)</h4>
-                        <span class="item-price">99.000</span>
-                    </div>
-                    <p>...THEM MO TA MON AN...</p>
-                    <button class="btn-add">THÊM VÀO GIỎ</button>
-                </div>
-            </div>
-            
-            <div class="concession-item">
-                <div class="item-img-wrap">
-                    <span class="item-tag tag-blue">ICE COLD</span>
-                    <img src="https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=200&q=80" alt="Soda" />
-                </div>
-                <div class="item-info">
-                    <div class="item-header">
-                        <h4>Coca Cola</h4>
-                        <span class="item-price">29.000</span>
-                    </div>
-                    <p>mo ta</p>
-                    <button class="btn-add">THÊM VÀO GIỎ</button>
-                </div>
-            </div>
+            @if (!Model.Items.Any())
+            {
+                <div class="concessions-empty">Chua co mon bap nuoc nao trong database.</div>
+            }
 
+            @foreach (var item in Model.Items)
+            {
+                var wholePrice = decimal.Truncate(item.ComboPrice);
+                var price = wholePrice.ToString("N0", culture) + " VND";
+                var dataPrice = wholePrice.ToString("0", CultureInfo.InvariantCulture);
 
-            <div class="concession-item">
-                <div class="item-img-wrap">
-                    <span class="item-tag tag-red">COMBO</span>
-                    <img src="~/image/comboL.png" alt="Combo" />
-                </div>
-                <div class="item-info">
-                    <div class="item-header">
-                        <h4>Combo Bắp nước (L)</h4>
-                        <span class="item-price">99.000</span>
+                <div class="concession-item concession-card"
+                     draggable="true"
+                     data-combo-id="@item.ComboID"
+                     data-combo-name="@item.ComboName"
+                     data-combo-price="@dataPrice"
+                     data-category="all">
+                    <div class="item-img-wrap concession-placeholder" aria-hidden="true">
+                        <span>@GetPlaceholderText(item.ComboName)</span>
                     </div>
-                    <p>mo ta</p>
-                    <button class="btn-add">THÊM VÀO GIỎ</button>
-                </div>
-            </div>
-
-            <!-- Item 4 -->
-            <div class="concession-item">
-                <div class="item-img-wrap">
-                    <span class="item-tag tag-red">Combo</span>
-                    <img src="~/image/comboXL.png" alt="BAP NUOC" />
-                </div>
-                <div class="item-info">
-                    <div class="item-header">
-                        <h4>Combo Bắp Nước (XL)</h4>
-                        <span class="item-price">199.000</span>
+                    <div class="item-info">
+                        <div class="item-header">
+                            <h4>@item.ComboName</h4>
+                            <span class="item-price">@price</span>
+                        </div>
+                        <div class="concession-actions">
+                            <a class="btn-edit-concession"
+                               asp-controller="Staff"
+                               asp-action="EditConcession"
+                               asp-route-id="@item.ComboID"
+                               title="Sua mon"
+                               aria-label="Sua mon @item.ComboName">Sửa</a>
+                            <button class="btn-add" type="button">THÊM VÀO GIỎ</button>
+                        </div>
                     </div>
-                    <p>1 bắp 2 nước</p>
-                    <button class="btn-add">THÊM VÀO GIỎ</button>
                 </div>
-            </div>
+            }
         </div>
     </div>
 
@@ -111,19 +104,20 @@
             <h4>GIỎ HÀNG</h4>
             <span class="badge badge-primary">POS READY</span>
         </div>
-        
-        <div class="receipt-empty">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--color-neutral-400)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:16px"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>
-            <p>Giỏ hàng đang trống..</p>
+
+        <div id="cartDropZone" class="cart-drop-zone">
+            KÉO MÓN VÀO ĐÂY ĐỂ THÊM VÀO GIỎ HÀNG
         </div>
+
+        <div id="cartItems" class="receipt-cart-items"></div>
 
         <div class="receipt-footer">
             <div class="receipt-total">
-                <span>Tổng giá trị (Đã tính thuế)</span>
-                <strong>$0.00</strong>
+                <span>TỔNG GIÁ TRỊ<br>(Đã tính thuế)</span>
+                <strong id="cartTotal">0 VND</strong>
             </div>
             <div class="receipt-actions">
-                <button class="btn-secondary" style="flex:1">
+                <button id="resetCartButton" class="btn-secondary" style="flex:1" type="button">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
                     LÀM MỚI
                 </button>
@@ -132,3 +126,439 @@
         </div>
     </div>
 </div>
+
+@if (showForm)
+{
+    <div class="modal-backdrop show">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div>
+                    <p class="modal-pretitle">Bap nuoc</p>
+                    <h3>@(isEdit ? "Sua mon" : "Them mon")</h3>
+                </div>
+                <a class="btn-close-modal" asp-controller="Staff" asp-action="Concessions" aria-label="Dong">×</a>
+            </div>
+            <form asp-controller="Staff" asp-action="@(isEdit ? "EditConcession" : "CreateConcession")" method="post">
+                <input type="hidden" asp-for="Form.ComboID" name="ComboID" />
+                <div class="modal-body">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <div class="form-group">
+                        <label for="ComboName">Ten mon</label>
+                        <input id="ComboName" name="ComboName" value="@Model.Form.ComboName" maxlength="150" />
+                        @Html.ValidationMessage("ComboName", null, new { @class = "text-danger" })
+                    </div>
+                    <div class="form-group">
+                        <label for="ComboPrice">Gia mon</label>
+                        <input id="ComboPrice" name="ComboPrice" value="@formPrice" type="number" min="0" step="1" inputmode="numeric" pattern="[0-9]*" data-whole-vnd-input />
+                        @Html.ValidationMessage("ComboPrice", null, new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a class="btn-secondary btn-close-modal" asp-controller="Staff" asp-action="Concessions">Huy</a>
+                    <button class="btn-primary" type="submit">@(isEdit ? "Cap nhat" : "Them mon")</button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+@functions {
+    private static string GetPlaceholderText(string name)
+    {
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length == 0)
+        {
+            return "CB";
+        }
+
+        return string.Concat(parts.Take(2).Select(part => char.ToUpperInvariant(part[0])));
+    }
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // UI-only category mapping.
+        // Categories are not stored in the database.
+        const concessionCategoryMap = {
+            1: "Popcorn",
+            2: "Popcorn",
+            3: "Drinks",
+            4: "Drinks",
+            5: "Drinks",
+            6: "Combos",
+            7: "Combos",
+            8: "Combos",
+            9: "Combos",
+            10: "Combos",
+            11: "Combos",
+            12: "Combos",
+            13: "Combos"
+        };
+
+        let cart = [];
+        const cards = document.querySelectorAll('.concession-card');
+        const cartDropZone = document.getElementById('cartDropZone');
+        const cartItems = document.getElementById('cartItems');
+        const cartTotal = document.getElementById('cartTotal');
+        const resetCartButton = document.getElementById('resetCartButton');
+        const checkoutButton = document.querySelector('.receipt-actions .btn-primary');
+        const statValues = document.querySelectorAll('.pos-stats .stat-card h3');
+        const monthlyRevenueStat = statValues[0];
+        const totalTransactionsStat = statValues[1];
+        const averageOrderValueStat = statValues[2];
+        const wholeVndPriceInput = document.querySelector('[data-whole-vnd-input]');
+        const checkoutToken = document.querySelector('#concessionCheckoutTokenForm input[name="__RequestVerificationToken"]')?.value || '';
+        let monthlyRevenue = getNumericStatValue(monthlyRevenueStat);
+        let totalTransactions = getNumericStatValue(totalTransactionsStat);
+
+        if (wholeVndPriceInput) {
+            wholeVndPriceInput.addEventListener('keydown', function (event) {
+                if (['.', ',', 'e', 'E', '+', '-'].includes(event.key)) {
+                    event.preventDefault();
+                }
+            });
+
+            wholeVndPriceInput.addEventListener('paste', function (event) {
+                event.preventDefault();
+                const pastedText = event.clipboardData.getData('text') || '';
+                wholeVndPriceInput.value = getWholeVndInputValue(pastedText);
+            });
+
+            wholeVndPriceInput.addEventListener('input', function () {
+                wholeVndPriceInput.value = getWholeVndInputValue(wholeVndPriceInput.value);
+            });
+        }
+
+        cards.forEach(function (card) {
+            const comboId = Number(card.dataset.comboId);
+            card.dataset.category = concessionCategoryMap[comboId] ?? "Combos";
+
+            card.addEventListener('dragstart', function (event) {
+                const product = getProductFromCard(card);
+                event.dataTransfer.setData('application/json', JSON.stringify(product));
+                event.dataTransfer.effectAllowed = 'copy';
+            });
+        });
+
+        document.querySelectorAll('[data-concession-tabs] .tab-btn').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var category = button.dataset.category;
+                document.querySelectorAll('[data-concession-tabs] .tab-btn').forEach(function (tab) {
+                    tab.classList.toggle('active', tab === button);
+                });
+                cards.forEach(function (card) {
+                    const shouldShow = category === 'all' || card.dataset.category === category;
+                    card.hidden = !shouldShow;
+                });
+            });
+        });
+
+        document.querySelectorAll('.btn-add').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const card = button.closest('.concession-card');
+                if (!card) {
+                    return;
+                }
+
+                addToCart(getProductFromCard(card));
+            });
+        });
+
+        cartDropZone.addEventListener('dragenter', function (event) {
+            event.preventDefault();
+            cartDropZone.classList.add('is-drag-over');
+        });
+
+        cartDropZone.addEventListener('dragover', function (event) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'copy';
+            cartDropZone.classList.add('is-drag-over');
+        });
+
+        cartDropZone.addEventListener('dragleave', function () {
+            cartDropZone.classList.remove('is-drag-over');
+        });
+
+        cartDropZone.addEventListener('drop', function (event) {
+            event.preventDefault();
+            cartDropZone.classList.remove('is-drag-over');
+
+            const rawProduct = event.dataTransfer.getData('application/json');
+            if (!rawProduct) {
+                return;
+            }
+
+            try {
+                addToCart(JSON.parse(rawProduct));
+            } catch {
+                return;
+            }
+        });
+
+        cartItems.addEventListener('click', function (event) {
+            const button = event.target.closest('[data-cart-action]');
+            if (!button) {
+                return;
+            }
+
+            const comboId = Number(button.dataset.comboId);
+            if (button.dataset.cartAction === 'increase') {
+                increaseQuantity(comboId);
+            } else if (button.dataset.cartAction === 'decrease') {
+                decreaseQuantity(comboId);
+            } else if (button.dataset.cartAction === 'remove') {
+                removeFromCart(comboId);
+            }
+        });
+
+        resetCartButton.addEventListener('click', function () {
+            cart = [];
+            renderCart();
+        });
+
+        checkoutButton.addEventListener('click', async function () {
+            if (checkoutButton.disabled) {
+                return;
+            }
+
+            if (cart.length === 0) {
+                showConcessionMessage('Giỏ hàng đang trống. Vui lòng thêm món trước khi thanh toán.', 'warning');
+                return;
+            }
+
+            checkoutButton.disabled = true;
+
+            try {
+                const response = await fetch('/Staff/CheckoutConcessions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': checkoutToken
+                    },
+                    body: JSON.stringify({
+                        items: cart.map(function (item) {
+                            return {
+                                comboID: item.comboId,
+                                quantity: item.quantity
+                            };
+                        })
+                    })
+                });
+
+                const result = await readCheckoutResponse(response);
+                if (!response.ok) {
+                    showConcessionMessage(result.message || 'Không thể thanh toán. Vui lòng thử lại.', 'warning');
+                    return;
+                }
+
+                monthlyRevenue = Math.trunc(Number(result.monthlyRevenue) || 0);
+                totalTransactions = Math.trunc(Number(result.totalTransactions) || 0);
+                updateConcessionStats();
+                showConcessionMessage('Thanh toán thành công - Tổng tiền: ' + formatVnd(result.total), 'success');
+
+                cart = [];
+                renderCart();
+            } catch {
+                showConcessionMessage('Không thể thanh toán. Vui lòng thử lại.', 'warning');
+            } finally {
+                checkoutButton.disabled = false;
+            }
+        });
+
+        async function readCheckoutResponse(response) {
+            const text = await response.text();
+            if (!text) {
+                return {};
+            }
+
+            try {
+                return JSON.parse(text);
+            } catch {
+                return {};
+            }
+        }
+
+        function getProductFromCard(card) {
+            return {
+                comboId: Number(card.dataset.comboId),
+                comboName: card.dataset.comboName || '',
+                comboPrice: Math.trunc(Number(card.dataset.comboPrice) || 0)
+            };
+        }
+
+        function addToCart(product) {
+            const existingItem = cart.find(function (item) {
+                return item.comboId === product.comboId;
+            });
+
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({
+                    comboId: product.comboId,
+                    comboName: product.comboName,
+                    comboPrice: product.comboPrice,
+                    quantity: 1
+                });
+            }
+
+            renderCart();
+        }
+
+        function increaseQuantity(comboId) {
+            const item = cart.find(function (cartItem) {
+                return cartItem.comboId === comboId;
+            });
+
+            if (item) {
+                item.quantity += 1;
+                renderCart();
+            }
+        }
+
+        function decreaseQuantity(comboId) {
+            const item = cart.find(function (cartItem) {
+                return cartItem.comboId === comboId;
+            });
+
+            if (!item) {
+                return;
+            }
+
+            item.quantity -= 1;
+            if (item.quantity <= 0) {
+                removeFromCart(comboId);
+                return;
+            }
+
+            renderCart();
+        }
+
+        function removeFromCart(comboId) {
+            cart = cart.filter(function (item) {
+                return item.comboId !== comboId;
+            });
+            renderCart();
+        }
+
+        function renderCart() {
+            cartItems.replaceChildren();
+
+            if (cart.length === 0) {
+                const emptyMessage = document.createElement('div');
+                emptyMessage.className = 'cart-empty-compact';
+                emptyMessage.textContent = 'Chua co mon trong gio';
+                cartItems.appendChild(emptyMessage);
+                cartTotal.textContent = formatVnd(0);
+                return;
+            }
+
+            cart.forEach(function (item) {
+                const row = document.createElement('div');
+                row.className = 'cart-line-item';
+
+                const name = document.createElement('strong');
+                name.className = 'cart-line-name';
+                name.textContent = item.comboName;
+
+                const meta = document.createElement('span');
+                meta.className = 'cart-line-meta';
+                meta.textContent = formatVnd(item.comboPrice) + ' x ' + item.quantity;
+
+                const subtotal = document.createElement('span');
+                subtotal.className = 'cart-line-subtotal';
+                subtotal.textContent = 'Thanh tien: ' + formatVnd(item.comboPrice * item.quantity);
+
+                const controls = document.createElement('div');
+                controls.className = 'cart-line-controls';
+
+                const decrease = createCartButton('-', 'decrease', item.comboId);
+                const quantity = document.createElement('span');
+                quantity.className = 'cart-line-quantity';
+                quantity.textContent = item.quantity.toString();
+                const increase = createCartButton('+', 'increase', item.comboId);
+                const remove = createCartButton('Xoa', 'remove', item.comboId);
+
+                controls.append(decrease, quantity, increase, remove);
+                row.append(name, meta, subtotal, controls);
+                cartItems.appendChild(row);
+            });
+
+            cartTotal.textContent = formatVnd(calculateTotal());
+        }
+
+        function createCartButton(text, action, comboId) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'cart-control-btn';
+            button.dataset.cartAction = action;
+            button.dataset.comboId = comboId.toString();
+            button.textContent = text;
+            return button;
+        }
+
+        function calculateTotal() {
+            return cart.reduce(function (sum, item) {
+                return sum + item.comboPrice * item.quantity;
+            }, 0);
+        }
+
+        function updateConcessionStats() {
+            if (monthlyRevenueStat) {
+                monthlyRevenueStat.textContent = formatVnd(monthlyRevenue);
+            }
+
+            if (totalTransactionsStat) {
+                totalTransactionsStat.textContent = totalTransactions.toString() + ' GIAO DỊCH';
+            }
+
+            if (averageOrderValueStat) {
+                const averageOrderValue = totalTransactions > 0 ? monthlyRevenue / totalTransactions : 0;
+                averageOrderValueStat.textContent = formatVnd(averageOrderValue);
+            }
+        }
+
+        function showConcessionMessage(message, type) {
+            const existingMessage = document.querySelector('[data-concession-message]');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+
+            const messageBox = document.createElement('div');
+            messageBox.dataset.concessionMessage = 'true';
+            messageBox.className = type === 'success'
+                ? 'staff-alert staff-alert-success'
+                : 'staff-alert staff-alert-error';
+            messageBox.style.margin = '0 0 16px';
+            messageBox.textContent = message;
+
+            document.querySelector('.concessions-layout').before(messageBox);
+
+            window.setTimeout(function () {
+                messageBox.remove();
+            }, 3200);
+        }
+
+        function formatVnd(value) {
+            return new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(Math.trunc(Number(value) || 0)) + ' VND';
+        }
+
+        function getNumericStatValue(element) {
+            if (!element) {
+                return 0;
+            }
+
+            const rawValue = element.dataset.statValue || element.textContent || '0';
+            const numericValue = Number(rawValue.toString().replace(/\D/g, ''));
+            return Number.isFinite(numericValue) ? numericValue : 0;
+        }
+
+        function getWholeVndInputValue(value) {
+            const wholePart = value.toString().split(/[.,]/)[0];
+            return wholePart.replace(/\D/g, '');
+        }
+
+        renderCart();
+    </script>
+}

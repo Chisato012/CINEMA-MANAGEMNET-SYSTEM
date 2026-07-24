@@ -1,0 +1,119 @@
+@model PaymentPageViewModel
+@using System.Globalization
+@* Quang An *@
+@{
+    Layout = null;
+    var vi = CultureInfo.GetCultureInfo("vi-VN");
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@@tailwindcss/browser@@4"></script>
+</head>
+
+<body class="min-h-[100dvh] bg-[#121212] text-[#FFEDE3] font-[Manrope]">
+    <main class="mx-auto w-full max-w-6xl px-4 py-8 lg:py-14">
+        <header class="mb-8 max-w-2xl">
+            <p class="font-mono text-xs uppercase text-[#D6A079]">
+                Đang chờ thanh toán
+            </p>
+            <h1 class="mt-3 text-4xl font-bold";">
+                Hoàn tất giao dịch
+            </h1>
+        </header>
+
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_.85fr]">
+            <section class="rounded-md border border-[#f3bb92] bg-[#211f1e] p-6">
+                <h2 class="text-xl font-semibold" style="font-family: 'JetBrains Mono', monospace">@Model.MovieTitle</h2>
+
+                <div class="mt-6 divide-y divide-[#f3bb92] font-mono text-sm">
+                    <div class="flex justify-between py-4">
+                        <span>Suất chiếu</span>
+                        <span>@Model.SelectedDate · @Model.SelectedTime</span>
+                    </div>
+                    <div class="flex justify-between py-4">
+                        <span>Ghế</span>
+                        <span>@string.Join(", ", Model.SelectedSeats)</span>
+                    </div>
+                    <div class="flex justify-between py-4">
+                        <span>Tiền vé</span>
+                        <span>@Model.TicketSubtotal.ToString("C", vi)</span>
+                    </div>
+                    <div class="flex justify-between py-4">
+                        <span>Combo</span>
+                        <span>@Model.ConcessionSubtotal.ToString("C", vi)</span>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex items-end justify-between border-t border-[#f3bb92] pt-6">
+                    <span style="font-family: 'JetBrains Mono', monospace">Tổng thanh toán</span>
+                    <strong class="font-mono text-2xl text-[#F4BB92]">
+                        @Model.TotalAmount.ToString("C", vi)
+                    </strong>
+                </div>
+            </section>
+
+            <aside class="rounded-md border border-[#f3bb92] bg-[#211f1e] p-6 lg:sticky lg:top-6">
+                <div class="mx-auto aspect-square w-full max-w-[320px] bg-white p-4">
+                    <img src="@Model.QrImageUrl" alt="Mã QR thanh toán" class="h-full w-full object-contain" />
+                </div>
+
+                <dl class="mt-5 border-t border-[#f3bb92] pt-5 font-mono text-sm">
+                    <div class="flex justify-between gap-4">
+                        <dt>Nội dung</dt>
+                        <dd>@Model.PaymentReference</dd>
+                    </div>
+                </dl>
+
+                @if (Model.ShowDevelopmentPaymentButton)
+                {
+                    <form asp-action="CompleteDevPayment" method="post" class="mt-6">
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden" name="paymentReference" value="@Model.PaymentReference" />
+
+                        <button type="submit" class="w-full rounded-md bg-[#B98661] px-5 py-4 font-semibold text-[#301400] transition active:scale-[.98]" style="font-family: 'JetBrains Mono', monospace; color: #fff;" >
+                            Mô phỏng thanh toán thành công
+                        </button>
+                    </form>
+                }
+            </aside>
+        </div>
+    </main>
+
+    <script>
+        (() => {
+            const reference = '@Model.PaymentReference';
+            const statusUrl = '@Url.Action("PaymentStatus", "Booking")';
+            const successUrl = '@Url.Action("PaymentSuccess", "Booking")';
+
+            if (!reference || !statusUrl || !successUrl) {
+                return;
+            }
+
+            const checkPaymentStatus = async () => {
+                const response = await fetch(`${statusUrl}?paymentReference=${encodeURIComponent(reference)}`, {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.status === 'Success' && data.bookingId) {
+                    window.location.href = `${successUrl}?bookingId=${encodeURIComponent(data.bookingId)}`;
+                }
+            };
+
+            window.setInterval(checkPaymentStatus, 5000);
+        })();
+    </script>
+</body>
+</html>

@@ -13,6 +13,7 @@ public class MovieViewModel
     public string Title { get; set; }
     public short Duration { get; set; }
     public string PosterURL { get; set; }
+    [StringLength(1000, ErrorMessage = "Mô tả phim không được vượt quá 1000 ký tự.")]
     public string Synopsis { get; set; }
     public DateTime ReleaseDate { get; set; }
     public string AgeRating { get; set; }

@@ -1,0 +1,33 @@
+@{
+    ViewData["Title"] = "Xác nhận thất bại";
+    var email = ViewBag.Email as string ?? string.Empty;
+    var message = ViewBag.Message as string ?? "Liên kết xác nhận không hợp lệ hoặc đã hết hạn.";
+}
+
+<head>
+    <link rel="stylesheet" href="~/css/auth.css">
+</head>
+
+<div class="auth-wrapper">
+    <div class="auth-container">
+        <div class="text-center">
+            <h1 class="auth-header-text fw-bold mb-1">COSMOS CINEMA</h1>
+            <p class="auth-subtitle">Cần xác nhận lại tài khoản</p>
+        </div>
+
+        <div class="auth-card">
+            <h2 class="auth-state-title">Không thể xác nhận email</h2>
+            <p class="auth-state-text">@message</p>
+
+            @if (!string.IsNullOrWhiteSpace(email))
+            {
+                <form asp-controller="Account" asp-action="ResendConfirmationEmail" method="post" class="auth-state-form">
+                    <input type="hidden" name="email" value="@email" />
+                    <button type="submit" class="btn btn-submit w-100">Gửi lại email xác nhận</button>
+                </form>
+            }
+
+            <a class="auth-secondary-link" asp-controller="Account" asp-action="Login">Quay lại đăng nhập</a>
+        </div>
+    </div>
+</div>
