@@ -1,12 +1,28 @@
 using Cinema_Management.Data;
+using Cinema_Management.Services.Chatbot;
+using Cinema_Management.Services.Recommendation;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Đăng ký MVC
+// Lệnh train chạy riêng, không khởi động web server.
+// Chạy tại folder CINEMA-MANAGEMNET-SYSTEM:
+// dotnet run --project Cinema-Management\Cinema-Management.csproj -- --train-recommendation-model
+// sẽ gọi sang MovieGenreModelTrainer.Train() để train model từ CSV và lưu ra file zip.
+if (args.Contains("--train-recommendation-model", StringComparer.OrdinalIgnoreCase))
+{
+    var dataPath = MovieGenreModelTrainer.GetDefaultDataPath(builder.Environment.ContentRootPath);
+    var modelPath = MlNetGenreRecommendationService.GetDefaultModelPath(builder.Environment.ContentRootPath);
+    var result = MovieGenreModelTrainer.Train(dataPath, modelPath);
+
+    Console.WriteLine($"Recommendation model trained: {result.ModelPath}");
+    Console.WriteLine($"Rows: {result.RowCount}; Labels: {result.LabelCount}");
+    Console.WriteLine($"MicroAccuracy: {result.MicroAccuracy:0.###}; MacroAccuracy: {result.MacroAccuracy:0.###}; LogLoss: {result.LogLoss:0.###}");
+    return;
+}
+
 builder.Services.AddControllersWithViews();
 
-//Đăng ký session
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
@@ -14,23 +30,26 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// Dùng để gọi API Cloudflare Turnstile
+// Dùng để gọi API Cloudflare Turnstile ở luồng đăng nhập/đăng ký.
 builder.Services.AddHttpClient();
 
-// Lấy chuỗi kết nối từ appsettings.Development.json hoặc appsettings.json
+// Service ML.NET singleton chỉ cần load một lần.
+// ChatbotService giới hạn lại, phụ thuộc ApplicationDbContext của từng request.
+builder.Services.AddSingleton<IGenreRecommendationService, MlNetGenreRecommendationService>();
+builder.Services.AddScoped<IChatbotService, ChatbotService>();
+
 var connectionString = builder.Configuration
                            .GetConnectionString("DefaultConnection")
                        ?? throw new InvalidOperationException(
                            "Không tìm thấy ConnectionStrings:DefaultConnection."
                        );
 
-// Đăng ký ApplicationDbContext và cấu hình SQL Server
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 var app = builder.Build();
 
-// Kiểm tra kết nối database khi khởi động ứng dụng
+// Kiểm tra nhanh kết nối database khi app khởi động.
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider
@@ -52,7 +71,6 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Cấu hình HTTP request pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -60,16 +78,11 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseSession();
-
 app.UseAuthorization();
 
-// Định tuyến MVC
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");

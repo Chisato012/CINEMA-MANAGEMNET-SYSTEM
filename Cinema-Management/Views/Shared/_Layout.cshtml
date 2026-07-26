@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 
 <head>
     <meta charset="utf-8" />
@@ -10,10 +10,6 @@
     <link rel="stylesheet" href="~/Cinema_Management.styles.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
 </head>
-
-<style>
-
-</style>
 
 <body>
     <header>
@@ -26,7 +22,7 @@
                     COSMOS
                 </a>
 
-                <div class="d-none d-lg-flex gap-4 ms-5 me-auto ">
+                <div class="d-none d-lg-flex gap-4 ms-5 me-auto">
                     <a href="#" class="cosmos-nav-link">Phim</a>
                     <a href="#" class="cosmos-nav-link">Giá vé</a>
                     <a href="#" class="cosmos-nav-link">Ưu đãi</a>
@@ -38,7 +34,6 @@
                     {
                         <span style="color: #D4A373; font-size: 0.85rem; font-family: 'Manrope', sans-serif;">
                             Welcome @Context.Session.GetString("UserEmail")
-                            @* hiện chào mừng *@
                         </span>
                         <div class="user-dropdown">
                             <a asp-controller="Account" asp-action="Login" class="cosmos-nav-link p-1"
@@ -74,11 +69,14 @@
             </div>
         </nav>
     </header>
+
     <div class="container-fluid px-0">
         <main role="main">
             @RenderBody()
         </main>
     </div>
+    <!--gọi tới giao diện chatbot-->
+    @await Html.PartialAsync("_ChatbotWidget")
 
     <footer>
         <div class="container-fluid py-4" style="background-color: #121212; color: #888; font-size: 0.85rem;">
@@ -98,7 +96,6 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 
-    @* ====== TOAST NOTIFICATION SYSTEM ====== *@
     <div aria-live="polite" aria-atomic="true" style="position: fixed; top: 20px; right: 20px; z-index: 99999;">
         @if (TempData["AlertSuccess"] != null)
         {
@@ -106,7 +103,7 @@
                  style="background: linear-gradient(135deg, #28a745, #218838); min-width: 350px; border-radius: 12px; box-shadow: 0 8px 32px rgba(40,167,69,0.3);">
                 <div class="d-flex">
                     <div class="toast-body" style="font-size: 0.95rem; padding: 16px 20px;">
-                        ✅ @TempData["AlertSuccess"]
+                        Thành công: @TempData["AlertSuccess"]
                     </div>
                     <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
                 </div>
@@ -118,7 +115,7 @@
                  style="background: linear-gradient(135deg, #dc3545, #c82333); min-width: 350px; border-radius: 12px; box-shadow: 0 8px 32px rgba(220,53,69,0.3);">
                 <div class="d-flex">
                     <div class="toast-body" style="font-size: 0.95rem; padding: 16px 20px;">
-                        ❌ @TempData["AlertError"]
+                        Lỗi: @TempData["AlertError"]
                     </div>
                     <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
                 </div>
@@ -127,18 +124,17 @@
     </div>
 
     <script>
-            // Auto-hide toasts after 5 seconds
-            document.addEventListener('DOMContentLoaded', function () {
-                var toasts = document.querySelectorAll('.toast.show');
-                toasts.forEach(function (toast) {
-                    setTimeout(function () {
-                        toast.classList.remove('show');
-                        toast.style.transition = 'opacity 0.5s ease';
-                        toast.style.opacity = '0';
-                        setTimeout(function () { toast.remove(); }, 500);
-                    }, 5000);
-                });
+        document.addEventListener('DOMContentLoaded', function () {
+            var toasts = document.querySelectorAll('.toast.show');
+            toasts.forEach(function (toast) {
+                setTimeout(function () {
+                    toast.classList.remove('show');
+                    toast.style.transition = 'opacity 0.5s ease';
+                    toast.style.opacity = '0';
+                    setTimeout(function () { toast.remove(); }, 500);
+                }, 5000);
             });
+        });
     </script>
 </body>
 

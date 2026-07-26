@@ -1,6 +1,86 @@
-﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
+document.addEventListener('DOMContentLoaded', function () {
+    const widget = document.querySelector('.chatbot-widget');
+    if (!widget) return;
 
-// Write your JavaScript code.
+    const toggle = widget.querySelector('.chatbot-toggle');
+    const close = widget.querySelector('.chatbot-close');
+    const panel = widget.querySelector('.chatbot-panel');
+    const form = widget.querySelector('.chatbot-form');
+    const firstSelect = widget.querySelector('.chatbot-select');
+    const messages = widget.querySelector('.chatbot-messages');
 
+    function setOpen(isOpen) {
+        widget.classList.toggle('chatbot-widget--open', isOpen);
+        panel.setAttribute('aria-hidden', String(!isOpen));
+        if (isOpen) firstSelect.focus();
+    }
 
+    function appendMessage(text, sender) {
+        const bubble = document.createElement('div');
+        bubble.className = `chatbot-message chatbot-message--${sender}`;
+        bubble.textContent = text;
+        messages.appendChild(bubble);
+        messages.scrollTop = messages.scrollHeight;
+        return bubble;
+    }
+
+    function formatSelection(payload) {
+        const labels = {
+            mood: form.elements.mood.selectedOptions[0].text,
+            companion: form.elements.companion.selectedOptions[0].text,
+            intensity: form.elements.intensity.selectedOptions[0].text,
+            ageRating: payload.ageRating
+        };
+
+        return `${labels.mood} · ${labels.companion} · ${labels.intensity} · ${labels.ageRating}`;
+    }
+
+    function formatRecommendation(data) {
+        const reply = data.reply ? `${data.reply}\n\n` : '';
+        const movies = Array.isArray(data.movies) && data.movies.length > 0
+            ? data.movies
+                .map((movie, index) => `${index + 1}. ${movie.title} (${movie.genres}, ${movie.ageRating})`)
+                .join('\n')
+            : 'Chưa tìm thấy phim phù hợp với lựa chọn này.';
+
+        return `${reply}${movies}`.trim();
+    }
+
+    async function requestRecommendation(payload) {
+        appendMessage(formatSelection(payload), 'user');
+        const pending = appendMessage('Đang tìm phim...', 'bot');
+
+        try {
+            // Frontend chỉ gọi endpoint guided recommendation, không còn gửi câu hỏi tự do.
+            const response = await fetch('/api/chatbot/recommend', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error('Recommendation request failed.');
+            }
+
+            const data = await response.json();
+            pending.textContent = formatRecommendation(data);
+        } catch {
+            pending.textContent = 'Không gọi được chatbot. Hãy kiểm tra server ứng dụng, SQL Server và model ML.NET.';
+        }
+    }
+
+    toggle.addEventListener('click', () => setOpen(!widget.classList.contains('chatbot-widget--open')));
+    close.addEventListener('click', () => setOpen(false));
+
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        const formData = new FormData(form);
+        requestRecommendation({
+            mood: formData.get('mood'),
+            companion: formData.get('companion'),
+            intensity: formData.get('intensity'),
+            ageRating: formData.get('ageRating')
+        });
+    });
+});

@@ -333,6 +333,10 @@ paket-files/
 __pycache__/
 *.pyc
 
+# ML training artifacts
+ML/*.zip
+ML/screenshot/
+
 # Cake - Uncomment if you are using it
 # tools/**
 # !tools/packages.config
