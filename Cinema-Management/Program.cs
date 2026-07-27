@@ -1,4 +1,5 @@
 using Cinema_Management.Data;
+<<<<<<< HEAD
 using Cinema_Management.Models;
 using Cinema_Management.Services;
 using System.Security.Claims;
@@ -18,6 +19,32 @@ CultureInfo.DefaultThreadCurrentUICulture = viCulture;
 builder.Services.AddControllersWithViews();
 
 //Đăng ký session
+=======
+using Cinema_Management.Services.Chatbot;
+using Cinema_Management.Services.Recommendation;
+using Microsoft.EntityFrameworkCore;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Lệnh train chạy riêng, không khởi động web server.
+// Chạy tại folder CINEMA-MANAGEMNET-SYSTEM:
+// dotnet run --project Cinema-Management\Cinema-Management.csproj -- --train-recommendation-model
+// sẽ gọi sang MovieGenreModelTrainer.Train() để train model từ CSV và lưu ra file zip.
+if (args.Contains("--train-recommendation-model", StringComparer.OrdinalIgnoreCase))
+{
+    var dataPath = MovieGenreModelTrainer.GetDefaultDataPath(builder.Environment.ContentRootPath);
+    var modelPath = MlNetGenreRecommendationService.GetDefaultModelPath(builder.Environment.ContentRootPath);
+    var result = MovieGenreModelTrainer.Train(dataPath, modelPath);
+
+    Console.WriteLine($"Recommendation model trained: {result.ModelPath}");
+    Console.WriteLine($"Rows: {result.RowCount}; Labels: {result.LabelCount}");
+    Console.WriteLine($"MicroAccuracy: {result.MicroAccuracy:0.###}; MacroAccuracy: {result.MacroAccuracy:0.###}; LogLoss: {result.LogLoss:0.###}");
+    return;
+}
+
+builder.Services.AddControllersWithViews();
+
+>>>>>>> origin/chatbot
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
@@ -25,6 +52,7 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
+<<<<<<< HEAD
 // Dùng để gọi API Cloudflare Turnstile
 builder.Services.AddHttpClient();
 
@@ -93,19 +121,36 @@ if (!string.IsNullOrWhiteSpace(googleClientId) &&
 }
 
 // Lấy chuỗi kết nối từ appsettings.Development.json hoặc appsettings.json
+=======
+// Dùng để gọi API Cloudflare Turnstile ở luồng đăng nhập/đăng ký.
+builder.Services.AddHttpClient();
+
+// Service ML.NET singleton chỉ cần load một lần.
+// ChatbotService giới hạn lại, phụ thuộc ApplicationDbContext của từng request.
+builder.Services.AddSingleton<IGenreRecommendationService, MlNetGenreRecommendationService>();
+builder.Services.AddScoped<IChatbotService, ChatbotService>();
+
+>>>>>>> origin/chatbot
 var connectionString = builder.Configuration
                            .GetConnectionString("DefaultConnection")
                        ?? throw new InvalidOperationException(
                            "Không tìm thấy ConnectionStrings:DefaultConnection."
                        );
 
+<<<<<<< HEAD
 // Đăng ký ApplicationDbContext và cấu hình SQL Server
+=======
+>>>>>>> origin/chatbot
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 var app = builder.Build();
 
+<<<<<<< HEAD
 // Kiểm tra kết nối database khi khởi động ứng dụng
+=======
+// Kiểm tra nhanh kết nối database khi app khởi động.
+>>>>>>> origin/chatbot
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider
@@ -127,7 +172,10 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+<<<<<<< HEAD
 // Cấu hình HTTP request pipeline
+=======
+>>>>>>> origin/chatbot
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -135,6 +183,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+<<<<<<< HEAD
 
 app.UseStaticFiles();
 
@@ -227,6 +276,13 @@ if (app.Environment.IsDevelopment() &&
 app.UseAuthorization();
 
 // Định tuyến MVC
+=======
+app.UseStaticFiles();
+app.UseRouting();
+app.UseSession();
+app.UseAuthorization();
+
+>>>>>>> origin/chatbot
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");

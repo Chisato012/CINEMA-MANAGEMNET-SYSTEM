@@ -22,6 +22,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<MovieDirectors> MovieDirectors { get; set; }
     public DbSet<Person> Persons { get; set; }
     public DbSet<Showtimes> Showtimes { get; set; }
+<<<<<<< HEAD
     public DbSet<Combo> Combos { get; set; }
     public DbSet<Payment> Payments { get; set; } = null!;
     public DbSet<PaymentIntent> PaymentIntents { get; set; } = null!;
@@ -36,6 +37,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<PaymentMethod> PaymentMethods { get; set; }
     public DbSet<SeatTypePricing> SeatTypePricings { get; set; }
 
+=======
+>>>>>>> origin/chatbot
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

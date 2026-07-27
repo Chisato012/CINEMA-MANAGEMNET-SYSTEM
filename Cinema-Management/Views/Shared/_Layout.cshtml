@@ -44,7 +44,7 @@
                 </div>
 
                 <div class="d-flex align-items-center gap-2">
-                    @if (Context.Session.GetString("UserEmail") != null)
+                    @if (Context.Session.GetString("UserEmail") != null) //Nếu Session có khách hàng
                     {
                         var displayName = Context.Session.GetString("UserFullName")
                             ?? Context.Session.GetString("UserEmail");
@@ -74,7 +74,7 @@
                             </a>
                         </div>
                     }
-                    else
+                    else //Nếu không có hiển thị phần dẫn tới Login như thường lệ
                     {
                         <a asp-controller="Account" asp-action="Login" class="cosmos-icon-button cosmos-login-button"
                            aria-label="Đăng nhập" title="Đăng nhập">
@@ -94,9 +94,10 @@
             @RenderBody()
         </main>
     </div>
-
+    <!--gọi tới giao diện chatbot-->
+    @await Html.PartialAsync("_ChatbotWidget")
     
-        <footer class="cosmos-movie-footer">
+    <footer class="cosmos-movie-footer">
         <div class="cosmos-movie-footer__brand">
             <a class="cosmos-movie-footer__logo" asp-controller="Home" asp-action="Index">COSMOS<br>CINEMA</a>
             <p>Cinema nights, curated beautifully.</p>
