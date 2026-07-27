@@ -9,7 +9,7 @@ using Cinema_Management.ViewModels;
 using System.Text.Json.Serialization;
 
 namespace Cinema_Management.Controllers;
-
+// Bắc BE
 
 public class StaffController : Controller
 {

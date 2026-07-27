@@ -4,7 +4,7 @@ using Cinema_Management.Models.Sepay;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json; // Dùng để chuyển danh sách combo thành JSON khi lưu Session.
+using System.Text.Json; 
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -118,7 +118,6 @@ public class BookingController : Controller
         return View(model);
     }
 
-    // GET: Booking/SelectShowtime dùng để fill dữ liệu lên UI
     private static BookingScheduleDateOption BuildDateOption(DateTime date, DateTime today, DateTime? selectedDate)
     {
         return new BookingScheduleDateOption

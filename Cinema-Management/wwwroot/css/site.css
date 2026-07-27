@@ -29,6 +29,12 @@ body {
   /* Chữ mặc định màu trắng */
 }
 
+.cosmos-site-header {
+  position: sticky;
+  top: 0;
+  z-index: 1040;
+}
+
 
 .custom-navbar {
   background:
