@@ -109,10 +109,6 @@ if (!string.IsNullOrWhiteSpace(googleClientId) &&
     });
 }
 
-// Lấy chuỗi kết nối từ appsettings.Development.json hoặc appsettings.json
-// Dùng để gọi API Cloudflare Turnstile ở luồng đăng nhập/đăng ký.
-builder.Services.AddHttpClient();
-
 // Service ML.NET singleton chỉ cần load một lần.
 // ChatbotService giới hạn lại, phụ thuộc ApplicationDbContext của từng request.
 builder.Services.AddSingleton<IGenreRecommendationService, MlNetGenreRecommendationService>();

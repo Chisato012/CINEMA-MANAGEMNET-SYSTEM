@@ -22,6 +22,8 @@ public class AccountController : Controller
     private const string GoogleProvider = "Google";
     private const string GoogleRememberMeSessionKey = "Google_RememberMe";
     private const string RememberMeAuthItemKey = "rememberMe";
+    private const string CaptchaFailureMessage = "Xác minh CAPTCHA thất bại. Vui lòng thử lại.";
+    private static readonly TimeSpan TurnstileVerifyTimeout = TimeSpan.FromSeconds(5);
     private static readonly HashSet<string> DevelopmentPasswordlessEmails =
         new(StringComparer.OrdinalIgnoreCase)
         {
@@ -58,7 +60,7 @@ public class AccountController : Controller
     [HttpGet]
     public IActionResult Login()
     {
-        SetTurnstileSiteKey();
+        SetTurnstileViewData();
         ViewBag.ShowDevelopmentPasswordlessLoginMessage = _environment.IsDevelopment();
         return View();
     }
@@ -67,7 +69,7 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(LoginRequest model, CancellationToken cancellationToken)
     {
-        SetTurnstileSiteKey();
+        SetTurnstileViewData();
 
         model.CaptchaToken = Request.Form["cf-turnstile-response"].ToString();
         ModelState.Remove(nameof(LoginRequest.CaptchaToken));
@@ -95,13 +97,14 @@ public class AccountController : Controller
             return View(model);
         }
 
-        // if (!await IsTurnstileValidAsync(cancellationToken))
-        // {
-        //     ViewBag.ShowDevelopmentPasswordlessLoginMessage = _environment.IsDevelopment();
-        //     ViewBag.CaptchaError = "Vui lòng xác minh captcha.";
-        //     TempData["AlertError"] = "Xác minh CAPTCHA thất bại. Vui lòng thử lại.";
-        //     return View(model);
-        // }
+        if (IsTurnstileEnabled() && !await IsTurnstileValidAsync(model.CaptchaToken, cancellationToken))
+        {
+            ViewBag.ShowDevelopmentPasswordlessLoginMessage = _environment.IsDevelopment();
+            ViewBag.CaptchaError = CaptchaFailureMessage;
+            ModelState.AddModelError(string.Empty, CaptchaFailureMessage);
+            TempData["AlertError"] = CaptchaFailureMessage;
+            return View(model);
+        }
 
         var user = await FindUserByNormalizedEmailAsync(normalizedEmail, cancellationToken);
 
@@ -870,14 +873,23 @@ public async Task<IActionResult> GoogleCallback(CancellationToken cancellationTo
                    .Any(error => error.Number is 2601 or 2627);
     }
 
-    private void SetTurnstileSiteKey()
+    private bool IsTurnstileEnabled()
     {
-        ViewBag.TurnstileSiteKey = _configuration["CloudflareTurnstile:SiteKey"];
+        return !string.IsNullOrWhiteSpace(_configuration["CloudflareTurnstile:SiteKey"])
+               && !string.IsNullOrWhiteSpace(_configuration["CloudflareTurnstile:SecretKey"]);
     }
 
-    private async Task<bool> IsTurnstileValidAsync(CancellationToken cancellationToken)
+    private void SetTurnstileViewData()
     {
-        var token = Request.Form["cf-turnstile-response"].ToString();
+        var isTurnstileEnabled = IsTurnstileEnabled();
+        ViewBag.IsTurnstileEnabled = isTurnstileEnabled;
+        ViewBag.TurnstileSiteKey = isTurnstileEnabled
+            ? _configuration["CloudflareTurnstile:SiteKey"]
+            : null;
+    }
+
+    private async Task<bool> IsTurnstileValidAsync(string token, CancellationToken cancellationToken)
+    {
         var secretKey = _configuration["CloudflareTurnstile:SecretKey"];
 
         if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(secretKey))
@@ -888,6 +900,10 @@ public async Task<IActionResult> GoogleCallback(CancellationToken cancellationTo
         try
         {
             var client = _httpClientFactory.CreateClient();
+            using var timeoutCancellationTokenSource =
+                CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutCancellationTokenSource.CancelAfter(TurnstileVerifyTimeout);
+
             var response = await client.PostAsync(
                 "https://challenges.cloudflare.com/turnstile/v0/siteverify",
                 new FormUrlEncodedContent(new Dictionary<string, string>
@@ -896,7 +912,7 @@ public async Task<IActionResult> GoogleCallback(CancellationToken cancellationTo
                     ["response"] = token,
                     ["remoteip"] = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty
                 }),
-                cancellationToken);
+                timeoutCancellationTokenSource.Token);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -904,21 +920,31 @@ public async Task<IActionResult> GoogleCallback(CancellationToken cancellationTo
             }
 
             var result = await response.Content.ReadFromJsonAsync<TurnstileVerifyResponse>(
-                cancellationToken);
+                timeoutCancellationTokenSource.Token);
             return result?.Success == true;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             throw;
         }
+        catch (OperationCanceledException exception)
+        {
+            _logger.LogWarning(exception, "Cloudflare Turnstile request timed out.");
+            return false;
+        }
         catch (HttpRequestException exception)
         {
             _logger.LogWarning(exception, "Cloudflare Turnstile request failed.");
             return false;
         }
-        catch (TaskCanceledException exception)
+        catch (NotSupportedException exception)
         {
-            _logger.LogWarning(exception, "Cloudflare Turnstile request timed out.");
+            _logger.LogWarning(exception, "Cloudflare Turnstile response could not be parsed.");
+            return false;
+        }
+        catch (System.Text.Json.JsonException exception)
+        {
+            _logger.LogWarning(exception, "Cloudflare Turnstile response was invalid.");
             return false;
         }
     }

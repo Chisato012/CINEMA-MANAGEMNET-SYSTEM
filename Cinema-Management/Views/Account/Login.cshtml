@@ -7,6 +7,8 @@
     var googleLoginEnabled =
         !string.IsNullOrWhiteSpace(Configuration["Authentication:Google:ClientId"]) &&
         !string.IsNullOrWhiteSpace(Configuration["Authentication:Google:ClientSecret"]);
+
+    var turnstileEnabled = ViewBag.IsTurnstileEnabled == true;
 }
 
 @section Styles {
@@ -87,15 +89,18 @@
                     <span asp-validation-for="Password" class="auth-field-error"></span>
                 </div>
 
-                @* <div class="auth-turnstile">
-                    <div class="cf-turnstile" data-sitekey="@ViewBag.TurnstileSiteKey" data-theme="dark">
-                    </div>
+                @if (turnstileEnabled)
+                {
+                    <div class="auth-turnstile">
+                        <div class="cf-turnstile" data-sitekey="@ViewBag.TurnstileSiteKey" data-theme="dark">
+                        </div>
 
-                    @if (ViewBag.CaptchaError != null)
-                    {
-                        <span class="auth-field-error">@ViewBag.CaptchaError</span>
-                    }
-                </div> *@
+                        @if (ViewBag.CaptchaError != null)
+                        {
+                            <span class="auth-field-error">@ViewBag.CaptchaError</span>
+                        }
+                    </div>
+                }
 
                 <label class="auth-check">
                     <input type="checkbox" id="RememberMe" class="form-check-input" asp-for="RememberMe" />
@@ -146,7 +151,10 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    @if (turnstileEnabled)
+    {
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    }
     @if (googleLoginEnabled)
     {
         <script>
