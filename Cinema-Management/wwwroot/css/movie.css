@@ -127,8 +127,8 @@ body {
 }
 
 .movie-section__header h2,
-.top-rated__header h2,
-.ai-suggest h2 {
+.top-rated__header h2
+{
     margin: 0;
     color: var(--movie-text);
     font-size: 42px;
@@ -148,7 +148,6 @@ body {
 .movie-card__body p,
 .featured-card__body p,
 .suggestion-card p,
-.ai-suggest__controls p,
 .cosmos-movie-footer p {
     color: var(--movie-muted);
 }
@@ -769,37 +768,9 @@ body {
     border-top: 1px solid var(--movie-line-soft);
 }
 
-.ai-suggest {
-    padding: 92px 0 0;
-}
 
-.ai-suggest__panel {
-    display: grid;
-    grid-template-columns: minmax(320px, 0.74fr) minmax(0, 1.36fr);
-    gap: 44px;
-    padding: 34px;
-    border: 1px solid var(--movie-line);
-    border-radius: var(--movie-radius);
-    background: rgba(29, 27, 25, 0.76);
-    box-shadow: 0 28px 70px rgba(18, 18, 18, 0.4);
-}
 
-.ai-suggest__controls {
-    padding-right: 42px;
-    border-right: 1px solid var(--movie-line-soft);
-}
 
-.ai-suggest__controls h2 {
-    font-family: Georgia, serif;
-    font-size: 66px;
-}
-
-.ai-suggest__controls > p:not(.movie-eyebrow) {
-    max-width: 380px;
-    margin: 22px 0 28px;
-    font-size: 18px;
-    line-height: 1.65;
-}
 
 .mood-grid {
     display: grid;
@@ -831,7 +802,7 @@ body {
     color: var(--movie-accent);
 }
 
-.ai-suggest__results .movie-section__header {
+.movie-section__header {
     margin-bottom: 24px;
 }
 
@@ -1022,17 +993,10 @@ body {
     }
 
     .top-rated__layout,
-    .ai-suggest__panel,
     .cosmos-movie-footer {
         grid-template-columns: 1fr;
     }
 
-    .ai-suggest__controls {
-        padding-right: 0;
-        padding-bottom: 34px;
-        border-right: 0;
-        border-bottom: 1px solid var(--movie-line-soft);
-    }
 }
 
 @media (max-width: 980px) {
@@ -1132,8 +1096,7 @@ body {
     }
 
     .movie-filter h2,
-    .movie-section__header--large h2,
-    .ai-suggest__controls h2 {
+    .movie-section__header--large h2{
         font-size: 42px;
     }
 
@@ -1190,8 +1153,7 @@ body {
         font-size: 26px;
     }
 
-    .featured-card__body,
-    .ai-suggest__panel {
+    .featured-card__body{
         padding: 24px;
     }
 

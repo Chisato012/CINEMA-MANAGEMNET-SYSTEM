@@ -1,5 +1,7 @@
 using Cinema_Management.Data;
-<<<<<<< HEAD
+using Cinema_Management.Services.Chatbot;
+using Cinema_Management.Services.Recommendation;
+using Microsoft.EntityFrameworkCore;
 using Cinema_Management.Models;
 using Cinema_Management.Services;
 using System.Security.Claims;
@@ -8,21 +10,6 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
-
-var builder = WebApplication.CreateBuilder(args);
- //Định giá tiền cho cả local lẫn server
-var viCulture = new CultureInfo("vi-VN");
-CultureInfo.DefaultThreadCurrentCulture = viCulture;
-CultureInfo.DefaultThreadCurrentUICulture = viCulture;
-
-// Đăng ký MVC
-builder.Services.AddControllersWithViews();
-
-//Đăng ký session
-=======
-using Cinema_Management.Services.Chatbot;
-using Cinema_Management.Services.Recommendation;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,9 +29,12 @@ if (args.Contains("--train-recommendation-model", StringComparer.OrdinalIgnoreCa
     return;
 }
 
+var viCulture = new CultureInfo("vi-VN");
+CultureInfo.DefaultThreadCurrentCulture = viCulture;
+CultureInfo.DefaultThreadCurrentUICulture = viCulture;
+
 builder.Services.AddControllersWithViews();
 
->>>>>>> origin/chatbot
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
@@ -52,7 +42,6 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-<<<<<<< HEAD
 // Dùng để gọi API Cloudflare Turnstile
 builder.Services.AddHttpClient();
 
@@ -121,7 +110,6 @@ if (!string.IsNullOrWhiteSpace(googleClientId) &&
 }
 
 // Lấy chuỗi kết nối từ appsettings.Development.json hoặc appsettings.json
-=======
 // Dùng để gọi API Cloudflare Turnstile ở luồng đăng nhập/đăng ký.
 builder.Services.AddHttpClient();
 
@@ -130,27 +118,19 @@ builder.Services.AddHttpClient();
 builder.Services.AddSingleton<IGenreRecommendationService, MlNetGenreRecommendationService>();
 builder.Services.AddScoped<IChatbotService, ChatbotService>();
 
->>>>>>> origin/chatbot
 var connectionString = builder.Configuration
                            .GetConnectionString("DefaultConnection")
                        ?? throw new InvalidOperationException(
                            "Không tìm thấy ConnectionStrings:DefaultConnection."
                        );
 
-<<<<<<< HEAD
 // Đăng ký ApplicationDbContext và cấu hình SQL Server
-=======
->>>>>>> origin/chatbot
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 var app = builder.Build();
 
-<<<<<<< HEAD
 // Kiểm tra kết nối database khi khởi động ứng dụng
-=======
-// Kiểm tra nhanh kết nối database khi app khởi động.
->>>>>>> origin/chatbot
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider
@@ -172,10 +152,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-<<<<<<< HEAD
 // Cấu hình HTTP request pipeline
-=======
->>>>>>> origin/chatbot
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -183,7 +160,6 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-<<<<<<< HEAD
 
 app.UseStaticFiles();
 
@@ -276,13 +252,6 @@ if (app.Environment.IsDevelopment() &&
 app.UseAuthorization();
 
 // Định tuyến MVC
-=======
-app.UseStaticFiles();
-app.UseRouting();
-app.UseSession();
-app.UseAuthorization();
-
->>>>>>> origin/chatbot
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");

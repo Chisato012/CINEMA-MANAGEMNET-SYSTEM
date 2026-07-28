@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', function () {
-<<<<<<< HEAD
     document.querySelectorAll('.staff-alert').forEach(function (alert) {
         var duration = Number.parseInt(alert.dataset.alertDuration || '', 10);
 
@@ -14,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 alert.remove();
             }, 240);
         }, duration);
-=======
+    })
     const widget = document.querySelector('.chatbot-widget');
     if (!widget) return;
 
@@ -98,6 +97,5 @@ document.addEventListener('DOMContentLoaded', function () {
             intensity: formData.get('intensity'),
             ageRating: formData.get('ageRating')
         });
->>>>>>> origin/chatbot
     });
 });

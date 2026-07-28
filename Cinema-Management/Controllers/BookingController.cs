@@ -235,7 +235,8 @@ public class BookingController : Controller
 
         //Các ngày có thể có suất chiếu của phim
         movie.AvailableDates = movie.ShowtimeChoices.Select(s => s.Date).Distinct().ToList();
-        movie.SelectedDate = string.Empty;
+        var today = DateTime.Today.ToString("yyyy-MM-dd");
+        movie.SelectedDate = movie.AvailableDates.Contains(today) ? today : movie.AvailableDates.FirstOrDefault() ?? string.Empty;
 
         //Các giờ có thể có suất chiếu của phim dựa trên ngày đã chọn
         movie.AvailableTimes = movie.ShowtimeChoices

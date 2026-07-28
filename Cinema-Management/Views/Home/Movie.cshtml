@@ -300,61 +300,7 @@
         }
     </section>
 
-    <section class="movie-shell ai-suggest" aria-labelledby="ai-suggest-title">
-        <div class="ai-suggest__panel">
-            <div class="ai-suggest__controls">
-                <p class="movie-eyebrow">COSMOS CINEMA</p>
-                <h2 id="ai-suggest-title">Gợi ý phim</h2>
-                <p>Hãy chọn tâm trạng của bạn và chúng tôi sẽ gợi ý bộ phim phù hợp cho tối nay.</p>
-
-                <div class="mood-grid" aria-label="Mood options">
-                    <button type="button" class="mood-chip is-active" data-mood="cozy"><i class="fa-solid fa-mug-hot"></i>Cozy</button>
-                    <button type="button" class="mood-chip" data-mood="thrilling"><i class="fa-solid fa-fire"></i>Thrilling</button>
-                    <button type="button" class="mood-chip" data-mood="funny"><i class="fa-regular fa-face-laugh"></i>Funny</button>
-                    <button type="button" class="mood-chip" data-mood="romantic"><i class="fa-regular fa-heart"></i>Romantic</button>
-                    <button type="button" class="mood-chip mood-chip--wide" data-mood="mind"><i class="fa-solid fa-brain"></i>Mind-bending</button>
-                </div>
-
-                <label class="mood-input" for="moodInput">
-                    <span>What are you in the mood for?</span>
-                    <span class="mood-input__box">
-                        <input id="moodInput" type="text" placeholder="E.g. feel good, adventure, family..." />
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                    </span>
-                </label>
-
-                <button type="button" class="movie-btn movie-btn--primary movie-btn--full" data-find-movie>
-                    Tìm kiếm phim
-                    <i class="fa-solid fa-chevron-right"></i>
-                </button>
-            </div>
-
-            <div class="ai-suggest__results">
-                <div class="movie-section__header">
-                    <div>
-                        <h3>Recommended for you</h3>
-                    </div>
-                    <a class="movie-section__link" href="#now-showing-title">See all <i class="fa-solid fa-chevron-right"></i></a>
-                </div>
-
-                <div class="suggestion-grid">
-                    @foreach (var movie in suggestions)
-                    {
-                        <article class="suggestion-card" data-suggestion-card data-genres="@GenreData(movie)">
-                            <a asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">
-                                <img src="@Poster(movie)" alt="@Safe(movie.Title, "Movie") poster" />
-                            </a>
-                            <div>
-                                <a class="suggestion-card__title" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">@Safe(movie.Title, "Untitled movie")</a>
-                                <p class="suggestion-card__label">Why it matches</p>
-                                <p>@MatchReason(movie)</p>
-                            </div>
-                        </article>
-                    }
-                </div>
-            </div>
-        </div>
-    </section>
+    
 
     
 </div>

@@ -587,6 +587,7 @@ body > div[aria-live="polite"][aria-atomic="true"] .btn-close {
 
 body > div[aria-live="polite"][aria-atomic="true"] .btn-close:hover {
     opacity: 1;
+  }
 .chatbot-widget {
   position: fixed;
   right: 24px;
@@ -754,5 +755,4 @@ body > div[aria-live="polite"][aria-atomic="true"] .btn-close:hover {
   .chatbot-form {
     grid-template-columns: 1fr;
   }
-}
 }
