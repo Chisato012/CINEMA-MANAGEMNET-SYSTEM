@@ -1,108 +1,159 @@
-@{
-    ViewData["Title"] = "Đăng Ký";
-}
-
 @model Cinema_Management.Models.AuthViewModel
 
-<head>
-    <link rel="stylesheet" href="~/css/auth.css">
-</head>
-<div class="auth-wrapper">
-    <div class="register-wide">
-        <!-- Header -->
-        <div class="text-center">
-            <h1 class="auth-header-text fw-bold mb-1">COSMOS CINEMA</h1>
-            <p class="auth-subtitle">Truy cập vũ trụ điện ảnh của bạn</p>
-        </div>
-        <!-- Form -->
-        <div class="auth-card">
-            <!-- Tabs -->
-            <div class="auth-tabs">
-                <a class="auth-tab active" id="register-tab" asp-controller="Account" asp-action="Register">Đăng Ký</a>
-            </div>
-            <div id="register-container">
-                <form asp-controller="Account" asp-action="Register" method="post" novalidate="">
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label form-label-custom">HỌ TÊN</label>
-                            <div class="input-group input-group-custom">
-                                <input asp-for="FullName" type="text" class="form-control" id="name-input" required>
-                            </div>
-                            <small id="name-error" class="text-danger" style="font-size: 10px;"></small>
-                            <span asp-validation-for="FullName" class="text-danger" style="font-size: 10px;"></span>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label form-label-custom">SỐ ĐIỆN THOẠI</label>
-                            <div class="input-group input-group-custom">
-                                <input asp-for="PhoneNumber" type="tel" class="form-control" id="phone-input">
-                            </div>
-                            <small id="phone-error" class="text-danger" style="font-size: 10px;"></small>
-                            <span asp-validation-for="PhoneNumber" class="text-danger" style="font-size: 10px;"></span>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label form-label-custom">EMAIL</label>
-                            <div class="input-group input-group-custom">
-                                <input asp-for="Email" type="email" class="form-control" id="email-input" required>
-                            </div>
-                            <small id="email-error" class="text-danger mt-1" style="font-size: 10px;"></small>
-                            <span asp-validation-for="Email" class="text-danger mt-1" style="font-size: 10px;"></span>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label form-label-custom">NGÀY SINH</label>
-                            <div class="input-group input-group-custom">
-                                <input asp-for="DateOfBirth" type="date" class="form-control">
-                            </div>
-                            <span asp-validation-for="DateOfBirth" class="text-danger" style="font-size: 10px;"></span>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label form-label-custom">MẬT KHẨU</label>
-                        <div class="input-group input-group-custom">
-                            <input asp-for="Password" type="password" id="passwordInput" class="form-control" required />
-                            <span class="input-group-text end-icon" id="togglePassword">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7.028 7.028 0 0 0-2.79.588l.77.771A5.944 5.944 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.134 13.134 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755l.192.195z" />
-                                    <path d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829l.822.822zm-2.943 1.299.822.822a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 0 2.829 2.829z" />
-                                    <path d="M3.35 5.47c-.18.16-.353.322-.518.487A13.134 13.134 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7.029 7.029 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709zm10.296 8.884-12-12 .708-.708 12 12-.708.708z" />
-                                </svg>
-                            </span>
-                            
-                        </div>
-                        <small id="password-error" class="text-danger mt-1" style="font-size: 10px;"></small>
-                        <span asp-validation-for="Password" class="text-danger mt-1" style="font-size: 10px;"></span>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label form-label-custom">NHẬP LẠI MẬT KHẨU</label>
-                        <div class="input-group input-group-custom">
-                            <input asp-for="ConfirmPassword" type="password" class="form-control" id="confirmPasswordInput" required/>                                  
-                        </div>    
-                        <small id="confirmPasswordError" class="text-danger mt-1" style="font-size:10px"></small>                        
-                        <span asp-validation-for="ConfirmPassword" class="text-danger mt-1" style="font-size: 10px;"></span>
-                    </div>
-
-                    <div class="mb-3">
-                        <p style="font-size: 13px; color: #ccc">Nếu đã có tài khoản <a asp-controller="Account" asp-action="Login" style="color: #A67B5B">Đăng nhập</a></p>
-                    </div>
-                    <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-submit">Tạo Tài Khoản</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script src="~/js/auth.js" asp-append-version="true"> </script>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+@{
+    ViewData["Title"] = "Đăng ký";
 }
 
-    
-    
+@section Styles {
+    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
+}
+
+<section class="auth-wrapper auth-page-register">
+    <div class="auth-shell  max-w-7xl mx-auto">
+
+        <div class="auth-form-panel">
+            <div class="auth-form-heading">
+                <p class="auth-form-kicker">COSMOS CINEMA</p>
+                <h2>Tạo tài khoản</h2>
+                <p>Thông tin này giúp COSMOS phục vụ đặt vé và liên hệ chính xác hơn.</p>
+            </div>
+
+            <div class="auth-tabs" role="tablist" aria-label="Chuyển chế độ tài khoản">
+                <a class="auth-tab" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                <a class="auth-tab active" asp-controller="Account" asp-action="Register" aria-current="page">Đăng
+                    ký</a>
+                </div>
+
+                <div asp-validation-summary="ModelOnly" class="auth-validation-summary"></div>
+
+                <form class="auth-form" asp-controller="Account" asp-action="Register" method="post" novalidate>
+                    <div class="auth-field-grid">
+                        <div class="auth-field">
+                            <label asp-for="FullName" class="auth-label">Họ tên</label>
+                            <div class="auth-input-frame">
+                                <span class="auth-input-icon" aria-hidden="true">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                        <path
+                                        d="M12 12.25A4.25 4.25 0 1 1 12 3.75a4.25 4.25 0 0 1 0 8.5Zm0-1.5a2.75 2.75 0 1 0 0-5.5 2.75 2.75 0 0 0 0 5.5Zm-7.25 8.5A5.25 5.25 0 0 1 10 14h4a5.25 5.25 0 0 1 5.25 5.25.75.75 0 0 1-1.5 0A3.75 3.75 0 0 0 14 15.5h-4a3.75 3.75 0 0 0-3.75 3.75.75.75 0 0 1-1.5 0Z" />
+                                    </svg>
+                                </span>
+                                <input asp-for="FullName" type="text" class="form-control auth-input" id="name-input"
+                                       autocomplete="name" placeholder="Nguyễn An" required aria-describedby="name-error" />
+                            </div>
+                            <small id="name-error" class="auth-field-error"></small>
+                            <span asp-validation-for="FullName" class="auth-field-error"></span>
+                        </div>
+
+                        <div class="auth-field">
+                            <label asp-for="PhoneNumber" class="auth-label">Số điện thoại</label>
+                            <div class="auth-input-frame">
+                                <span class="auth-input-icon" aria-hidden="true">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                        <path
+                                        d="M8.25 3.5h7.5A2.25 2.25 0 0 1 18 5.75v12.5a2.25 2.25 0 0 1-2.25 2.25h-7.5A2.25 2.25 0 0 1 6 18.25V5.75A2.25 2.25 0 0 1 8.25 3.5Zm0 1.5a.75.75 0 0 0-.75.75v12.5c0 .41.34.75.75.75h7.5c.41 0 .75-.34.75-.75V5.75a.75.75 0 0 0-.75-.75h-7.5Zm2.25 11.75h3a.75.75 0 0 1 0 1.5h-3a.75.75 0 0 1 0-1.5Z" />
+                                    </svg>
+                                </span>
+                                <input asp-for="PhoneNumber" type="tel" class="form-control auth-input" id="phone-input"
+                                       autocomplete="tel" placeholder="0901234567" aria-describedby="phone-error" />
+                            </div>
+                            <small id="phone-error" class="auth-field-error"></small>
+                            <span asp-validation-for="PhoneNumber" class="auth-field-error"></span>
+                        </div>
+                    </div>
+
+                    <div class="auth-field-grid">
+                        <div class="auth-field">
+                            <label asp-for="Email" class="auth-label">Email</label>
+                            <div class="auth-input-frame">
+                                <span class="auth-input-icon" aria-hidden="true">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                        <path
+                                        d="M4.75 6.75A2.75 2.75 0 0 1 7.5 4h9A2.75 2.75 0 0 1 19.25 6.75v10.5A2.75 2.75 0 0 1 16.5 20h-9a2.75 2.75 0 0 1-2.75-2.75V6.75Zm2.75-1.25A1.25 1.25 0 0 0 6.25 6.75v.55l5.18 3.31c.35.22.79.22 1.14 0l5.18-3.31v-.55A1.25 1.25 0 0 0 16.5 5.5h-9Zm10.25 3.58-4.38 2.8a2.62 2.62 0 0 1-2.74 0l-4.38-2.8v8.17c0 .69.56 1.25 1.25 1.25h9c.69 0 1.25-.56 1.25-1.25V9.08Z" />
+                                    </svg>
+                                </span>
+                                <input asp-for="Email" type="email" class="form-control auth-input" id="email-input"
+                                       autocomplete="email" placeholder="you@example.com" required
+                                       aria-describedby="email-error" />
+                            </div>
+                            <small id="email-error" class="auth-field-error"></small>
+                            <span asp-validation-for="Email" class="auth-field-error"></span>
+                        </div>
+
+                        <div class="auth-field">
+                            <label asp-for="DateOfBirth" class="auth-label">Ngày sinh</label>
+                            <div class="auth-input-frame">
+                                <span class="auth-input-icon" aria-hidden="true">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                        <path
+                                        d="M7.25 3.75A.75.75 0 0 1 8 4.5V6h8V4.5a.75.75 0 0 1 1.5 0V6h.75A2.75 2.75 0 0 1 21 8.75v8.5A2.75 2.75 0 0 1 18.25 20H5.75A2.75 2.75 0 0 1 3 17.25v-8.5A2.75 2.75 0 0 1 5.75 6h.75V4.5a.75.75 0 0 1 .75-.75Zm11 4.75H5.75a1.25 1.25 0 0 0-1.25 1.25v.75h15v-.75a1.25 1.25 0 0 0-1.25-1.25Zm1.25 3.5h-15v5.25c0 .69.56 1.25 1.25 1.25h12.5c.69 0 1.25-.56 1.25-1.25V12Z" />
+                                    </svg>
+                                </span>
+                                <input asp-for="DateOfBirth" type="date" class="form-control auth-input"
+                                       autocomplete="bday" />
+                            </div>
+                            <span asp-validation-for="DateOfBirth" class="auth-field-error"></span>
+                        </div>
+                    </div>
+
+                    <div class="auth-field">
+                        <label asp-for="Password" class="auth-label">Mật khẩu</label>
+                        <div class="auth-input-frame">
+                            <span class="auth-input-icon" aria-hidden="true">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                    <path
+                                    d="M8.75 10V7.75a3.25 3.25 0 0 1 6.5 0V10h.5A2.25 2.25 0 0 1 18 12.25v5.5A2.25 2.25 0 0 1 15.75 20h-7.5A2.25 2.25 0 0 1 6 17.75v-5.5A2.25 2.25 0 0 1 8.25 10h.5Zm1.5 0h3.5V7.75a1.75 1.75 0 0 0-3.5 0V10Zm-2.75 2.25v5.5c0 .41.34.75.75.75h7.5c.41 0 .75-.34.75-.75v-5.5a.75.75 0 0 0-.75-.75h-7.5a.75.75 0 0 0-.75.75Z" />
+                                </svg>
+                            </span>
+                            <input asp-for="Password" type="password" id="passwordInput" class="form-control auth-input"
+                                   autocomplete="new-password" required aria-describedby="password-helper password-error" />
+                            <button class="auth-password-toggle" id="togglePassword" type="button"
+                                    aria-label="Hiện hoặc ẩn mật khẩu">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+                                    <path
+                                    d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7.028 7.028 0 0 0-2.79.588l.77.771A5.944 5.944 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.134 13.134 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755l.192.195z" />
+                                    <path
+                                    d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829l.822.822Zm-2.943 1.299.822.822a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 0 2.829 2.829z" />
+                                    <path
+                                    d="M3.35 5.47c-.18.16-.353.322-.518.487A13.134 13.134 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7.029 7.029 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709Zm10.296 8.884-12-12 .708-.708 12 12-.708.708z" />
+                                </svg>
+                            </button>
+                        </div>
+                        <small id="password-helper" class="auth-helper">Ít nhất 8 ký tự, gồm chữ hoa, số và ký tự đặc
+                            biệt.</small>
+                            <small id="password-error" class="auth-field-error"></small>
+                            <span asp-validation-for="Password" class="auth-field-error"></span>
+                        </div>
+
+                        <div class="auth-field">
+                            <label asp-for="ConfirmPassword" class="auth-label">Nhập lại mật khẩu</label>
+                            <div class="auth-input-frame">
+                                <span class="auth-input-icon" aria-hidden="true">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                        <path
+                                        d="M12 3.75 18.25 6v4.7c0 3.88-2.39 7.36-6 8.76a.75.75 0 0 1-.5 0c-3.61-1.4-6-4.88-6-8.76V6L12 3.75Zm0 1.6L7.25 7.06v3.64c0 3.15 1.86 6.03 4.75 7.25 2.89-1.22 4.75-4.1 4.75-7.25V7.06L12 5.35Zm2.53 4.62a.75.75 0 0 1 0 1.06l-2.75 2.75a.75.75 0 0 1-1.06 0l-1.25-1.25a.75.75 0 1 1 1.06-1.06l.72.72 2.22-2.22a.75.75 0 0 1 1.06 0Z" />
+                                    </svg>
+                                </span>
+                                <input asp-for="ConfirmPassword" type="password" class="form-control auth-input"
+                                       id="confirmPasswordInput" autocomplete="new-password" required
+                                       aria-describedby="confirmPasswordError" />
+                            </div>
+                            <small id="confirmPasswordError" class="auth-field-error"></small>
+                            <span asp-validation-for="ConfirmPassword" class="auth-field-error"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-submit">Tạo tài khoản</button>
+                    </form>
+
+                    <p class="auth-switch-copy">
+                        Đã có tài khoản?
+                        <a asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <script src="~/js/auth.js" asp-append-version="true"></script>
+
+        @section Scripts {
+            <partial name="_ValidationScriptsPartial" />
+        }

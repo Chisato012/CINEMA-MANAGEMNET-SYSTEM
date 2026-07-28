@@ -1,0 +1,25 @@
+@{
+    ViewData["Title"] = "Xác nhận thành công";
+}
+
+<head>
+    <link rel="stylesheet" href="~/css/auth.css">
+</head>
+
+<div class="auth-wrapper">
+    <div class="auth-container">
+        <div class="text-center">
+            <h1 class="auth-header-text fw-bold mb-1">COSMOS CINEMA</h1>
+            <p class="auth-subtitle">Tài khoản đã sẵn sàng</p>
+        </div>
+
+        <div class="auth-card">
+            <h2 class="auth-state-title">Xác nhận thành công</h2>
+            <p class="auth-state-text">
+                Email của bạn đã được xác nhận. Bạn có thể đăng nhập và sử dụng tài khoản COSMOS Cinema.
+            </p>
+
+            <a class="btn btn-submit w-100" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+        </div>
+    </div>
+</div>

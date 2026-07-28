@@ -1,0 +1,75 @@
+<!--giao diện-->
+<section class="chatbot-widget" aria-label="Gợi ý phim">
+    
+    <button class="chatbot-toggle" type="button" aria-label="Mở gợi ý phim" title="Gợi ý phim">
+        <span>AI</span>
+    </button>
+
+    <div class="chatbot-panel" aria-hidden="true">
+        <div class="chatbot-header">
+            <div>
+                <strong>COSMOS AI SUPPORT</strong>
+                <span>Gợi ý phim</span>
+            </div>
+            <button class="chatbot-close" type="button" aria-label="Đóng gợi ý phim">×</button>
+        </div>
+
+        <div class="chatbot-messages" role="log" aria-live="polite">
+            <div class="chatbot-message chatbot-message--bot">Hãy chọn nhu cầu xem phim, hệ thống sẽ tìm thể loại và gợi ý phim đang có trong rạp cho bạn.</div>
+        </div>
+
+        <form class="chatbot-form">
+            <label class="chatbot-field">
+                <span>Tâm trạng</span>
+                <select class="chatbot-select" name="mood" required>
+                    <option value="" disabled selected hidden>-- Tâm trạng --</option>
+                    <option value="vui">Vui vẻ</option>
+                    <option value="buon">Buồn</option>
+                    <option value="met_moi">Mệt mỏi</option>
+                    <option value="thu_gian">Thư giãn</option>
+                    <option value="am_ap">Bình yên</option>
+                    <option value="lang_man">Lãng mạn</option>
+                    <option value="to_mo">Khám phá</option>
+                    <option value="hoi_hop">Hồi hộp</option>
+                    <option value="so_hai">Sợ hãi</option>
+                    <option value="kich_tinh">Kịch tính</option>
+                </select>
+            </label>
+
+            <label class="chatbot-field">
+                <span>Đồng hành</span>
+                <select class="chatbot-select" name="companion" required>
+                    <option value="" disabled selected hidden>-- Đồng hành --</option>
+                    <option value="ban_be">Bạn bè</option>
+                    <option value="mot_minh">Một mình</option>
+                    <option value="nguoi_yeu">Người yêu</option>
+                    <option value="gia_dinh">Gia đình</option>
+                    <option value="tre_em">Trẻ em</option>
+                </select>
+            </label>
+
+            <label class="chatbot-field">
+                <span>Nhịp phim</span>
+                <select class="chatbot-select" name="intensity" required>
+                    <option value="" disabled selected hidden>-- Nhịp phim --</option>
+                    <option value="vua_phai">Vừa phải</option>
+                    <option value="nhe_nhang">Nhẹ nhàng</option>
+                    <option value="gay_can">Gay cấn</option>
+                </select>
+            </label>
+
+            <label class="chatbot-field">
+                <span>Độ tuổi</span>
+                <select class="chatbot-select" name="ageRating" required>
+                    <option value="" disabled selected hidden>-- Độ tuổi --</option>
+                    <option value="T13">T13</option>
+                    <option value="P">P</option>
+                    <option value="T16">T16</option>
+                    <option value="T18">T18</option>
+                </select>
+            </label>
+
+            <button class="chatbot-send" type="submit">Gợi ý phim</button>
+        </form>
+    </div>
+</section>

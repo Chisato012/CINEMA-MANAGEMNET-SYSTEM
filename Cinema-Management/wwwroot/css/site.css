@@ -29,6 +29,399 @@ body {
   /* Chữ mặc định màu trắng */
 }
 
+.cosmos-site-header {
+  position: sticky;
+  top: 0;
+  z-index: 1040;
+}
+
+
+.custom-navbar {
+  background:
+    linear-gradient(180deg, rgba(31, 29, 25, 0.96), rgba(18, 18, 18, 0.98));
+  border-bottom: 1px solid rgba(225, 193, 148, 0.16);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
+  min-height: 78px;
+  z-index: 1030;
+}
+
+.cosmos-logo {
+  color: #D6A079!important;
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  font-weight: 800;
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  letter-spacing: 0;
+  line-height: 1;
+  text-decoration: none;
+  transition: color 0.22s ease, transform 0.22s ease;
+}
+
+.cosmos-logo img{
+  height: 2.5rem;
+  width: auto;
+  object-fit: contain;
+}
+
+.cosmos-logo:hover,
+.cosmos-logo:focus-visible {
+  color: #f2d6a7 !important;
+  transform: translateY(-1px);
+}
+
+.cosmos-nav-link {
+  color: #D6A079 !important;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-weight: 600;
+  font-size: 0.92rem;
+  letter-spacing: 0;
+  line-height: 1;
+  transition: color 0.22s ease, background-color 0.22s ease, transform 0.22s ease;
+  /* padding: 0.7rem 0.95rem; */
+  text-decoration: none;
+}
+
+.cosmos-nav-link:hover {
+  color: #f6dfb8 !important;
+  transform: translateY(-1px);
+}
+
+.cosmos-nav-link.is-active {
+  position: relative;
+  color: #D4A373 !important;
+  font-weight: 800;
+}
+
+.cosmos-nav-link.is-active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1.35rem;
+  height: 2px;
+  border-radius: 999px;
+  background: #D4A373;
+}
+
+.cosmos-nav-link:focus-visible,
+.cosmos-icon-button:focus-visible,
+.cosmos-profile-button:focus-visible {
+  outline: 2px solid rgba(225, 193, 148, 0.85);
+  outline-offset: 3px;
+}
+
+.cosmos-nav-link:active,
+.cosmos-icon-button:active,
+.cosmos-profile-button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Căn giữa tuyệt đối cho cụm menu */
+.center-menu {
+  position: absolute;
+  left: 250;
+  transform: translateX(-50%);
+}
+
+
+
+.navbar-account {
+  /* border: 1px solid rgba(225, 193, 148, 0.18);
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.045);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08); */
+  padding: 0.3rem;
+}
+
+.cosmos-welcome {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  color: #f5e5cf;
+  font-family: "Manrope", "Segoe UI", sans-serif;
+  font-size: 0.84rem;
+  line-height: 1;
+  padding-left: 0.7rem;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.cosmos-welcome-label {
+  color: rgba(245, 229, 207, 0.62);
+}
+
+.cosmos-welcome-name {
+  color: #E1C194;
+  display: inline-block;
+  font-weight: 700;
+  max-width: clamp(7rem, 16vw, 14rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+
+.cosmos-profile-button,
+.cosmos-icon-button {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 2.35rem;
+  justify-content: center;
+  text-decoration: none;
+  transition: background-color 0.22s ease, color 0.22s ease, transform 0.22s ease;
+  width: 2.35rem;
+}
+
+.cosmos-profile-button {
+  background-color: #E1C194;
+  color: #171511;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.cosmos-profile-button:hover {
+  background-color: #f2d6a7;
+  color: #171511;
+  transform: translateY(-1px);
+}
+
+.cosmos-profile-avatar {
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.cosmos-icon-button {
+  background-color: rgba(225, 193, 148, 0.08);
+  border: 1px solid rgba(225, 193, 148, 0.13);
+  color: #E1C194;
+}
+
+.cosmos-icon-button svg {
+  display: block;
+  fill: currentColor;
+  height: 1.15rem;
+  width: 1.15rem;
+}
+
+.cosmos-icon-button:hover {
+  background-color: rgba(225, 193, 148, 0.15);
+  color: #f2d6a7;
+  transform: translateY(-1px);
+}
+
+.cosmos-logout-button {
+  color: #efb8ae;
+}
+
+.cosmos-logout-button:hover {
+  background-color: rgba(239, 184, 174, 0.12);
+  border-color: rgba(239, 184, 174, 0.22);
+  color: #ffd2ca;
+}
+
+@media (max-width: 575.98px) {
+  .custom-navbar .container-fluid {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  .cosmos-welcome-label {
+    display: none;
+  }
+
+  .cosmos-welcome-name {
+    max-width: 6.5rem;
+  }
+
+  .navbar-account {
+    gap: 0.25rem !important;
+  }
+}
+
+.cosmos-profile-page {
+  background:
+    radial-gradient(circle at top left, rgba(225, 193, 148, 0.11), transparent 34rem),
+    #121212;
+  color: #f7efe4;
+  min-height: calc(100dvh - 78px);
+  padding: clamp(2rem, 6vw, 5rem) 1rem;
+}
+
+.cosmos-profile-shell {
+  border-top: 1px solid rgba(225, 193, 148, 0.22);
+  margin: 0 auto;
+  max-width: 760px;
+  padding-top: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.cosmos-profile-identity {
+  align-items: center;
+  display: flex;
+  gap: 1.1rem;
+}
+
+.cosmos-profile-large-avatar {
+  align-items: center;
+  background-color: #E1C194;
+  border-radius: 50%;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  color: #171511;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 1.5rem;
+  font-weight: 800;
+  height: 4.25rem;
+  justify-content: center;
+  width: 4.25rem;
+}
+
+.cosmos-profile-kicker {
+  color: rgba(245, 229, 207, 0.62);
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.cosmos-profile-identity h1 {
+  color: #f7efe4;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1;
+  margin: 0;
+}
+
+.cosmos-profile-details {
+  display: grid;
+  gap: 0;
+  margin: clamp(2rem, 5vw, 3rem) 0;
+}
+
+.cosmos-profile-details div {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(8rem, 0.35fr) 1fr;
+  padding: 1rem 0;
+}
+
+.cosmos-profile-details div:last-child {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cosmos-profile-details dt {
+  color: rgba(245, 229, 207, 0.58);
+  font-weight: 600;
+}
+
+.cosmos-profile-details dd {
+  color: #f7efe4;
+  font-weight: 700;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.cosmos-profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.cosmos-profile-secondary-action,
+.cosmos-profile-danger-action {
+  border-radius: 999px;
+  display: inline-flex;
+  font-weight: 800;
+  justify-content: center;
+  line-height: 1;
+  padding: 0.9rem 1.1rem;
+  text-decoration: none;
+  transition: background-color 0.22s ease, color 0.22s ease, transform 0.22s ease;
+}
+
+.cosmos-profile-secondary-action {
+  background-color: rgba(225, 193, 148, 0.1);
+  border: 1px solid rgba(225, 193, 148, 0.18);
+  color: #E1C194;
+}
+
+.cosmos-profile-danger-action {
+  background-color: rgba(239, 184, 174, 0.11);
+  border: 1px solid rgba(239, 184, 174, 0.2);
+  color: #ffd2ca;
+}
+
+.cosmos-profile-secondary-action:hover,
+.cosmos-profile-danger-action:hover {
+  transform: translateY(-1px);
+}
+
+.cosmos-profile-secondary-action:hover {
+  background-color: rgba(225, 193, 148, 0.16);
+  color: #f2d6a7;
+}
+
+.cosmos-profile-danger-action:hover {
+  background-color: rgba(239, 184, 174, 0.16);
+  color: #ffe2dc;
+}
+
+@media (max-width: 575.98px) {
+  .cosmos-profile-identity {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cosmos-profile-details div {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* QUANG */
+/*Ticket Picing Form*/
+.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
+    color: var(--bs-secondary-color);
+    text-align: end;
+}
+
+.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
+    text-align: start;
+  }
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus,
+.btn:active:focus,
+.btn-link.nav-link:focus,
+.form-control:focus,
+.form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+
+  background-color: #121212;
+  /* Áp dụng nền tối cho toàn trang */
+  color: #fff;
+  /* Chữ mặc định màu trắng */
+}
+
 
 .custom-navbar {
   background-color: #151515;
@@ -113,4 +506,253 @@ body {
 /* QUAN TRỌNG NHẤT: Hiển thị menu ra khi di chuột vào khối user-dropdown */
 .user-dropdown:hover .user-dropdown-content {
     display: block;
+}
+
+/*Ticket Picing Form*/
+.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
+    color: var(--bs-secondary-color);
+    text-align: end;
+}
+
+.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
+    text-align: start;
+}
+
+/* Cảnh báo khi ấn đặt vé nhưng chưa chọn phim */
+.booking-nav-toast {
+    position: fixed;
+    top: 96px;
+    right: 24px;
+    z-index: 100000;
+    width: min(360px, calc(100vw - 32px));
+    padding: 14px 18px;
+    border: 1px solid rgba(212, 163, 115, 0.55);
+    border-left: 4px solid #D4A373;
+    border-radius: 10px;
+    background: #211f1e;
+    color: #FFF1E6;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.38);
+    font-family: 'Manrope', 'Segoe UI', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.booking-nav-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Shared TempData alerts, including logout success */
+body > div[aria-live="polite"][aria-atomic="true"] {
+    top: 96px !important;
+    right: 24px !important;
+    z-index: 100000 !important;
+}
+
+body > div[aria-live="polite"][aria-atomic="true"] > .toast.show {
+    width: min(360px, calc(100vw - 32px)) !important;
+    min-width: 0 !important;
+    border: 1px solid rgba(212, 163, 115, 0.55) !important;
+    border-left: 4px solid #D4A373 !important;
+    border-radius: 10px !important;
+    background: #211f1e !important;
+    color: #FFF1E6 !important;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.38) !important;
+    font-family: 'Manrope', 'Segoe UI', sans-serif !important;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+body > div[aria-live="polite"][aria-atomic="true"] > .toast.show[style*="#dc3545"] {
+    border-color: rgba(224, 122, 139, 0.55) !important;
+    border-left-color: #E07A8B !important;
+    color: #FFE8EC !important;
+}
+
+body > div[aria-live="polite"][aria-atomic="true"] .toast-body {
+    padding: 14px 18px !important;
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+}
+
+body > div[aria-live="polite"][aria-atomic="true"] .btn-close {
+    margin-right: 10px !important;
+    opacity: 0.72;
+    filter: invert(91%) sepia(14%) saturate(533%) hue-rotate(329deg) brightness(105%) contrast(101%);
+}
+
+body > div[aria-live="polite"][aria-atomic="true"] .btn-close:hover {
+    opacity: 1;
+  }
+.chatbot-widget {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1080;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.chatbot-toggle {
+  width: 58px;
+  height: 58px;
+  border: 1px solid rgba(225, 193, 148, 0.55);
+  border-radius: 50%;
+  background: #e1c194;
+  color: #17120d;
+  font-weight: 900;
+  letter-spacing: 0;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45);
+}
+
+.chatbot-panel {
+  position: absolute;
+  right: 0;
+  bottom: 74px;
+  width: min(380px, calc(100vw - 32px));
+  height: 520px;
+  max-height: calc(100vh - 130px);
+  display: none;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;
+  border: 1px solid rgba(225, 193, 148, 0.22);
+  border-radius: 8px;
+  background: #181818;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.65);
+}
+
+.chatbot-widget--open .chatbot-panel {
+  display: grid;
+}
+
+.chatbot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  background: #211d18;
+  border-bottom: 1px solid rgba(225, 193, 148, 0.18);
+}
+
+.chatbot-header strong,
+.chatbot-header span {
+  display: block;
+}
+
+.chatbot-header strong {
+  color: #e1c194;
+  font-size: 0.95rem;
+}
+
+.chatbot-header span {
+  margin-top: 3px;
+  color: #cfc3b3;
+  font-size: 0.78rem;
+}
+
+.chatbot-close {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.chatbot-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.chatbot-message {
+  max-width: 88%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  line-height: 1.45;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.chatbot-message--bot {
+  align-self: flex-start;
+  background: #262626;
+  color: #f4f1ec;
+}
+
+.chatbot-message--user {
+  align-self: flex-end;
+  background: #e1c194;
+  color: #17120d;
+}
+
+.chatbot-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 14px;
+  border-top: 1px solid rgba(225, 193, 148, 0.18);
+  background: #151515;
+}
+
+.chatbot-field {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.chatbot-field span {
+  color: #cfc3b3;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.chatbot-select {
+  min-width: 0;
+  height: 42px;
+  border: 1px solid rgba(225, 193, 148, 0.22);
+  border-radius: 6px;
+  background: #202020;
+  color: #fff;
+  padding: 0 12px;
+  outline: none;
+}
+
+.chatbot-select:focus {
+  border-color: rgba(225, 193, 148, 0.8);
+}
+
+.chatbot-send {
+  grid-column: 1 / -1;
+  width: 100%;
+  height: 42px;
+  border: 0;
+  border-radius: 6px;
+  background: #e1c194;
+  color: #17120d;
+  font-weight: 700;
+}
+
+@media (max-width: 576px) {
+  .chatbot-widget {
+    right: 16px;
+    bottom: 16px;
+  }
+
+  .chatbot-panel {
+    height: min(500px, calc(100vh - 112px));
+  }
+
+  .chatbot-form {
+    grid-template-columns: 1fr;
+  }
 }

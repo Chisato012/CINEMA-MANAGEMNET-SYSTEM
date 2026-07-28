@@ -1,0 +1,222 @@
+﻿@model BookingViewModel //truyền đối tượng model từ controller
+@* Quang UI An BE *@
+@using System.Globalization
+@{
+    Layout = null;
+    ViewData["Title"] = "Chọn đồ ăn/uống | Cosmos Cinema";
+    var currentStep = 3;
+    var stepLabels = new[] { "Thông tin phim", "Ghế ngồi", "Đồ ăn/uống", "Thanh toán" };
+    var selectedAddons = Model.Concessions.Where(item => item.SelectedQuantity > 0).ToList();
+}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/booking.css" asp-append-version="true" />
+</head>
+
+<body>
+    <header class="site-header">
+        <div class="shell header-row">
+            <div class="brand"><span class="brand-mark" aria-hidden="true"></span> Cosmos Cinema</div>
+            <div class="booking-header-actions">
+                <form asp-controller="Booking" asp-action="CancelBooking" method="post" class="cancel-form">
+                    @Html.AntiForgeryToken()
+
+                    <button type="submit" class="cancel-button"
+                            onclick="return confirm('Bạn có chắc muốn huỷ quá trình đặt vé?');">
+                        Huỷ
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="stepper-wrap">
+            <nav class="shell stepper" aria-label="Booking progress">
+                @for (var step = 1; step <= 4; step++)
+                {
+                    var stepClass = step == currentStep ? "active" : step < currentStep ? "complete" : "";
+                    <button type="button" class="stepper-button @stepClass" disabled="@(step != currentStep)"
+                            aria-current="@(step == currentStep ? "step" : "false")">
+                        <span class="step-number">@step</span><span class="step-label">@stepLabels[step - 1]</span>
+                    </button>
+                }
+            </nav>
+        </div>
+
+        <main class="shell">
+            <div class="booking-step active" data-step="3">
+                <header class="step-heading">
+                    <div>
+                        <p class="eyebrow">Step 3 of 4 · Add-ons</p>
+                        <h2>Nâng cao trải nghiệm</h2>
+                        <p class="subtitle">Đặt Combo Bỏng nước</p>
+                    </div>
+                </header>
+
+                <form asp-controller="Booking" asp-action="SelectConcessions" method="post" id="concessionForm"
+                      class="content-summary-grid">
+
+                    @Html.AntiForgeryToken()
+                    <section class="concession-grid" aria-label="Concessions">
+                        @* Duyệt qua các combo từ GET trong controller *@
+                        @for (var i = 0; i < Model.Concessions.Count; i++)
+                        {
+                            @* Lấy ra concession theo i *@
+                            var item = Model.Concessions[i];
+                            <article class="card product-card" data-name="@item.Name"
+                                     data-price="@item.Price.ToString(CultureInfo.InvariantCulture)">
+                                @* Mã combo gửi về Controller. *@
+                                <input type="hidden" name="Items[@i].ComboId" value="@item.Id" />
+
+                                @* Số lượng combo gửi về Controller. *@
+                                <input type="hidden" class="quantity-input" name="Items[@i].Quantity"
+                                       value="@item.SelectedQuantity" />
+                                <div class="product-body">
+                                    <h3>@item.Name</h3>
+                                    @* <p class="product-description">@item.Description</p> *@
+                                    <div class="product-footer">
+                                        <span class="price">@item.Price.ToString("C",
+                                                                                                                                    CultureInfo.GetCultureInfo("vi-VN"))</span>
+                                            <div class="quantity" aria-label="Quantity for @item.Name">
+                                                <button type="button" aria-label="Remove one" data-change="-1">−</button>
+                                                <span class="quantity-value">@item.SelectedQuantity</span>
+                                                <button type="button" class="plus" aria-label="Add one" data-change="1">+</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </article>
+                            }
+                        </section>
+
+                        @{
+                            var ticketSubtotal = Model.TicketSubtotal;
+                        }
+                        <aside class="card summary-card" id="contentSummary"
+                               data-ticket-total="@ticketSubtotal.ToString(CultureInfo.InvariantCulture)">
+                            <h3>Tổng quan đặt vé</h3>
+                            <span class="summary-label">@Model.MovieTitle</span>
+                            <div class="compact-list" id="selectedConcessionsList"></div>
+                            <div class="totals">
+                                <div class="total-line">
+                                    <span>Vé và phí</span>
+                                    <span>@ticketSubtotal.ToString("C")</span>
+                                </div>
+
+                                <div class="total-line">
+                                    <span>Combo</span>
+                                    <span id="concessionSubtotal">0.00đ</span>
+                                </div>
+
+                                <div class="total-line grand">
+                                    <span>Tổng: </span>
+                                    <span id="grandTotal">@ticketSubtotal.ToString("C")</span>
+                                </div>
+                            </div>
+
+                            <div class="summary-actions">
+                                <button type="submit" class="primary-button full">
+                                    Chuyển đến trang thanh toán
+                                </button>
+
+                                <button type="button" class="secondary-button full" id="skipAddonsButton">
+                                    Bỏ qua
+                                </button>
+                            </div>
+                        </aside>
+                    </form>
+                </div>
+            </main>
+        </body>
+        <script>
+            //form chứa toàn bộ combo
+            const concessionForm = document.getElementById("concessionForm")
+            //Phần card combo
+            const productCards = document.querySelectorAll(".product-card")
+            //Khu vực hiển thi combo đã chọn bên phải 
+            const selectedList = document.getElementById("selectedConcessionsList")
+            // Các vị trí hiển thị tổng tiền.
+            const concessionSubtotal = document.getElementById("concessionSubtotal");
+            const grandTotal = document.getElementById("grandTotal");
+            const contentSummary = document.getElementById("contentSummary");
+
+            // Tổng tiền vé và phí được truyền từ Razor qua data attribute.
+            const ticketTotal = Number(contentSummary.dataset.ticketTotal);
+
+            // Định dạng tiền giống giao diện hiện tại.
+            const moneyFormatter = new Intl.NumberFormat("vi-VN", {
+                style: "currency",
+                currency: "VND"
+            });
+
+            //chuyển 1 chuỗi số thành tiền tệ
+            function formatMoney(value) {
+                return moneyFormatter.format(value);
+            }
+
+            // Tính lại danh sách combo và tổng tiền trên summary.
+
+            function updateSummary() {
+                let comboTotal = 0;
+                selectedList.replaceChildren();
+
+                //duyệt qua từng card product
+                productCards.forEach(card => {
+                    //Lấy ra các dataset theo từng thuộc tính
+                    const name = card.dataset.name;
+                    const price = Number(card.dataset.price)
+                    const input = card.querySelector(".quantity-input")
+                    const quantity = Number(input.value)
+
+                    if (quantity <= 0) return;
+
+                    const lineTotal = price * quantity; //tổng 
+                    comboTotal += lineTotal//cộng dồn
+
+                    const line = document.createElement("div");//tạo thẻ div
+                    line.className = "compact-line"; //thêm class name
+                    line.innerHTML = "<span></span><span></span>" //thêm các thẻ span
+                    line.children[0].textContent = `${name} x ${quantity}`//tạo text content
+                    line.children[1].textContent = formatMoney(lineTotal)
+                    selectedList.appendChild(line) //thêm thẻ line 
+
+
+                })
+                if (!selectedList.children.length) {
+                    const emptyState = document.createElement("div");
+                    emptyState.className = "empty-state";
+                    emptyState.textContent = "Không có combo nào được chọn";
+                    selectedList.appendChild(emptyState);
+                }
+
+                concessionSubtotal.textContent = formatMoney(comboTotal) //gán tổng vào thẻ
+                grandTotal.textContent = formatMoney(ticketTotal + comboTotal)
+            }
+
+            //gắn sự kiện tăng giảm
+
+            productCards.forEach(card => {
+                const input = card.querySelector(".quantity-input")
+                const quantityValue = card.querySelector(".quantity-value")
+                const button = card.querySelectorAll("[data-change]")
+
+                button.forEach(btn => {
+                    btn.addEventListener("click", () => {
+                        const change = Number(btn.dataset.change) //đọc từ data-change trong thẻ button
+                        const newQuantity = Math.min(10, Math.max(0, Number(input.value) + change));
+
+                        input.value = newQuantity;
+                        quantityValue.textContent = newQuantity;
+                        updateSummary();
+                    })
+                })
+            })
+
+    
+        </script>
+
+    </html>
+

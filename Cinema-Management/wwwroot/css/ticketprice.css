@@ -1,0 +1,592 @@
+@import url("https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400;600;700&family=JetBrains+Mono:wght@500;700&family=Manrope:wght@400;500;600&display=swap");
+
+:root {
+    --ticket-primary: #8b5e3c;
+    --ticket-secondary: #a67b5b;
+    --ticket-accent: #f4b183;
+    --ticket-neutral: #101010;
+    --ticket-surface: #1b1a1a;
+    --ticket-surface-raised: rgba(31, 29, 28, 0.88);
+    --ticket-text: #f4ece7;
+    --ticket-text-muted: #dbc8bb;
+    --ticket-line: rgba(255, 255, 255, 0.07);
+    --ticket-container: 1040px;
+    --ticket-panel: 922px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    min-height: 100%;
+    background: var(--ticket-neutral);
+}
+
+body {
+    margin-bottom: 0;
+}
+
+button,
+a {
+    -webkit-tap-highlight-color: transparent;
+}
+
+body .ticket-page {
+    position: relative;
+    display: flex;
+    min-height: auto;
+    flex-direction: column;
+    overflow-x: hidden;
+    color: var(--ticket-text);
+    background:
+        radial-gradient(circle at 68% 40%, rgba(139, 94, 60, 0.12), transparent 28rem),
+        radial-gradient(circle at 34% 68%, rgba(255, 255, 255, 0.035), transparent 26rem),
+        #101010;
+    font-family: "Manrope", sans-serif;
+}
+
+body .ticket-page::before {
+    content: "";
+    position: fixed;
+    z-index: 0;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.16;
+    background-image:
+        linear-gradient(115deg, rgba(255, 255, 255, 0.014), transparent 28%, rgba(255, 255, 255, 0.01)),
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.72' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E");
+}
+
+.ticket-header,
+.ticket-main,
+.ticket-footer {
+    position: relative;
+    z-index: 1;
+}
+
+body .ticket-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    height: 74px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(12, 12, 12, 0.96);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
+    backdrop-filter: blur(15px);
+}
+
+body .ticket-header__inner {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    width: min(calc(100% - 48px), var(--ticket-container));
+    height: 100%;
+    margin: 0 auto;
+    padding: 0;
+}
+
+body .ticket-logo {
+    justify-self: start;
+    color: #efb88f;
+    font-family: "Archivo Narrow", sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0;
+    white-space: nowrap;
+}
+
+body .ticket-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+}
+
+body .ticket-nav a {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    height: 74px;
+    color: #cbb9ae;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.055em;
+    text-decoration: none;
+}
+
+body .ticket-nav a:hover,
+body .ticket-nav a[aria-current="page"] {
+    color: #f1b58a;
+}
+
+body .ticket-nav a[aria-current="page"]::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 21px;
+    left: 0;
+    height: 1px;
+    background: #f1b58a;
+}
+
+body .ticket-actions {
+    display: flex;
+    justify-self: end;
+    align-items: center;
+    gap: 18px;
+}
+
+body .ticket-search {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    color: #e9ac7e;
+    background: transparent;
+    cursor: pointer;
+}
+
+body .ticket-search:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+body .ticket-search svg {
+    width: 20px;
+    height: 20px;
+}
+
+body .ticket-login {
+    min-width: 118px;
+    padding: 10px 20px;
+    border: 1px solid rgba(255, 212, 184, 0.05);
+    border-radius: 4px;
+    color: #fff0e5;
+    background: var(--ticket-primary);
+    box-shadow: inset 0 1px rgba(255, 255, 255, 0.08);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: background-color 180ms ease, transform 180ms ease;
+}
+
+body .ticket-login:hover {
+    background: #a16c45;
+}
+
+body .ticket-login:active {
+    transform: translateY(1px);
+}
+
+body .ticket-main {
+    display: flex;
+    width: min(calc(100% - 40px), var(--ticket-container));
+    min-height: auto;
+    flex: 1 0 auto;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 auto;
+    padding: 32px 0 64px;
+}
+
+body .ticket-hero {
+    width: 100%;
+    margin-bottom: 58px;
+    text-align: center;
+}
+
+body .ticket-hero > div {
+    display: none;
+}
+
+body .ticket-hero h1 {
+    margin: 0 0 14px;
+    color: #f4a875;
+    font-family: "Archivo Narrow", sans-serif;
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: 0;
+}
+
+body .ticket-hero p {
+    max-width: 650px;
+    margin: 0 auto;
+    color: #ead5c7;
+    font-size: 16px;
+    line-height: 1.55;
+}
+
+body .pricing-card {
+    position: relative;
+    width: min(100%, var(--ticket-panel));
+    margin: 0 auto;
+    padding: 28px 30px 26px;
+    overflow: hidden;
+    border: 1px solid rgba(212, 163, 115, 0.12);
+    border-radius: 7px;
+    background:
+        radial-gradient(circle at 88% 12%, rgba(139, 94, 60, 0.16), transparent 22rem),
+        linear-gradient(125deg, rgba(255, 255, 255, 0.024), transparent 45%),
+        var(--ticket-surface-raised);
+    box-shadow: 0 22px 55px rgba(0, 0, 0, 0.24);
+}
+
+body .pricing-card__glow {
+    display: none;
+}
+
+body .pricing-scroll {
+    overflow-x: auto;
+    scrollbar-color: var(--ticket-primary) #242322;
+}
+
+body .pricing-tabs-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 32px;
+}
+
+body .pricing-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    width: 256px;
+    padding: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.035);
+    border-radius: 11px;
+    background: linear-gradient(100deg, #363635, #2d2d2c);
+    box-shadow: inset 0 1px rgba(255, 255, 255, 0.035);
+}
+
+body .pricing-tab {
+    min-width: 0;
+    padding: 9px 14px;
+    border: 0;
+    border-radius: 9px;
+    color: #f0c19f;
+    background: transparent;
+    box-shadow: none;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    line-height: 1.15;
+    cursor: pointer;
+    transition: color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+}
+
+body .pricing-tab[aria-selected="true"] {
+    color: #fff4ec;
+    background: #a46d43;
+    box-shadow: 0 5px 13px rgba(0, 0, 0, 0.2), inset 0 1px rgba(255, 255, 255, 0.09);
+}
+
+[data-pricing-panel].hidden {
+    display: none;
+}
+
+body .pricing-table {
+    width: 100%;
+    min-width: 650px;
+    border-collapse: collapse;
+}
+
+body .pricing-table--day-seat {
+    min-width: 760px;
+}
+
+body .pricing-table th {
+    width: 25%;
+    padding: 17px 14px 25px;
+    color: #f3ebe6;
+    font-family: "Archivo Narrow", sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+body .pricing-table--day-seat th {
+    width: 20%;
+}
+
+body .pricing-table th:not(:first-child) {
+    text-align: center;
+}
+
+body .pricing-table th span {
+    display: inline-block;
+    margin-top: 8px;
+    color: #d5c3b8;
+    font-family: "Manrope", sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+}
+
+body .pricing-table thead tr {
+    border-bottom: 1px solid rgba(212, 163, 115, 0.13);
+}
+
+body .pricing-table tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+    transition: background-color 180ms ease;
+}
+
+body .pricing-table tbody tr:hover {
+    background: rgba(166, 123, 91, 0.045);
+}
+
+@media (hover: hover) {
+    body .pricing-table tbody tr:hover td {
+        color: #f4bb92;
+    }
+}
+
+
+body .pricing-table td {
+    height: 95px;
+    padding: 20px 14px;
+    vertical-align: middle;
+    color: #eee7e2;
+}
+
+body .pricing-table--day-seat td {
+    height: 72px;
+}
+
+body .pricing-table td:first-child {
+    color: #eee7e2;
+    font-family: "Archivo Narrow", sans-serif;
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.15;
+}
+
+body .pricing-table--day-seat td:first-child {
+    color: #eee7e2;
+    font-size: 20px;
+}
+
+body .pricing-table td:first-child span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+body .pricing-table td:first-child svg {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+}
+
+body .pricing-table tbody tr:nth-child(2) td:first-child,
+body .pricing-table tbody tr:nth-child(3) td:first-child {
+    color: #f1ae7d;
+}
+
+body .pricing-table--day-seat tbody tr:nth-child(2) td:first-child,
+body .pricing-table--day-seat tbody tr:nth-child(3) td:first-child {
+    color: #eee7e2;
+}
+
+body .pricing-table td:not(:first-child) {
+    color: #a86f43;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 0.055em;
+    text-align: center;
+}
+
+body .pricing-table--day-seat td:not(:first-child) {
+    font-size: 16px;
+}
+
+body .pricing-table td:last-child {
+    font-weight: 700;
+}
+
+body .pricing-notes {
+    margin-top: 0;
+    padding: 21px 0 2px;
+    border-top: 0;
+}
+
+body .pricing-notes p {
+    margin: 0;
+    color: #e7c9b4;
+    font-size: 12px;
+    font-style: italic;
+    line-height: 1.48;
+}
+
+body .ticket-footer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 24px;
+    align-items: center;
+    width: min(calc(100% - 48px), var(--ticket-container));
+    margin: 0 auto;
+    padding: 28px 0 34px;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    color: var(--ticket-text-muted);
+    background: transparent;
+}
+
+body .ticket-footer__brand {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+body .ticket-footer__logo {
+    color: #efb88f;
+    font-family: "Archivo Narrow", sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+body .ticket-footer p {
+    margin: 0;
+    color: #cdb9ac;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+body .ticket-footer__links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 18px;
+}
+
+body .ticket-footer__links a {
+    color: #d5c3b8;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+}
+
+body .ticket-footer__links a:hover {
+    color: #f4bb92;
+}
+
+@media (max-width: 767px) {
+    body .ticket-header {
+        height: auto;
+    }
+
+    body .ticket-header__inner {
+        grid-template-columns: 1fr auto;
+        grid-template-areas:
+            "logo actions"
+            "nav nav";
+        gap: 10px 14px;
+        width: min(calc(100% - 28px), var(--ticket-container));
+        height: auto;
+        padding: 14px 0 12px;
+    }
+
+    body .ticket-logo {
+        grid-area: logo;
+        font-size: 24px;
+    }
+
+    body .ticket-nav {
+        grid-area: nav;
+        justify-content: flex-start;
+        gap: 20px;
+        overflow-x: auto;
+    }
+
+    body .ticket-nav a {
+        height: 28px;
+        flex: 0 0 auto;
+    }
+
+    body .ticket-nav a[aria-current="page"]::after {
+        bottom: 0;
+    }
+
+    body .ticket-actions {
+        grid-area: actions;
+        gap: 8px;
+    }
+
+    body .ticket-login {
+        min-width: auto;
+        padding: 9px 12px;
+    }
+
+    body .ticket-main {
+        width: min(calc(100% - 24px), var(--ticket-container));
+        min-height: calc(100vh - 118px);
+        padding-top: 28px;
+    }
+
+    body .ticket-hero {
+        margin-bottom: 34px;
+    }
+
+    body .ticket-hero h1 {
+        font-size: 38px;
+    }
+
+    body .ticket-hero p {
+        font-size: 14px;
+    }
+
+    body .pricing-card {
+        padding: 20px 16px;
+    }
+
+    body .pricing-tabs {
+        width: min(100%, 256px);
+    }
+
+    body .pricing-table th {
+        font-size: 18px;
+    }
+
+    body .pricing-table td:first-child {
+        font-size: 24px;
+    }
+
+    body .pricing-table td:not(:first-child) {
+        font-size: 15px;
+    }
+
+    body .ticket-footer {
+        grid-template-columns: 1fr;
+        width: min(calc(100% - 28px), var(--ticket-container));
+        padding: 24px 0 30px;
+    }
+
+    body .ticket-footer__links {
+        justify-content: flex-start;
+        gap: 14px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
+}
