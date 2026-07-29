@@ -34,10 +34,6 @@ public class AccountController : Controller
         };
     private static readonly TimeSpan EmailVerificationLifetime = TimeSpan.FromMinutes(30);
     private static readonly TimeSpan ResendConfirmationCooldown = TimeSpan.FromMinutes(2);
-    private static readonly TimeSpan PasswordResetLifetime = TimeSpan.FromMinutes(30);
-    private static readonly TimeSpan PasswordResetCooldown = TimeSpan.FromMinutes(2);
-    private const string PasswordResetGenericMessage =
-        "Neu email hop le, chung toi se gui huong dan dat lai mat khau.";
 
     private readonly IConfiguration _configuration;
     private readonly IWebHostEnvironment _environment;
@@ -297,102 +293,6 @@ public class AccountController : Controller
     }
 
     [HttpGet]
-    public IActionResult ForgotPassword()
-    {
-        return View(new ForgotPasswordViewModel());
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ForgotPassword(
-        ForgotPasswordViewModel model,
-        CancellationToken cancellationToken)
-    {
-        if (!ModelState.IsValid)
-        {
-            return View(model);
-        }
-
-        var normalizedEmail = NormalizeEmail(model.Email);
-        var user = await FindUserByNormalizedEmailAsync(normalizedEmail, cancellationToken);
-
-        if (CanSendPasswordReset(user))
-        {
-            var now = DateTime.UtcNow;
-            var cooldownExpired = !user!.PasswordResetLastSentAt.HasValue
-                                  || user.PasswordResetLastSentAt.Value.Add(PasswordResetCooldown) <= now;
-
-            if (cooldownExpired)
-            {
-                var resetToken = CreatePasswordResetToken(user);
-                await _context.SaveChangesAsync(cancellationToken);
-
-                var resetEmailSent = await SendPasswordResetEmailAsync(
-                    user,
-                    resetToken,
-                    cancellationToken);
-
-                if (!resetEmailSent)
-                {
-                    user.PasswordResetLastSentAt = null;
-                    await _context.SaveChangesAsync(cancellationToken);
-                }
-            }
-        }
-
-        ViewBag.StatusMessage = PasswordResetGenericMessage;
-        return View(model);
-    }
-
-    [HttpGet]
-    public IActionResult ResetPassword(string? email, string? token)
-    {
-        var model = new ResetPasswordViewModel
-        {
-            Email = NormalizeEmail(email),
-            Token = token ?? string.Empty
-        };
-
-        if (string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Token))
-        {
-            ModelState.AddModelError(string.Empty, "Lien ket dat lai mat khau khong hop le hoac da het han.");
-        }
-
-        return View(model);
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ResetPassword(
-        ResetPasswordViewModel model,
-        CancellationToken cancellationToken)
-    {
-        if (!ModelState.IsValid)
-        {
-            return View(model);
-        }
-
-        var normalizedEmail = NormalizeEmail(model.Email);
-        var user = await FindUserByNormalizedEmailAsync(normalizedEmail, cancellationToken);
-
-        if (!IsPasswordResetTokenValid(user, model.Token))
-        {
-            ModelState.AddModelError(string.Empty, "Lien ket dat lai mat khau khong hop le hoac da het han.");
-            return View(model);
-        }
-
-        user!.PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password);
-        user.PasswordResetTokenHash = null;
-        user.PasswordResetTokenExpiresAt = null;
-        user.PasswordResetLastSentAt = null;
-
-        await _context.SaveChangesAsync(cancellationToken);
-
-        TempData["AlertSuccess"] = "Dat lai mat khau thanh cong. Vui long dang nhap.";
-        return RedirectToAction(nameof(Login));
-    }
-
-    [HttpGet]
     public async Task<IActionResult> ConfirmEmail(
         string email,
         string token,
@@ -456,25 +356,20 @@ public class AccountController : Controller
     }
     
     [HttpGet]
-    public IActionResult GoogleRegister()
+public IActionResult GoogleRegister()
 {
-    var googleId = HttpContext.Session.GetString("Google_Id");
     var email = HttpContext.Session.GetString("Google_Email");
     var fullName = HttpContext.Session.GetString("Google_FullName");
 
-    if (string.IsNullOrWhiteSpace(googleId)
-        || string.IsNullOrWhiteSpace(email)
-        || string.IsNullOrWhiteSpace(fullName))
+    if (string.IsNullOrEmpty(email))
     {
-        ClearGoogleRegistrationSession();
-        TempData["AlertError"] = "Phien dang ky Google da het han. Vui long dang nhap lai.";
         return RedirectToAction(nameof(Login));
     }
 
     // Đổ dữ liệu có sẵn từ Google ra View thông qua AuthViewModel
     var model = new AuthViewModel
     {
-        Email = NormalizeEmail(email),
+        Email = email,
         FullName = fullName
     };
 
@@ -490,8 +385,6 @@ public class AccountController : Controller
 
         if (string.IsNullOrEmpty(googleId) || string.IsNullOrEmpty(email))
         {
-            ClearGoogleRegistrationSession();
-            TempData["AlertError"] = "Phien dang ky Google da het han. Vui long dang nhap lai.";
             return RedirectToAction(nameof(Login));
         }
 
@@ -518,11 +411,41 @@ public class AccountController : Controller
 
             if (existingEmailUser != null)
             {
-                ClearGoogleRegistrationSession();
-                TempData["AlertError"] = GoogleLoginFlow.IsLocalAccount(existingEmailUser)
-                    ? GoogleLoginFlow.ExistingLocalAccountMessage
-                    : GoogleLoginFlow.DifferentExternalProviderMessage;
-                return RedirectToAction(nameof(Login));
+                if (!existingEmailUser.Status)
+                {
+                    TempData["AlertError"] = "Tài khoản của bạn đã bị khóa.";
+                    return RedirectToAction(nameof(Login));
+                }
+
+                if (HasDifferentExternalProviderKey(existingEmailUser, googleId))
+                {
+                    TempData["AlertError"] = "Email này đã được liên kết với nhà cung cấp đăng nhập khác.";
+                    return RedirectToAction(nameof(Login));
+                }
+
+                LinkGoogleAccount(existingEmailUser, googleId);
+                user = existingEmailUser;
+
+                try
+                {
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+                catch (DbUpdateException exception) when (IsDuplicateAccountError(exception))
+                {
+                    var linkedUser = await TryLinkExistingUserAfterGoogleDuplicateAsync(
+                        user,
+                        normalizedEmail,
+                        googleId,
+                        cancellationToken);
+
+                    if (linkedUser == null)
+                    {
+                        TempData["AlertError"] = "Không thể liên kết tài khoản Google này.";
+                        return RedirectToAction(nameof(Login));
+                    }
+
+                    user = linkedUser;
+                }
             }
             else
             {
@@ -548,18 +471,19 @@ public class AccountController : Controller
                 }
                 catch (DbUpdateException exception) when (IsDuplicateAccountError(exception))
                 {
-                    _context.Entry(user).State = EntityState.Detached;
-                    var duplicateEmailUser = await FindUserByNormalizedEmailAsync(
+                    var linkedUser = await TryLinkExistingUserAfterGoogleDuplicateAsync(
+                        user,
                         normalizedEmail,
+                        googleId,
                         cancellationToken);
 
-                    ClearGoogleRegistrationSession();
-                    TempData["AlertError"] = duplicateEmailUser != null
-                        ? GoogleLoginFlow.IsLocalAccount(duplicateEmailUser)
-                            ? GoogleLoginFlow.ExistingLocalAccountMessage
-                            : GoogleLoginFlow.DifferentExternalProviderMessage
-                        : "Không thể tạo tài khoản Google này.";
-                    return RedirectToAction(nameof(Login));
+                    if (linkedUser == null)
+                    {
+                        TempData["AlertError"] = "Không thể tạo tài khoản Google này.";
+                        return RedirectToAction(nameof(Login));
+                    }
+
+                    user = linkedUser;
                 }
             }
         }
@@ -730,58 +654,81 @@ public async Task<IActionResult> GoogleCallback(CancellationToken cancellationTo
 
     // 1. Kiểm tra xem tài khoản liên kết Google này đã tồn tại trong DB chưa
     var user = await FindUserByGoogleIdAsync(googleId, cancellationToken);
-    var existingEmailUser = user == null
-        ? await FindUserByNormalizedEmailAsync(email, cancellationToken)
-        : null;
 
-    var decision = GoogleLoginFlow.Decide(
-        googleId,
-        email,
-        emailVerified,
-        user,
-        existingEmailUser);
-
-    switch (decision.Type)
+    var shouldSave = false;
+    if (user == null)
     {
-        case GoogleLoginDecisionType.InvalidGoogleProfile:
-            TempData["AlertError"] = "Google không trả về đủ thông tin tài khoản.";
-            return RedirectToAction(nameof(Login));
+        // 2. Nếu chưa, kiểm tra xem Email này đã được đăng ký bằng phương thức thường chưa
+        var existingEmailUser = await FindUserByNormalizedEmailAsync(email, cancellationToken);
 
-        case GoogleLoginDecisionType.UnverifiedGoogleEmail:
-            TempData["AlertError"] = "Google chưa xác minh email của tài khoản này.";
-            return RedirectToAction(nameof(Login));
+        if (existingEmailUser != null)
+        {
+            if (!existingEmailUser.Status)
+            {
+                TempData["AlertError"] = "Tài khoản của bạn đã bị khóa.";
+                return RedirectToAction(nameof(Login));
+            }
 
-        case GoogleLoginDecisionType.InactiveAccount:
-            TempData["AlertError"] = "Tài khoản của bạn đã bị khóa.";
-            return RedirectToAction(nameof(Login));
+            if (HasDifferentExternalProviderKey(existingEmailUser, googleId))
+            {
+                TempData["AlertError"] = "Email này đã được liên kết với nhà cung cấp đăng nhập khác.";
+                return RedirectToAction(nameof(Login));
+            }
 
-        case GoogleLoginDecisionType.ExistingUnconfirmedGoogleAccount:
-            return RedirectToAction(nameof(RegisterPending), new { email = decision.User!.Email });
-
-        case GoogleLoginDecisionType.ExistingLocalAccount:
-            ClearGoogleRegistrationSession();
-            TempData["AlertError"] = GoogleLoginFlow.ExistingLocalAccountMessage;
-            return RedirectToAction(nameof(Login));
-
-        case GoogleLoginDecisionType.DifferentExternalProvider:
-            ClearGoogleRegistrationSession();
-            TempData["AlertError"] = GoogleLoginFlow.DifferentExternalProviderMessage;
-            return RedirectToAction(nameof(Login));
-
-        case GoogleLoginDecisionType.NewGoogleRegistrationRequired:
+            // Liên kết tài khoản thường có sẵn với Google ID mới nhập
+            LinkGoogleAccount(existingEmailUser, googleId);
+            user = existingEmailUser;
+            shouldSave = true;
+        }
+        else
+        {
+            // Lưu thông tin từ Google vào Session để dùng ở Form đăng ký tiếp theo
             HttpContext.Session.SetString("Google_Email", email);
             HttpContext.Session.SetString("Google_FullName", fullName.Trim());
             HttpContext.Session.SetString("Google_Id", googleId);
             HttpContext.Session.SetString(GoogleRememberMeSessionKey, rememberMe.ToString());
+
+            // Bắn người dùng sang trang điền thêm thông tin (Số điện thoại, Ngày sinh...)
             return RedirectToAction(nameof(GoogleRegister));
+        }
 
-        case GoogleLoginDecisionType.ExistingGoogleAccount:
-            user = decision.User!;
-            break;
+        if (shouldSave)
+        {
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException exception) when (IsDuplicateAccountError(exception))
+            {
+                var linkedUser = await TryLinkExistingUserAfterGoogleDuplicateAsync(
+                    user,
+                    email,
+                    googleId,
+                    cancellationToken);
 
-        default:
-            TempData["AlertError"] = "Đăng nhập Google thất bại hoặc đã bị hủy.";
-            return RedirectToAction(nameof(Login));
+                if (linkedUser == null)
+                {
+                    TempData["AlertError"] = "Không thể liên kết tài khoản Google này.";
+                    return RedirectToAction(nameof(Login));
+                }
+
+                user = linkedUser;
+            }
+        }
+    }
+
+    // 3. Kiểm tra trạng thái tài khoản đối với những người dùng đã có sẵn trong hệ thống
+    if (!user.Status)
+    {
+        TempData["AlertError"] = "Tài khoản của bạn đã bị khóa.";
+        return RedirectToAction(nameof(Login));
+    }
+
+    // Đăng nhập thành công, thiết lập Session
+    if (!user.EmailConfirmed)
+    {
+        TempData["AlertError"] = "Vui lòng xác nhận Gmail trước khi đăng nhập.";
+        return RedirectToAction(nameof(RegisterPending), new { email = user.Email });
     }
 
     SignInWithSession(user, rememberMe);
@@ -933,78 +880,6 @@ public async Task<IActionResult> GoogleCallback(CancellationToken cancellationTo
             Request.Scheme);
     }
 
-    private async Task<bool> SendPasswordResetEmailAsync(
-        User user,
-        string resetToken,
-        CancellationToken cancellationToken)
-    {
-        var resetLink = BuildPasswordResetLink(user.Email, resetToken);
-
-        if (string.IsNullOrWhiteSpace(resetLink))
-        {
-            _logger.LogWarning("Could not create password reset URL for user {UserID}.", user.UserID);
-            return false;
-        }
-
-        var safeFullName = WebUtility.HtmlEncode(user.FullName);
-        var safeLink = WebUtility.HtmlEncode(resetLink);
-        var htmlBody = $"""
-            <!doctype html>
-            <html>
-            <body style="margin:0;background:#121212;font-family:Arial,sans-serif;color:#f5f5f5;">
-                <div style="max-width:560px;margin:0 auto;padding:32px 24px;">
-                    <h1 style="color:#D4A373;margin:0 0 12px;">COSMOS Cinema</h1>
-                    <p>Chao {safeFullName},</p>
-                    <p>Chung toi nhan duoc yeu cau dat lai mat khau cho tai khoan COSMOS Cinema cua ban.</p>
-                    <p style="margin:28px 0;">
-                        <a href="{safeLink}" style="background:#A67B5B;color:#ffffff;text-decoration:none;padding:14px 22px;border-radius:8px;font-weight:bold;display:inline-block;">
-                            Dat lai mat khau
-                        </a>
-                    </p>
-                    <p style="color:#ddd;font-size:14px;line-height:1.6;">
-                        Neu nut khong hoat dong, hay sao chep lien ket nay va mo trong trinh duyet:
-                    </p>
-                    <p style="word-break:break-all;color:#D4A373;font-size:13px;line-height:1.6;">
-                        {safeLink}
-                    </p>
-                    <p>Lien ket nay co hieu luc trong 30 phut va chi dung mot lan.</p>
-                    <p style="color:#aaa;font-size:13px;">Neu ban khong yeu cau dat lai mat khau, vui long bo qua email nay.</p>
-                </div>
-            </body>
-            </html>
-            """;
-
-        return await _emailService.SendEmailAsync(
-            user.Email,
-            "Dat lai mat khau COSMOS Cinema",
-            htmlBody,
-            cancellationToken);
-    }
-
-    private string? BuildPasswordResetLink(string email, string resetToken)
-    {
-        var publicBaseUrl = _configuration["Application:PublicBaseUrl"]?.Trim().TrimEnd('/');
-
-        if (!string.IsNullOrWhiteSpace(publicBaseUrl)
-            && Uri.TryCreate(publicBaseUrl, UriKind.Absolute, out var baseUri))
-        {
-            var resetPasswordUrl = new Uri(baseUri, "/Account/ResetPassword").ToString();
-            return QueryHelpers.AddQueryString(
-                resetPasswordUrl,
-                new Dictionary<string, string?>
-                {
-                    ["email"] = email,
-                    ["token"] = resetToken
-                });
-        }
-
-        return Url.Action(
-            nameof(ResetPassword),
-            "Account",
-            new { email, token = resetToken },
-            Request.Scheme);
-    }
-
     private void SignInWithSession(User user, bool rememberMe = false)
     {
         HttpContext.Session.SetString("UserEmail", user.Email);
@@ -1100,6 +975,44 @@ public async Task<IActionResult> GoogleCallback(CancellationToken cancellationTo
             .AnyAsync(
                 u => u.Email.Trim().ToLower() == normalizedEmail,
                 cancellationToken);
+    }
+
+    private static bool HasDifferentExternalProviderKey(User user, string googleId)
+    {
+        return !string.IsNullOrWhiteSpace(user.ExternalProviderKey)
+               && !string.Equals(user.ExternalProviderKey, googleId, StringComparison.Ordinal);
+    }
+
+    private static void LinkGoogleAccount(User user, string googleId)
+    {
+        user.ExternalProvider = GoogleProvider;
+        user.ExternalProviderKey = googleId;
+    }
+
+    private async Task<User?> TryLinkExistingUserAfterGoogleDuplicateAsync(
+        User pendingUser,
+        string email,
+        string googleId,
+        CancellationToken cancellationToken)
+    {
+        var entry = _context.Entry(pendingUser);
+        entry.State = entry.State == EntityState.Added
+            ? EntityState.Detached
+            : EntityState.Unchanged;
+
+        var existingUser = await FindUserByNormalizedEmailAsync(email, cancellationToken);
+
+        if (existingUser == null
+            || !existingUser.Status
+            || HasDifferentExternalProviderKey(existingUser, googleId))
+        {
+            return null;
+        }
+
+        LinkGoogleAccount(existingUser, googleId);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return existingUser;
     }
 
     private void AddDuplicateAccountError()
@@ -1216,26 +1129,6 @@ public async Task<IActionResult> GoogleCallback(CancellationToken cancellationTo
         }
     }
 
-    private static bool CanSendPasswordReset(User? user)
-    {
-        return user is { Status: true }
-               && !string.IsNullOrWhiteSpace(user.PasswordHash);
-    }
-
-    private static bool IsPasswordResetTokenValid(User? user, string token)
-    {
-        if (!CanSendPasswordReset(user)
-            || string.IsNullOrWhiteSpace(token)
-            || string.IsNullOrWhiteSpace(user!.PasswordResetTokenHash)
-            || !user.PasswordResetTokenExpiresAt.HasValue)
-        {
-            return false;
-        }
-
-        return user.PasswordResetTokenExpiresAt.Value >= DateTime.UtcNow
-               && IsTokenHashValid(token, user.PasswordResetTokenHash);
-    }
-
     private static string NormalizeEmail(string? email)
     {
         return string.IsNullOrWhiteSpace(email)
@@ -1250,17 +1143,6 @@ public async Task<IActionResult> GoogleCallback(CancellationToken cancellationTo
         user.EmailVerificationTokenHash = HashToken(token);
         user.EmailVerificationTokenExpiresAt = DateTime.UtcNow.Add(EmailVerificationLifetime);
         user.EmailVerificationLastSentAt = DateTime.UtcNow;
-
-        return token;
-    }
-
-    private static string CreatePasswordResetToken(User user)
-    {
-        var token = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(32));
-
-        user.PasswordResetTokenHash = HashToken(token);
-        user.PasswordResetTokenExpiresAt = DateTime.UtcNow.Add(PasswordResetLifetime);
-        user.PasswordResetLastSentAt = DateTime.UtcNow;
 
         return token;
     }
@@ -1283,7 +1165,8 @@ public async Task<IActionResult> GoogleCallback(CancellationToken cancellationTo
 
     private static bool IsGoogleEmailVerified(ClaimsPrincipal principal)
     {
-        return GoogleLoginFlow.IsGoogleEmailVerified(principal);
+        var value = principal.FindFirstValue("urn:google:email_verified");
+        return bool.TryParse(value, out var emailVerified) && emailVerified;
     }
 
     private sealed class TurnstileVerifyResponse

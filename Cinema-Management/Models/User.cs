@@ -45,13 +45,6 @@ public class User
 
     public DateTime? EmailVerificationLastSentAt { get; set; }
 
-    [StringLength(64)]
-    public string? PasswordResetTokenHash { get; set; }
-
-    public DateTime? PasswordResetTokenExpiresAt { get; set; }
-
-    public DateTime? PasswordResetLastSentAt { get; set; }
-
     [Required]
     [StringLength(20)]
     public string Role {get; set;}
