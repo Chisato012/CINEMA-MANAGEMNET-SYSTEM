@@ -25,6 +25,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Combo> Combos { get; set; }
     public DbSet<Payment> Payments { get; set; } = null!;
     public DbSet<PaymentIntent> PaymentIntents { get; set; } = null!;
+    public DbSet<Review> Reviews { get; set; } = null!;
 
     public DbSet<Booking> Bookings { set; get; }
 
@@ -255,6 +256,43 @@ public class ApplicationDbContext : DbContext
                 .HasForeignKey(e => e.BookingID)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("FK_PaymentIntents_Bookings");
+        });
+
+        modelBuilder.Entity<Review>(entity =>
+        {
+            entity.HasKey(review => review.ReviewID);
+
+            entity.Property(review => review.Content)
+                .HasColumnName("Content")
+                .HasMaxLength(2000);
+
+            entity.Property(review => review.Rating)
+                .HasColumnType("decimal(3,2)");
+
+            entity.Property(review => review.Status)
+                .HasMaxLength(20)
+                .HasDefaultValue("Visible");
+
+            entity.Property(review => review.CreatedAt)
+                .HasDefaultValueSql("sysutcdatetime()");
+
+            entity.HasOne(review => review.User)
+                .WithMany()
+                .HasForeignKey(review => review.UserID)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_Reviews_Users");
+
+            entity.HasOne(review => review.Movie)
+                .WithMany()
+                .HasForeignKey(review => review.MovieID)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_Reviews_Movies");
+
+            entity.HasOne<Review>()
+                .WithMany()
+                .HasForeignKey(review => review.ParentReviewID)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_Reviews_Parent");
         });
 
 

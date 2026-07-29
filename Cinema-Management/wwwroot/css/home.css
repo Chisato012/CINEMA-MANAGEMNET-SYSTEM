@@ -62,12 +62,14 @@
 
 .slider-container {
     position: relative;
-    width: 100%;
-    height: clamp(520px, 66vw, 720px);
+    width: 1916px;
+    height: 860px;
     margin: 0 auto;
     overflow: hidden;
-    background: #121210;
-    border-bottom: 1px solid var(--home-line);
+    border: 1px solid var(--movie-line);
+    border-radius: var(--movie-radius);
+    background: var(--movie-bg);
+    box-shadow: 0 28px 80px var(--movie-shadow);
 }
 
 .slider-wrapper {
@@ -227,6 +229,13 @@
     color: var(--home-text);
     background: rgba(255, 247, 234, 0.06);
     border-color: rgba(232, 205, 166, 0.18);
+}
+
+.buy-button__content--details {
+    color: var(--home-accent-strong);
+    background: rgba(255, 247, 234, 0.06);
+    border-color: rgba(232, 205, 166, 0.22);
+    box-shadow: none;
 }
 
 .home-cta:hover,

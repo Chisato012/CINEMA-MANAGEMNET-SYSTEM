@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "COSMOS Cinema";
 
+    var today = DateTime.Today;
     var movies = Model ?? new List<Cinema_Management.Models.MovieViewModel>();
     var fallbackPosters = new[]
     {
@@ -47,24 +48,24 @@
 <main class="home-page" id="homePage">
     <section class="slider-container" aria-label="Phim nổi bật tại COSMOS">
         <div class="slider-wrapper" id="sliderWrapper">
-                <article class="slider-slide">
-                    <img src="~/img/poster/poster1.png" alt="">
-                </article>
-                <article class="slider-slide">
-                    <img src="~/img/poster/poster_minion.png" alt="">
-                </article>
-                <article class="slider-slide">
-                    <img src="~/img/poster/poster6.png" alt="">
-                </article>
-                <article class="slider-slide">
-                    <img src="~/img/poster/poster4.png" alt="">
-                </article>
-                <article class="slider-slide">
-                    <img src="~/img/poster/poster3.png" alt="">
-                </article>
-                <article class="slider-slide">
-                    <img src="~/img/poster/poster2.jpg" alt="">
-                </article>
+            <article class="slider-slide">
+                <img src="~/img/poster/spiderman.jpg" alt="">
+            </article>
+            <article class="slider-slide">
+                <img src="~/img/poster/poster1.png" alt="">
+            </article>
+            <article class="slider-slide">
+                <img src="~/img/poster/poster_theodyssey.jpg" alt="">
+            </article>
+            <article class="slider-slide">
+                <img src="~/img/poster/poster3(1).png" alt="">
+            </article>
+            <article class="slider-slide">
+                <img src="~/img/poster/poster_minion.png" alt="">
+            </article>
+            <article class="slider-slide">
+                <img src="~/img/poster/poster2.jpg" alt="">
+            </article>
         </div>
 
         <button class="slider-btn prev" type="button" data-slider-step="-1" aria-label="Ảnh trước">
@@ -100,7 +101,7 @@
             <div class="movie-gallery" aria-label="Phim đang chiếu">
                 @* Từng dòng phim *@
                 <div class="movie-gallery__row">
-                    @* Sử dungj vòng lặp qua từng phim *@
+                    @* Sử dung vòng lặp qua từng phim *@
                     @for (var movieIndex = 0; movieIndex < movies.Count; movieIndex++)
                     {
                         var movie = movies[movieIndex];
@@ -108,6 +109,7 @@
                         var title = !string.IsNullOrWhiteSpace(movie.Title) ? movie.Title : "Phim đang chiếu";
                         var genre = !string.IsNullOrWhiteSpace(movie.Genre) ? movie.Genre : "Đang cập nhật";
                         var imageLoading = movieIndex < 4 ? "eager" : "lazy";
+                        var isUpcoming = movie.ReleaseDate.Date > today;
 
                         <article class="movie-gallery__col reveal-on-scroll" style="--movie-index: @movieIndex" data-reveal>
                             <a class="movie-poster" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId" aria-label="Xem chi tiết @title">
@@ -125,10 +127,17 @@
                                     </div>
 
                                     <div class="buy-button__container">
-                                        <form asp-controller="Booking" asp-action="SelectShowtime" method="get" class="buy-button__form">
-                                            <input type="hidden" name="movieId" value="@movie.MovieId" />
-                                            <button type="submit" class="buy-button__content">Đặt vé</button>
-                                        </form>
+                                        @if (isUpcoming)
+                                        {
+                                            <a class="buy-button__content buy-button__content--details" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">Chi tiết</a>
+                                        }
+                                        else
+                                        {
+                                            <form asp-controller="Booking" asp-action="SelectShowtime" method="get" class="buy-button__form">
+                                                <input type="hidden" name="movieId" value="@movie.MovieId" />
+                                                <button type="submit" class="buy-button__content">Đặt vé</button>
+                                            </form>
+                                        }
                                     </div>
                                 </div>
                             </div>
@@ -192,7 +201,7 @@
                     <h3>Bắp nước sẵn sàng trước giờ phim</h3>
                     <p>Chọn combo phù hợp cho buổi xem phim cùng bạn bè, gia đình hoặc một tối thư giãn sau giờ làm.</p>
                 </div>
-                <a class="home-cta home-cta--primary" href="#now-showing">
+                <a class="home-cta home-cta--primary" asp-controller="Home" asp-action="Movie">
                     Chọn phim
                     <svg aria-hidden="true" viewBox="0 0 24 24">
                         <path d="M5 12h13m-5-5 5 5-5 5" />
