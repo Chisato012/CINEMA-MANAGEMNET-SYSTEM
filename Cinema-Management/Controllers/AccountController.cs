@@ -352,8 +352,7 @@ public class AccountController : Controller
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        TempData["AlertSuccess"] = "Xác nhận email thành công. Vui lòng đăng nhập.";
-        return RedirectToAction(nameof(Login));
+        return View("ConfirmEmailSuccess");
     }
     
     [HttpGet]
@@ -814,11 +813,7 @@ public async Task<IActionResult> GoogleCallback(CancellationToken cancellationTo
         string verificationToken,
         CancellationToken cancellationToken)
     {
-        var confirmationLink = Url.Action(
-            nameof(ConfirmEmail),
-            "Account",
-            new { email = user.Email, token = verificationToken },
-            Request.Scheme);
+        var confirmationLink = BuildEmailConfirmationLink(user.Email, verificationToken);
 
         if (string.IsNullOrWhiteSpace(confirmationLink))
         {
@@ -841,6 +836,12 @@ public async Task<IActionResult> GoogleCallback(CancellationToken cancellationTo
                             Xác nhận tài khoản
                         </a>
                     </p>
+                    <p style="color:#ddd;font-size:14px;line-height:1.6;">
+                        Nếu nút không hoạt động, hãy sao chép liên kết này và mở trong trình duyệt:
+                    </p>
+                    <p style="word-break:break-all;color:#D4A373;font-size:13px;line-height:1.6;">
+                        {safeLink}
+                    </p>
                     <p>Liên kết này có hiệu lực trong 30 phút.</p>
                     <p style="color:#aaa;font-size:13px;">Nếu bạn không tạo tài khoản, vui lòng bỏ qua email này.</p>
                 </div>
@@ -853,6 +854,30 @@ public async Task<IActionResult> GoogleCallback(CancellationToken cancellationTo
             "Xác nhận tài khoản COSMOS Cinema",
             htmlBody,
             cancellationToken);
+    }
+
+    private string? BuildEmailConfirmationLink(string email, string verificationToken)
+    {
+        var publicBaseUrl = _configuration["Application:PublicBaseUrl"]?.Trim().TrimEnd('/');
+
+        if (!string.IsNullOrWhiteSpace(publicBaseUrl)
+            && Uri.TryCreate(publicBaseUrl, UriKind.Absolute, out var baseUri))
+        {
+            var confirmEmailUrl = new Uri(baseUri, "/Account/ConfirmEmail").ToString();
+            return QueryHelpers.AddQueryString(
+                confirmEmailUrl,
+                new Dictionary<string, string?>
+                {
+                    ["email"] = email,
+                    ["token"] = verificationToken
+                });
+        }
+
+        return Url.Action(
+            nameof(ConfirmEmail),
+            "Account",
+            new { email, token = verificationToken },
+            Request.Scheme);
     }
 
     private void SignInWithSession(User user, bool rememberMe = false)
