@@ -88,20 +88,17 @@ if (!string.IsNullOrWhiteSpace(googleClientId) &&
         options.ClientSecret = googleClientSecret;
         options.CallbackPath = "/signin-google";
         options.SaveTokens = false;
-        options.Events.OnCreatingTicket = context =>
-        {
-            if (context.User.TryGetProperty("email_verified", out var emailVerified))
-            {
-                var identity = context.Principal?.Identity as ClaimsIdentity;
-                identity?.AddClaim(new Claim(
-                    "urn:google:email_verified",
-                    emailVerified.ToString()));
-            }
-
-            return Task.CompletedTask;
-        };
+        options.ClaimActions.MapJsonKey(
+            "urn:google:email_verified",
+            "verified_email");
         options.Events.OnRemoteFailure = context =>
         {
+            var logger = context.HttpContext.RequestServices
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger("GoogleOAuth");
+
+            logger.LogWarning(context.Failure, "Google OAuth remote failure.");
+
             context.HandleResponse();
             context.Response.Redirect("/Account/GoogleLoginFailed");
             return Task.CompletedTask;
