@@ -324,6 +324,9 @@ public class ApplicationDbContext : DbContext
 
             entity.Property(u => u.EmailVerificationTokenHash)
                 .HasMaxLength(64);
+
+            entity.Property(u => u.PasswordResetTokenHash)
+                .HasMaxLength(64);
         });
     }
 }
