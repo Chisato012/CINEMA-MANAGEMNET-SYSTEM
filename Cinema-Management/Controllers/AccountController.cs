@@ -411,41 +411,11 @@ public IActionResult GoogleRegister()
 
             if (existingEmailUser != null)
             {
-                if (!existingEmailUser.Status)
-                {
-                    TempData["AlertError"] = "Tài khoản của bạn đã bị khóa.";
-                    return RedirectToAction(nameof(Login));
-                }
-
-                if (HasDifferentExternalProviderKey(existingEmailUser, googleId))
-                {
-                    TempData["AlertError"] = "Email này đã được liên kết với nhà cung cấp đăng nhập khác.";
-                    return RedirectToAction(nameof(Login));
-                }
-
-                LinkGoogleAccount(existingEmailUser, googleId);
-                user = existingEmailUser;
-
-                try
-                {
-                    await _context.SaveChangesAsync(cancellationToken);
-                }
-                catch (DbUpdateException exception) when (IsDuplicateAccountError(exception))
-                {
-                    var linkedUser = await TryLinkExistingUserAfterGoogleDuplicateAsync(
-                        user,
-                        normalizedEmail,
-                        googleId,
-                        cancellationToken);
-
-                    if (linkedUser == null)
-                    {
-                        TempData["AlertError"] = "Không thể liên kết tài khoản Google này.";
-                        return RedirectToAction(nameof(Login));
-                    }
-
-                    user = linkedUser;
-                }
+                ClearGoogleRegistrationSession();
+                TempData["AlertError"] = GoogleLoginFlow.IsLocalAccount(existingEmailUser)
+                    ? GoogleLoginFlow.ExistingLocalAccountMessage
+                    : GoogleLoginFlow.DifferentExternalProviderMessage;
+                return RedirectToAction(nameof(Login));
             }
             else
             {
@@ -471,19 +441,18 @@ public IActionResult GoogleRegister()
                 }
                 catch (DbUpdateException exception) when (IsDuplicateAccountError(exception))
                 {
-                    var linkedUser = await TryLinkExistingUserAfterGoogleDuplicateAsync(
-                        user,
+                    _context.Entry(user).State = EntityState.Detached;
+                    var duplicateEmailUser = await FindUserByNormalizedEmailAsync(
                         normalizedEmail,
-                        googleId,
                         cancellationToken);
 
-                    if (linkedUser == null)
-                    {
-                        TempData["AlertError"] = "Không thể tạo tài khoản Google này.";
-                        return RedirectToAction(nameof(Login));
-                    }
-
-                    user = linkedUser;
+                    ClearGoogleRegistrationSession();
+                    TempData["AlertError"] = duplicateEmailUser != null
+                        ? GoogleLoginFlow.IsLocalAccount(duplicateEmailUser)
+                            ? GoogleLoginFlow.ExistingLocalAccountMessage
+                            : GoogleLoginFlow.DifferentExternalProviderMessage
+                        : "Không thể tạo tài khoản Google này.";
+                    return RedirectToAction(nameof(Login));
                 }
             }
         }
@@ -654,81 +623,58 @@ public async Task<IActionResult> GoogleCallback(CancellationToken cancellationTo
 
     // 1. Kiểm tra xem tài khoản liên kết Google này đã tồn tại trong DB chưa
     var user = await FindUserByGoogleIdAsync(googleId, cancellationToken);
+    var existingEmailUser = user == null
+        ? await FindUserByNormalizedEmailAsync(email, cancellationToken)
+        : null;
 
-    var shouldSave = false;
-    if (user == null)
+    var decision = GoogleLoginFlow.Decide(
+        googleId,
+        email,
+        emailVerified,
+        user,
+        existingEmailUser);
+
+    switch (decision.Type)
     {
-        // 2. Nếu chưa, kiểm tra xem Email này đã được đăng ký bằng phương thức thường chưa
-        var existingEmailUser = await FindUserByNormalizedEmailAsync(email, cancellationToken);
+        case GoogleLoginDecisionType.InvalidGoogleProfile:
+            TempData["AlertError"] = "Google không trả về đủ thông tin tài khoản.";
+            return RedirectToAction(nameof(Login));
 
-        if (existingEmailUser != null)
-        {
-            if (!existingEmailUser.Status)
-            {
-                TempData["AlertError"] = "Tài khoản của bạn đã bị khóa.";
-                return RedirectToAction(nameof(Login));
-            }
+        case GoogleLoginDecisionType.UnverifiedGoogleEmail:
+            TempData["AlertError"] = "Google chưa xác minh email của tài khoản này.";
+            return RedirectToAction(nameof(Login));
 
-            if (HasDifferentExternalProviderKey(existingEmailUser, googleId))
-            {
-                TempData["AlertError"] = "Email này đã được liên kết với nhà cung cấp đăng nhập khác.";
-                return RedirectToAction(nameof(Login));
-            }
+        case GoogleLoginDecisionType.InactiveAccount:
+            TempData["AlertError"] = "Tài khoản của bạn đã bị khóa.";
+            return RedirectToAction(nameof(Login));
 
-            // Liên kết tài khoản thường có sẵn với Google ID mới nhập
-            LinkGoogleAccount(existingEmailUser, googleId);
-            user = existingEmailUser;
-            shouldSave = true;
-        }
-        else
-        {
-            // Lưu thông tin từ Google vào Session để dùng ở Form đăng ký tiếp theo
+        case GoogleLoginDecisionType.ExistingUnconfirmedGoogleAccount:
+            return RedirectToAction(nameof(RegisterPending), new { email = decision.User!.Email });
+
+        case GoogleLoginDecisionType.ExistingLocalAccount:
+            ClearGoogleRegistrationSession();
+            TempData["AlertError"] = GoogleLoginFlow.ExistingLocalAccountMessage;
+            return RedirectToAction(nameof(Login));
+
+        case GoogleLoginDecisionType.DifferentExternalProvider:
+            ClearGoogleRegistrationSession();
+            TempData["AlertError"] = GoogleLoginFlow.DifferentExternalProviderMessage;
+            return RedirectToAction(nameof(Login));
+
+        case GoogleLoginDecisionType.NewGoogleRegistrationRequired:
             HttpContext.Session.SetString("Google_Email", email);
             HttpContext.Session.SetString("Google_FullName", fullName.Trim());
             HttpContext.Session.SetString("Google_Id", googleId);
             HttpContext.Session.SetString(GoogleRememberMeSessionKey, rememberMe.ToString());
-
-            // Bắn người dùng sang trang điền thêm thông tin (Số điện thoại, Ngày sinh...)
             return RedirectToAction(nameof(GoogleRegister));
-        }
 
-        if (shouldSave)
-        {
-            try
-            {
-                await _context.SaveChangesAsync(cancellationToken);
-            }
-            catch (DbUpdateException exception) when (IsDuplicateAccountError(exception))
-            {
-                var linkedUser = await TryLinkExistingUserAfterGoogleDuplicateAsync(
-                    user,
-                    email,
-                    googleId,
-                    cancellationToken);
+        case GoogleLoginDecisionType.ExistingGoogleAccount:
+            user = decision.User!;
+            break;
 
-                if (linkedUser == null)
-                {
-                    TempData["AlertError"] = "Không thể liên kết tài khoản Google này.";
-                    return RedirectToAction(nameof(Login));
-                }
-
-                user = linkedUser;
-            }
-        }
-    }
-
-    // 3. Kiểm tra trạng thái tài khoản đối với những người dùng đã có sẵn trong hệ thống
-    if (!user.Status)
-    {
-        TempData["AlertError"] = "Tài khoản của bạn đã bị khóa.";
-        return RedirectToAction(nameof(Login));
-    }
-
-    // Đăng nhập thành công, thiết lập Session
-    if (!user.EmailConfirmed)
-    {
-        TempData["AlertError"] = "Vui lòng xác nhận Gmail trước khi đăng nhập.";
-        return RedirectToAction(nameof(RegisterPending), new { email = user.Email });
+        default:
+            TempData["AlertError"] = "Đăng nhập Google thất bại hoặc đã bị hủy.";
+            return RedirectToAction(nameof(Login));
     }
 
     SignInWithSession(user, rememberMe);
@@ -977,44 +923,6 @@ public async Task<IActionResult> GoogleCallback(CancellationToken cancellationTo
                 cancellationToken);
     }
 
-    private static bool HasDifferentExternalProviderKey(User user, string googleId)
-    {
-        return !string.IsNullOrWhiteSpace(user.ExternalProviderKey)
-               && !string.Equals(user.ExternalProviderKey, googleId, StringComparison.Ordinal);
-    }
-
-    private static void LinkGoogleAccount(User user, string googleId)
-    {
-        user.ExternalProvider = GoogleProvider;
-        user.ExternalProviderKey = googleId;
-    }
-
-    private async Task<User?> TryLinkExistingUserAfterGoogleDuplicateAsync(
-        User pendingUser,
-        string email,
-        string googleId,
-        CancellationToken cancellationToken)
-    {
-        var entry = _context.Entry(pendingUser);
-        entry.State = entry.State == EntityState.Added
-            ? EntityState.Detached
-            : EntityState.Unchanged;
-
-        var existingUser = await FindUserByNormalizedEmailAsync(email, cancellationToken);
-
-        if (existingUser == null
-            || !existingUser.Status
-            || HasDifferentExternalProviderKey(existingUser, googleId))
-        {
-            return null;
-        }
-
-        LinkGoogleAccount(existingUser, googleId);
-        await _context.SaveChangesAsync(cancellationToken);
-
-        return existingUser;
-    }
-
     private void AddDuplicateAccountError()
     {
         ModelState.AddModelError(nameof(AuthViewModel.Email), "Tài khoản đã có");
@@ -1165,8 +1073,7 @@ public async Task<IActionResult> GoogleCallback(CancellationToken cancellationTo
 
     private static bool IsGoogleEmailVerified(ClaimsPrincipal principal)
     {
-        var value = principal.FindFirstValue("urn:google:email_verified");
-        return bool.TryParse(value, out var emailVerified) && emailVerified;
+        return GoogleLoginFlow.IsGoogleEmailVerified(principal);
     }
 
     private sealed class TurnstileVerifyResponse
