@@ -400,3 +400,74 @@ EXEC sp_addextendedproperty
   @level1type = N'Table',  @level1name = N'PaymentMethods',
   @level2type = N'Column', @level2name = N'MethodName'
 GO
+
+
+-- ==========================================
+-- REVIEW / COMMENT / RATING PHIM
+-- ==========================================
+CREATE TABLE Reviews (
+    ReviewID INT PRIMARY KEY IDENTITY(1, 1),
+
+    -- Tài khoản viết bình luận
+    UserID INT NOT NULL,
+
+    -- Phim được bình luận
+    MovieID INT NOT NULL,
+
+    -- NULL: bình luận gốc
+    -- Có giá trị: phản hồi một bình luận khác
+    ParentReviewID INT NULL,
+
+    -- Nội dung bình luận
+    Content NVARCHAR(2000) NOT NULL,
+
+    -- Số sao từ 0.00 đến 5.00
+    Rating DECIMAL(3,2) NULL,
+
+    CreatedAt DATETIME2 NOT NULL
+        CONSTRAINT DF_Reviews_CreatedAt
+        DEFAULT SYSUTCDATETIME(),
+
+    UpdatedAt DATETIME2 NULL,
+
+    Status NVARCHAR(20) NOT NULL
+        CONSTRAINT DF_Reviews_Status
+        DEFAULT N'Visible',
+
+    CONSTRAINT FK_Reviews_Users
+        FOREIGN KEY (UserID)
+        REFERENCES Users(UserID),
+
+    CONSTRAINT FK_Reviews_Movies
+        FOREIGN KEY (MovieID)
+        REFERENCES Movies(MovieID),
+
+    CONSTRAINT FK_Reviews_Parent
+        FOREIGN KEY (ParentReviewID)
+        REFERENCES Reviews(ReviewID),
+
+    CONSTRAINT CK_Reviews_Rating
+        CHECK (
+            Rating IS NULL
+            OR Rating BETWEEN 0.00 AND 5.00
+        ),
+
+    CONSTRAINT CK_Reviews_Content
+        CHECK (LEN(LTRIM(RTRIM(Content))) > 0),
+
+    CONSTRAINT CK_Reviews_Status
+        CHECK (Status IN (N'Visible', N'Hidden', N'Deleted'))
+);
+GO
+
+CREATE INDEX IX_Reviews_Movie_CreatedAt
+ON Reviews(MovieID, CreatedAt DESC);
+GO
+
+CREATE INDEX IX_Reviews_ParentReviewID
+ON Reviews(ParentReviewID);
+GO
+
+CREATE INDEX IX_Reviews_UserID
+ON Reviews(UserID);
+GO
