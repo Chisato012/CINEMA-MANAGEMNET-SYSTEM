@@ -1,4 +1,5 @@
 @model Cinema_Management.Models.MovieViewModel
+@using System.Globalization
 
 @{
     ViewData["Title"] = Model.Title + " - Movie Details";
@@ -7,6 +8,9 @@
         .OrderBy(s => s.Date)
         .ThenBy(s => s.StartTime)
         .FirstOrDefault();
+    var reviewSummary = Model.ReviewSummary ?? new MovieReviewSummaryViewModel();
+    var reviews = Model.Reviews ?? new List<MovieReviewViewModel>();
+    var isSignedIn = ViewBag.CanReview is bool canReview && canReview;
 }
 
 @section Styles {
@@ -126,6 +130,139 @@
         </div>
     </section>
 
+    <section class="reviews-section" aria-labelledby="movie-reviews-title">
+        <div class="details-section-heading">
+            <p>Ý kiến khán giả</p>
+            <h2 id="movie-reviews-title">Reviews</h2>
+        </div>
+
+        <div class="reviews-layout">
+            <aside class="reviews-summary" aria-label="Tổng quan đánh giá">
+                <span class="reviews-summary__label">Average rating</span>
+                <div class="reviews-summary__score">
+                    <strong>@FormatRating(reviewSummary.AverageRating)</strong>
+                    <span>/ 5</span>
+                </div>
+                <div class="review-stars" style="--rating-percent: @RatingPercent(reviewSummary.AverageRating);" aria-label="@FormatRating(reviewSummary.AverageRating) trên 5">
+                    <span class="review-stars__base" aria-hidden="true">★★★★★</span>
+                    <span class="review-stars__fill" aria-hidden="true">★★★★★</span>
+                </div>
+                <p>@reviewSummary.TotalRatings lượt đánh giá</p>
+            </aside>
+
+            <div class="reviews-panel">
+                @if (isSignedIn)
+                {
+                    <form class="review-form" asp-controller="Home" asp-action="AddReview" method="post" data-review-form novalidate>
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="MovieId" value="@Model.MovieId" />
+                        <input type="hidden" name="Rating" id="ReviewRating" data-review-rating />
+
+                        <div class="review-form__header">
+                            <div>
+                                <span class="review-form__eyebrow">Your review</span>
+                                <h3>Chia sẻ cảm nhận về @Model.Title</h3>
+                            </div>
+                            <span class="review-form__value" data-review-rating-label>0.00 / 5</span>
+                        </div>
+
+                        <div class="review-form__picker" role="radiogroup" aria-label="Chọn điểm đánh giá">
+                            @for (var rating = 1; rating <= 5; rating++)
+                            {
+                                <button type="button" class="review-star-button" data-review-star data-rating-value="@rating" aria-label="@rating trên 5">
+                                    ★
+                                </button>
+                            }
+                        </div>
+
+                        <input class="review-rating-range"
+                               type="range"
+                               min="0"
+                               max="5"
+                               step="0.25"
+                               value="0"
+                               data-review-rating-range
+                               aria-label="Điểm đánh giá chi tiết" />
+
+                        <label class="review-form__comment" for="ReviewComment">
+                            <span>Bình luận</span>
+                            <textarea id="ReviewComment"
+                                      name="Comment"
+                                      rows="5"
+                                      maxlength="2000"
+                                      data-review-comment
+                                      required></textarea>
+                        </label>
+
+                        <p class="review-form__error" data-review-error role="alert"></p>
+
+                        <button class="review-submit" type="submit" data-review-submit>
+                            <span data-review-submit-text>Gửi đánh giá</span>
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <div class="review-login">
+                        <div>
+                            <span class="review-form__eyebrow">Your review</span>
+                            <h3>Đăng nhập để gửi đánh giá</h3>
+                        </div>
+                        <a asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                    </div>
+                }
+
+                <div class="review-list" aria-label="Danh sách đánh giá">
+                    @if (reviews.Any())
+                    {
+                        @foreach (var review in reviews)
+                        {
+                            <article class="review-card">
+                                <div class="review-card__avatar" aria-hidden="true">
+                                    @if (!string.IsNullOrWhiteSpace(review.UserAvatarUrl))
+                                    {
+                                        <img src="@review.UserAvatarUrl" alt="" />
+                                    }
+                                    else
+                                    {
+                                        <span>@ReviewInitial(review.UserFullName)</span>
+                                    }
+                                </div>
+
+                                <div class="review-card__body">
+                                    <div class="review-card__topline">
+                                        <div>
+                                            <h3>@review.UserFullName</h3>
+                                            <time datetime="@review.CreatedAt.ToString("O", CultureInfo.InvariantCulture)">
+                                                @review.CreatedAt.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture)
+                                            </time>
+                                        </div>
+                                        <div class="review-card__rating">
+                                            <div class="review-stars review-stars--small" style="--rating-percent: @RatingPercent(review.Rating);" aria-label="@FormatRating(review.Rating) trên 5">
+                                                <span class="review-stars__base" aria-hidden="true">★★★★★</span>
+                                                <span class="review-stars__fill" aria-hidden="true">★★★★★</span>
+                                            </div>
+                                            <strong>@FormatRating(review.Rating)</strong>
+                                        </div>
+                                    </div>
+
+                                    <p>@review.Comment</p>
+                                </div>
+                            </article>
+                        }
+                    }
+                    else
+                    {
+                        <div class="reviews-empty">
+                            <h3>Chưa có đánh giá nào</h3>
+                            <p>Những đánh giá mới nhất sẽ xuất hiện tại đây sau khi khán giả gửi cảm nhận.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+
     @{
         var today = DateTime.Today;
         var endDate = today.AddDays(6);
@@ -186,7 +323,7 @@
                 @if (hasShowtimes)
                 {
                     <div class="showtimes-times__grid">
-                        @foreach (var showtime in dateShowtimes)
+                        @foreach (var showtime in dateShowtimes!)
                         {
                             <a href="#" class="showtimes-time-card">
                                 <span class="showtimes-time-card__time">@showtime.StartTime.ToString("HH:mm")</span>
@@ -219,6 +356,26 @@
         </div>
     </div>
 </main>
+
+@functions {
+    private static string FormatRating(decimal rating)
+    {
+        return rating.ToString("0.##", CultureInfo.InvariantCulture);
+    }
+
+    private static string RatingPercent(decimal rating)
+    {
+        var clamped = Math.Min(5m, Math.Max(0m, rating));
+        return (clamped / 5m * 100m).ToString("0.##", CultureInfo.InvariantCulture) + "%";
+    }
+
+    private static string ReviewInitial(string fullName)
+    {
+        return string.IsNullOrWhiteSpace(fullName)
+            ? "C"
+            : fullName.Trim()[0].ToString().ToUpperInvariant();
+    }
+}
 
 @section Scripts {
     <script>
@@ -282,5 +439,81 @@
             const target = document.querySelector('.showtimes-times[data-date="' + selectedDate + '"]');
             if (target) target.style.display = 'flex';
         }
+
+        (() => {
+            const form = document.querySelector('[data-review-form]');
+            if (!form) {
+                return;
+            }
+
+            const ratingInput = form.querySelector('[data-review-rating]');
+            const range = form.querySelector('[data-review-rating-range]');
+            const stars = Array.from(form.querySelectorAll('[data-review-star]'));
+            const label = form.querySelector('[data-review-rating-label]');
+            const comment = form.querySelector('[data-review-comment]');
+            const error = form.querySelector('[data-review-error]');
+            const submit = form.querySelector('[data-review-submit]');
+            const submitText = form.querySelector('[data-review-submit-text]');
+
+            const setError = (message) => {
+                if (error) {
+                    error.textContent = message || '';
+                }
+            };
+
+            const formatRating = (value) => value.toFixed(2).replace(/\.00$/, '');
+
+            const setRating = (value) => {
+                const rating = Math.max(0, Math.min(5, Number(value) || 0));
+                ratingInput.value = rating > 0 ? rating.toFixed(2) : '';
+                range.value = rating.toFixed(2);
+                if (label) {
+                    label.textContent = `${rating.toFixed(2)} / 5`;
+                }
+
+                stars.forEach((star) => {
+                    const starValue = Number(star.dataset.ratingValue || 0);
+                    star.classList.toggle('is-active', rating >= starValue);
+                    star.classList.toggle('is-soft-active', rating > starValue - 1 && rating < starValue);
+                });
+            };
+
+            stars.forEach((star) => {
+                star.addEventListener('click', () => {
+                    setRating(Number(star.dataset.ratingValue || 0));
+                    setError('');
+                });
+            });
+
+            range?.addEventListener('input', () => {
+                setRating(range.value);
+                setError('');
+            });
+
+            comment?.addEventListener('input', () => setError(''));
+
+            form.addEventListener('submit', (event) => {
+                if (!ratingInput.value) {
+                    event.preventDefault();
+                    setError('Vui lòng chọn điểm đánh giá.');
+                    return;
+                }
+
+                if (!comment?.value.trim()) {
+                    event.preventDefault();
+                    setError('Vui lòng nhập nội dung đánh giá.');
+                    comment?.focus();
+                    return;
+                }
+
+                submit?.setAttribute('disabled', 'disabled');
+                submit?.classList.add('is-loading');
+                if (submitText) {
+                    submitText.textContent = 'Đang gửi...';
+                }
+            });
+
+            setRating(0);
+        })();
     </script>
 }

@@ -344,7 +344,7 @@ body { background-color: var(--color-neutral-950); color: var(--color-neutral-50
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #D4A373;
+    background: #33d82f;
     display: inline-block;
     transition: background-color .3s ease;
 }
