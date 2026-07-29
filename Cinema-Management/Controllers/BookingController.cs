@@ -4,7 +4,7 @@ using Cinema_Management.Models.Sepay;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json; 
+using System.Text.Json;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -264,7 +264,16 @@ public class BookingController : Controller
 
         if (showtime == null)
         {
-            return NotFound();
+            TempData["AlertError"] = "Bạn chưa chọn suất chiếu. Vui lòng chọn ngày và giờ chiếu trước.";
+
+            return RedirectToAction(
+                nameof(Index),
+                new
+                {
+                    movieId = request.MovieId > 0
+                        ? request.MovieId
+                        : (int?)null
+                });
         }
 
         HttpContext.Session.SetInt32("SelectedShowtimeId", showtime.ShowtimeID);
@@ -1508,42 +1517,42 @@ public class BookingController : Controller
     }
 
 
-// POST: Booking/CancelBooking
-// Huỷ tiến trình đặt vé hiện tại và xóa dữ liệu Booking trong Session.
-[HttpPost]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> CancelBooking()
-{
-    // Lấy người dùng và mã thanh toán của tiến trình hiện tại.
-    var userId = HttpContext.Session.GetInt32("UserID");
-    var paymentReference = HttpContext.Session.GetString("PaymentReference");
-
-    // Chỉ cập nhật PaymentIntent khi đã đăng nhập và đã tạo phiên QR.
-    if (userId.HasValue && !string.IsNullOrWhiteSpace(paymentReference))
+    // POST: Booking/CancelBooking
+    // Huỷ tiến trình đặt vé hiện tại và xóa dữ liệu Booking trong Session.
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CancelBooking()
     {
-        var paymentIntent = await _context.PaymentIntents.FirstOrDefaultAsync(intent => intent.PaymentReference == paymentReference && intent.UserID == userId.Value);
+        // Lấy người dùng và mã thanh toán của tiến trình hiện tại.
+        var userId = HttpContext.Session.GetInt32("UserID");
+        var paymentReference = HttpContext.Session.GetString("PaymentReference");
 
-        // Không được huỷ giao dịch đã thanh toán thành công.
-        if (paymentIntent != null && paymentIntent.Status == "Pending" && !paymentIntent.BookingID.HasValue)
+        // Chỉ cập nhật PaymentIntent khi đã đăng nhập và đã tạo phiên QR.
+        if (userId.HasValue && !string.IsNullOrWhiteSpace(paymentReference))
         {
-            // Dùng Expired
-            paymentIntent.Status = "Expired";
+            var paymentIntent = await _context.PaymentIntents.FirstOrDefaultAsync(intent => intent.PaymentReference == paymentReference && intent.UserID == userId.Value);
 
-            // Đặt thời hạn về hiện tại để webhook không hoàn tất intent này.
-            paymentIntent.ExpiresAtUtc = DateTime.UtcNow;
+            // Không được huỷ giao dịch đã thanh toán thành công.
+            if (paymentIntent != null && paymentIntent.Status == "Pending" && !paymentIntent.BookingID.HasValue)
+            {
+                // Dùng Expired
+                paymentIntent.Status = "Expired";
 
-            await _context.SaveChangesAsync();
+                // Đặt thời hạn về hiện tại để webhook không hoàn tất intent này.
+                paymentIntent.ExpiresAtUtc = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+            }
         }
+
+        // Hàm này đã có sẵn trong BookingController.
+        // Chỉ xóa dữ liệu đặt vé, không xóa Session đăng nhập.
+        ClearBookingSession();
+
+        TempData["BookingMessage"] = "Đã huỷ quá trình đặt vé.";
+
+        return RedirectToAction("Index", "Home");
     }
-
-    // Hàm này đã có sẵn trong BookingController.
-    // Chỉ xóa dữ liệu đặt vé, không xóa Session đăng nhập.
-    ClearBookingSession();
-
-    TempData["BookingMessage"] = "Đã huỷ quá trình đặt vé.";
-
-    return RedirectToAction("Index", "Home");
-}
     private void ClearBookingSession()
     {
         var bookingSessionKeys = new[]
