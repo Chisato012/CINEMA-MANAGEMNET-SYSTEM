@@ -59,7 +59,7 @@
             @foreach (var movie in Model.Movies)
             {
                 var genreText = movie.MovieGenres != null ? string.Join(", ", movie.MovieGenres.Select(mg => mg.Genre?.Name).Where(n => n != null)) : "";
-                <div class="movie-list-item" draggable="true" data-movie-id="@movie.MovieId" data-title="@movie.Title" data-duration="@movie.Duration" data-rating="@movie.AgeRating" data-genre="@genreText" data-poster="@movie.PosterURL" data-synopsis="@movie.Synopsis" data-trailer="@movie.Trailer" data-release-date="@movie.ReleaseDate.ToString("yyyy-MM-dd")">
+                <div class="movie-list-item" data-movie-id="@movie.MovieId" data-title="@movie.Title" data-duration="@movie.Duration" data-rating="@movie.AgeRating" data-genre="@genreText" data-poster="@movie.PosterURL" data-synopsis="@movie.Synopsis" data-trailer="@movie.Trailer" data-release-date="@movie.ReleaseDate.ToString("yyyy-MM-dd")">
                     <img src="@movie.PosterURL" alt="@movie.Title" />
                     <div class="ml-info">
                         <h5>@movie.Title</h5>
@@ -76,13 +76,9 @@
                         <button type="button" class="btn-icon edit-movie-btn" title="Edit movie registry">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                         </button>
-                        <form method="post" action="/Staff/DeactivateMovie" style="display:inline;margin:0;">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@movie.MovieId" />
-                            <button type="submit" class="btn-icon delete-movie-btn" title="Delete movie" onclick="return confirm('Are you sure you want to deactivate this movie?');">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                            </button>
-                        </form>
+                        <button type="button" class="btn-icon schedule-movie-btn" title="Add movie to screening room">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M12 14v4"></path><path d="M10 16h4"></path></svg>
+                        </button>
                     </div>
                 </div>
             }
@@ -109,7 +105,7 @@
                         <span class="hall-tag @room.TagCssClass">@room.DisplayType</span>
                         <span>@room.SeatCount GHẾ</span>
                     </div>
-                    <div class="mr-timeline" data-room-id="@room.RoomID" data-hall-number="@room.RoomID"></div>
+                    <div class="mr-timeline" data-room-id="@room.RoomID" data-hall-number="@room.RoomID" data-room-name="@room.RoomName"></div>
                 </div>
             }
             @if (renderStaticRooms)
@@ -344,10 +340,72 @@
     </form>
 </div>
 
+
+<div id="movieScheduleModal" class="modal-backdrop">
+    <form class="modal-dialog schedule-modal" id="movieScheduleForm">
+        <div class="modal-header">
+            <div>
+                <p class="modal-pretitle">QUẢN LÝ LỊCH CHIẾU</p>
+                <h3>Thêm phim vào phòng chiếu</h3>
+            </div>
+            <button type="button" class="btn-close-modal" aria-label="Close schedule dialog">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        <div class="modal-body schedule-modal-body">
+            <div class="schedule-modal-summary">
+                <span>Selected movie</span>
+                <strong id="scheduleMovieTitle">No movie selected</strong>
+                <small id="scheduleMovieDuration">0 min</small>
+            </div>
+
+            <div class="form-group">
+                <label for="scheduleStartTime">Thời gian bắt đầu</label>
+                <input type="time" id="scheduleStartTime" min="08:00" max="23:45" step="900" required />
+                <small class="schedule-helper">Các mốc thời gian sẽ tự động khớp với lưới chia 15 phút được sử dụng trong lịch trình.</small>
+            </div>
+
+            <div class="form-group">
+                <label>CÁC PHÒNG CHIẾU</label>
+                <div class="schedule-room-tools">
+                    <button type="button" class="schedule-room-tool" id="selectAllRooms">CHỌN TẤT CẢ</button>
+                    <button type="button" class="schedule-room-tool" id="clearAllRooms">XOÁ</button>
+                </div>
+                <div class="schedule-room-grid">
+                    @foreach (var room in Model.Rooms)
+                    {
+                        <label class="schedule-room-option">
+                            <input type="checkbox" name="scheduleRoom" value="@room.RoomID" data-room-name="@room.RoomName" />
+                            <span>
+                                <strong>@room.RoomName</strong>
+                                <small>@room.DisplayType - @room.SeatCount seats</small>
+                            </span>
+                        </label>
+                    }
+                </div>
+            </div>
+
+            <p class="schedule-form-error" id="scheduleFormError" role="alert" hidden></p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary btn-close-modal" style="border:none">HUỶ</button>
+            <button type="submit" class="btn-primary" style="background:var(--color-primary-300);color:var(--color-neutral-950);font-weight:800;">THÊM VÀO LỊCH CHIẾU</button>
+        </div>
+    </form>
+</div>
+
 @section Scripts {
     <script>
         const editorModal = document.getElementById('movieEditorModal');
         const createModal = document.getElementById('movieCreateModal');
+        const scheduleModal = document.getElementById('movieScheduleModal');
+        const scheduleMovieForm = document.getElementById('movieScheduleForm');
+        const scheduleMovieTitle = document.getElementById('scheduleMovieTitle');
+        const scheduleMovieDuration = document.getElementById('scheduleMovieDuration');
+        const scheduleStartTimeInput = document.getElementById('scheduleStartTime');
+        const scheduleFormError = document.getElementById('scheduleFormError');
+        const selectAllRoomsButton = document.getElementById('selectAllRooms');
+        const clearAllRoomsButton = document.getElementById('clearAllRooms');
         const btnAddMovie = document.getElementById('btnAddMovie');
         const scheduleDateInput = document.getElementById('scheduleDate');
         const btnSaveSchedule = document.getElementById('btnSaveSchedule');
@@ -361,7 +419,10 @@
         
         const closeBtns = document.querySelectorAll('.btn-close-modal');
         const editBtns = document.querySelectorAll('.edit-movie-btn');
+        const scheduleMovieBtns = document.querySelectorAll('.schedule-movie-btn');
+        const scheduleRoomInputs = Array.from(document.querySelectorAll('input[name="scheduleRoom"]'));
         const telemetryText = document.querySelector('.telemetry p');
+        let selectedScheduleMovie = null;
 
         function setTelemetry(message) {
             if (telemetryText) {
@@ -398,7 +459,6 @@
                 const genreMatches = !titleMatches && genre.includes(keyword);
                 const isVisible = !keyword || titleMatches || genreMatches;
                 item.classList.toggle('is-search-hidden', !isVisible);
-                item.draggable = isVisible;
 
                 if (isVisible) {
                     visibleCount++;
@@ -473,14 +533,6 @@
             timeline.appendChild(block);
         }
 
-        function getDropStartMinutes(timeline, event, duration) {
-            const rect = timeline.getBoundingClientRect();
-            const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-            const rawMinutes = ratio * scheduleTotalMinutes;
-            const snapped = Math.round(rawMinutes / scheduleSnapMinutes) * scheduleSnapMinutes;
-            return clampStart(snapped, duration);
-        }
-
         function timelineHasOverlap(timeline, startMinutes, endMinutes, ignoredBlock = null) {
             return Array.from(timeline.querySelectorAll('.schedule-block')).some(block => {
                 if (block === ignoredBlock) {
@@ -539,50 +591,114 @@
             return null;
         }
 
-        document.querySelectorAll('.movie-list-item').forEach(item => {
-            item.addEventListener('dragstart', event => {
-                if (event.target.closest('.ml-actions')) {
-                    event.preventDefault();
-                    return;
-                }
+        function getRoomLabel(timeline, fallbackId) {
+            return timeline?.dataset.roomName || `Room ${fallbackId}`;
+        }
 
-                event.dataTransfer.setData('application/json', JSON.stringify(getMoviePayload(item)));
-                event.dataTransfer.effectAllowed = 'copy';
+        function setScheduleFormError(message) {
+            if (!scheduleFormError) {
+                return;
+            }
+
+            scheduleFormError.textContent = message || '';
+            scheduleFormError.hidden = !message;
+        }
+
+        function closeScheduleModal() {
+            scheduleModal?.classList.remove('show');
+            setScheduleFormError('');
+        }
+
+        function openScheduleModal(movie) {
+            selectedScheduleMovie = movie;
+            if (scheduleMovieTitle) {
+                scheduleMovieTitle.textContent = movie.title;
+            }
+
+            if (scheduleMovieDuration) {
+                scheduleMovieDuration.textContent = `${movie.duration || scheduleSnapMinutes} min`;
+            }
+
+            if (scheduleStartTimeInput) {
+                scheduleStartTimeInput.value = '09:00';
+            }
+
+            scheduleRoomInputs.forEach(input => {
+                input.checked = false;
             });
-        });
+
+            setScheduleFormError('');
+            scheduleModal?.classList.add('show');
+            scheduleStartTimeInput?.focus();
+        }
+
+        function getSelectedScheduleRooms() {
+            return scheduleRoomInputs
+                .filter(input => input.checked)
+                .map(input => ({
+                    roomId: Number(input.value),
+                    roomName: input.dataset.roomName || `Room ${input.value}`,
+                    timeline: document.querySelector(`.mr-timeline[data-room-id="${input.value}"], .mr-timeline[data-hall-number="${input.value}"]`)
+                }))
+                .filter(room => Number.isInteger(room.roomId) && room.roomId > 0 && room.timeline);
+        }
+
+        function normalizeScheduleStartMinutes(timeValue, duration) {
+            if (!timeValue || !timeValue.includes(':')) {
+                return null;
+            }
+
+            const rawMinutes = timeToMinutes(timeValue);
+            if (!Number.isFinite(rawMinutes)) {
+                return null;
+            }
+
+            const snapped = Math.round(rawMinutes / scheduleSnapMinutes) * scheduleSnapMinutes;
+            if (snapped < 0 || snapped + duration > scheduleTotalMinutes) {
+                return null;
+            }
+
+            return snapped;
+        }
+
+        function addMovieToSelectedRooms(event) {
+            event.preventDefault();
+
+            if (!selectedScheduleMovie) {
+                setScheduleFormError('Choose a movie before adding a schedule.');
+                return;
+            }
+
+            const duration = Math.max(selectedScheduleMovie.duration || scheduleSnapMinutes, scheduleSnapMinutes);
+            const startMinutes = normalizeScheduleStartMinutes(scheduleStartTimeInput?.value, duration);
+            if (startMinutes === null) {
+                setScheduleFormError('Start time must keep the full movie between 08:00 and 24:00.');
+                return;
+            }
+
+            const rooms = getSelectedScheduleRooms();
+            if (rooms.length === 0) {
+                setScheduleFormError('Select at least one screening room.');
+                return;
+            }
+
+            const endMinutes = startMinutes + duration;
+            const conflicts = rooms.filter(room => timelineHasOverlap(room.timeline, startMinutes, endMinutes));
+            if (conflicts.length > 0) {
+                setScheduleFormError(`Schedule overlaps in ${conflicts.map(room => getRoomLabel(room.timeline, room.roomId)).join(', ')}.`);
+                return;
+            }
+
+            rooms.forEach(room => {
+                addScheduleBlock(room.timeline, selectedScheduleMovie, startMinutes);
+            });
+
+            setTelemetry(`Added "${selectedScheduleMovie.title}" at ${minutesToTime(startMinutes)} to ${rooms.length} room(s).`);
+            closeScheduleModal();
+        }
 
         movieSearchInput?.addEventListener('input', filterMoviesByName);
         filterMoviesByName();
-
-        document.querySelectorAll('.mr-timeline').forEach(timeline => {
-            timeline.addEventListener('dragover', event => {
-                event.preventDefault();
-                timeline.classList.add('drag-over');
-            });
-
-            timeline.addEventListener('dragleave', () => timeline.classList.remove('drag-over'));
-
-            timeline.addEventListener('drop', event => {
-                event.preventDefault();
-                timeline.classList.remove('drag-over');
-
-                const payload = event.dataTransfer.getData('application/json');
-                if (!payload) {
-                    return;
-                }
-
-                const movie = JSON.parse(payload);
-                const startMinutes = getDropStartMinutes(timeline, event, movie.duration);
-                const endMinutes = startMinutes + Math.max(movie.duration || scheduleSnapMinutes, scheduleSnapMinutes);
-                if (timelineHasOverlap(timeline, startMinutes, endMinutes)) {
-                    setTelemetry('Lich chieu bi trung gio trong cung phong chieu.');
-                    return;
-                }
-
-                addScheduleBlock(timeline, movie, startMinutes);
-                setTelemetry(`Da them "${movie.title}" vao phong chieu ${timeline.dataset.roomId || timeline.dataset.hallNumber}.`);
-            });
-        });
 
         async function loadSchedule() {
             document.querySelectorAll('.schedule-block').forEach(block => block.remove());
@@ -691,6 +807,32 @@
             createModal.classList.add('show');
         });
 
+        scheduleMovieBtns.forEach(btn => {
+            btn.addEventListener('click', event => {
+                const item = event.currentTarget.closest('.movie-list-item');
+                if (!item) {
+                    return;
+                }
+
+                openScheduleModal(getMoviePayload(item));
+            });
+        });
+
+        scheduleMovieForm?.addEventListener('submit', addMovieToSelectedRooms);
+
+        selectAllRoomsButton?.addEventListener('click', () => {
+            scheduleRoomInputs.forEach(input => {
+                input.checked = true;
+            });
+            setScheduleFormError('');
+        });
+
+        clearAllRoomsButton?.addEventListener('click', () => {
+            scheduleRoomInputs.forEach(input => {
+                input.checked = false;
+            });
+        });
+
         // Live Poster Preview logic
         document.getElementById('createPosterInput').addEventListener('input', function() {
             const preview = document.getElementById('createPosterPreview');
@@ -756,6 +898,7 @@
             btn.addEventListener('click', () => {
                 editorModal.classList.remove('show');
                 createModal.classList.remove('show');
+                closeScheduleModal();
             });
         });
         
