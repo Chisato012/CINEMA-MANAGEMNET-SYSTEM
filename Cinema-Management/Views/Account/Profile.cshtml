@@ -16,6 +16,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - COSMOS CINEMA</title>
+    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
     <style>
             :root {
                 --home-bg: #121210;
@@ -163,17 +165,20 @@
             <div class="profile-row">
                 <div class="profile-item w50">
                     <h6>Họ và tên</h6>
-                    <input type="text" asp-for="FullName">
+                    <input type="text" asp-for="FullName" id="name-input">
+                    <small id="name-error" class="auth-field-error"></small>
                 </div>
                 <div class="profile-item w50">
                     <h6>Email</h6>
-                    <input type="text" asp-for="Email">
+                    <input type="text" asp-for="Email" id="email-input">
+                    <small id="email-error" class="auth-field-error"></small>
                 </div>
             </div>
             <div class="profile-row">
                 <div class="profile-item w50">
                     <h6>Số điện thoại</h6>
-                    <input type="text" asp-for="PhoneNumber">
+                    <input type="text" asp-for="PhoneNumber" id="phone-input">
+                    <small id="phone-error" class="auth-field-error"></small>
                 </div>
                 <div class="profile-item w50">
                     <h6>Ngày sinh</h6>
@@ -280,7 +285,10 @@
             });
         });
     });
+
 </script>
+
+<script src="~/js/auth.js" asp-append-version="true"></script>
 
 </html>
 
