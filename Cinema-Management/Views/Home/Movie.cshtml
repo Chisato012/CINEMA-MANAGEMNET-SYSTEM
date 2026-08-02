@@ -14,8 +14,7 @@
         .ToList();
 
     var nowShowing = movies
-        .Where(movie => movie.ReleaseDate.Date <= today ||
-                        (movie.Showtimes != null && movie.Showtimes.Any(showtime => showtime.Date.Date >= today)))
+        .Where(movie => movie.ReleaseDate.Date <= today)
         .Take(10)
         .ToList();
 
@@ -24,21 +23,31 @@
         nowShowing = movies.Take(10).ToList();
     }
 
-    var comingSoon = movies
-        .Where(movie => movie.ReleaseDate.Date > today)
-        .OrderBy(movie => movie.ReleaseDate)
-        .Take(8)
+    var allNowShowing = ViewBag.AllNowShowingMovies as List<MovieViewModel> ?? new List<MovieViewModel>();
+    if (!allNowShowing.Any())
+    {
+        allNowShowing = nowShowing;
+    }
+
+    var allComingSoon = ViewBag.AllComingSoonMovies as List<MovieViewModel> ?? new List<MovieViewModel>();
+    var comingSoon = allComingSoon.Take(5).ToList();
+
+    var rankingMovies = allNowShowing
+        .Concat(allComingSoon)
+        .Concat(movies)
+        .Where(movie => movie != null)
+        .GroupBy(movie => movie.MovieId)
+        .Select(group => group.First())
         .ToList();
 
-    var topRated = movies
-        .OrderByDescending(movie => CosmosScore(movie))
+    var topRated = rankingMovies
+        .OrderByDescending(movie => movie.AverageRating)
+        .ThenByDescending(movie => movie.ReviewCount)
         .ThenBy(movie => movie.Title)
         .Take(5)
         .ToList();
 
-    var heroSlides = nowShowing.Any()
-        ? nowShowing.Take(4).ToList()
-        : movies.Take(4).ToList();
+    var heroSlides = movies.Take(4).ToList();
 
     var featured = topRated.FirstOrDefault() ?? movies.FirstOrDefault();
     var suggestions = topRated.Skip(1).Concat(movies).GroupBy(movie => movie.MovieId).Select(group => group.First()).Take(3).ToList();
@@ -66,34 +75,48 @@
 
                     <article class="movie-hero__slide @activeClass" style="--hero-poster: url('@Poster(slide)');">
                         <div class="movie-hero__content">
-                            <p class="movie-eyebrow">Phim nổi bật</p>
+                            <p class="movie-eyebrow @HeroStatusClass(slide, today)">@HeroStatusLabel(slide, today)</p>
                             <h1>@Safe(slide.Title, "Tonight at COSMOS")</h1>
                             <p class="movie-hero__tagline">@Clamp(slide.Synopsis, 132)</p>
 
                             <div class="movie-hero__meta" aria-label="Movie metadata">
-                                <span><i class="fa-regular fa-clock"></i>@DurationLabel(slide)</span>
                                 <span>@Safe(slide.Genre, "Cinema pick")</span>
+                                <span>@DurationLabel(slide)</span>
+                                <span>@HeroDateLabel(slide, today)</span>
                             </div>
 
                             <div class="movie-hero__actions">
-                                <form asp-controller="Booking" asp-action="SelectShowtime" method="get">
-                                    <input type="hidden" name="movieId" value="@slide.MovieId" />
-                                    @if (firstFutureShowtime != null)
-                                    {
-                                        <input type="hidden" name="showtimeId" value="@firstFutureShowtime.ShowtimeID" />
-                                    }
-                                    <button type="submit" class="movie-btn movie-btn--primary">
-                                        <i class="fa-solid fa-ticket"></i>
-                                        Đặt vé
-                                    </button>
-                                </form>
+                                @if (IsUpcoming(slide, today))
+                                {
+                                    <a class="movie-btn movie-btn--primary" asp-controller="Home" asp-action="Details" asp-route-id="@slide.MovieId">
+                                        <i class="fa-solid fa-circle-info"></i>
+                                        Chi tiết
+                                    </a>
+                                }
+                                else
+                                {
+                                    <form asp-controller="Booking" asp-action="SelectShowtime" method="get">
+                                        <input type="hidden" name="movieId" value="@slide.MovieId" />
+                                        @if (firstFutureShowtime != null)
+                                        {
+                                            <input type="hidden" name="showtimeId" value="@firstFutureShowtime.ShowtimeID" />
+                                        }
+                                        <button type="submit" class="movie-btn movie-btn--primary">
+                                            <i class="fa-solid fa-ticket"></i>
+                                            Đặt vé
+                                        </button>
+                                    </form>
+                                }
 
                                 @if (!string.IsNullOrWhiteSpace(slide.Trailer))
                                 {
-                                    <a class="movie-btn movie-btn--ghost" href="@slide.Trailer" target="_blank" rel="noopener">
+                                    <button type="button"
+                                            class="movie-btn movie-btn--ghost"
+                                            data-trailer-trigger
+                                            data-trailer-url="@slide.Trailer">
                                         <i class="fa-solid fa-play"></i>
                                         Xem trailer
-                                    </a>
+                                    </button>
                                 }
                                 else
                                 {
@@ -166,7 +189,7 @@
                 <h2 id="now-showing-title">Phim Đang Chiếu</h2>
                 <p>Hiện đang chiếu hôm nay.</p>
             </div>
-            <a class="movie-section__link" href="#now-showing-title">Xem tất cả <i class="fa-solid fa-chevron-right"></i></a>
+            <button type="button" class="movie-btn movie-btn--outline" data-movie-list-open data-movie-list-target="nowShowingModal">Xem tất cả <i class="fa-solid fa-chevron-right"></i></button>
         </div>
 
         @if (nowShowing.Any())
@@ -192,15 +215,23 @@
                                 {
                                     <span class="movie-age">@movie.AgeRating</span>
                                 }
+                                <span class="movie-review-score"><i class="fa-solid fa-star"></i>@ReviewScoreLabel(movie)</span>
                             </div>
-                            <form asp-controller="Booking" asp-action="SelectShowtime" method="get">
-                                <input type="hidden" name="movieId" value="@movie.MovieId" />
-                                @if (firstFutureShowtime != null)
-                                {
-                                    <input type="hidden" name="showtimeId" value="@firstFutureShowtime.ShowtimeID" />
-                                }
-                                <button type="submit" class="movie-card__button">Đặt vé</button>
-                            </form>
+                            @if (IsUpcoming(movie, today))
+                            {
+                                <a class="movie-card__button movie-card__button--outline" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">Chi tiết</a>
+                            }
+                            else
+                            {
+                                <form asp-controller="Booking" asp-action="SelectShowtime" method="get">
+                                    <input type="hidden" name="movieId" value="@movie.MovieId" />
+                                    @if (firstFutureShowtime != null)
+                                    {
+                                        <input type="hidden" name="showtimeId" value="@firstFutureShowtime.ShowtimeID" />
+                                    }
+                                    <button type="submit" class="movie-card__button">Đặt vé</button>
+                                </form>
+                            }
                         </div>
                     </article>
                 }
@@ -218,7 +249,7 @@
                 <h2 id="coming-soon-title">Coming Soon</h2>
                 <p>Những phim mới sắp ra mắt.</p>
             </div>
-            <a class="movie-btn movie-btn--outline" href="#coming-soon-title">View all coming soon <i class="fa-solid fa-chevron-right"></i></a>
+            <button type="button" class="movie-btn movie-btn--outline" data-movie-list-open data-movie-list-target="comingSoonModal">View all coming soon <i class="fa-solid fa-chevron-right"></i></button>
         </div>
 
         @if (comingSoon.Any())
@@ -235,7 +266,7 @@
                             <a class="movie-card__title" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">@Safe(movie.Title, "Untitled movie")</a>
                             <p>@Safe(movie.Genre, "Coming soon")</p>
                             <a class="movie-card__button movie-card__button--outline" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">
-                                Notify me
+                                Chi tiết
                             </a>
                         </div>
                     </article>
@@ -251,47 +282,61 @@
     <section class="movie-shell top-rated" aria-labelledby="top-rated-title">
         <div class="top-rated__header">
             <h2 id="top-rated-title">Xếp hạng <span>Phim phổ biến</span></h2>
-            <a class="movie-btn movie-btn--outline" href="#top-rated-title">Xem tất cả <i class="fa-solid fa-chevron-right"></i></a>
         </div>
 
         @if (featured != null)
         {
-            <div class="top-rated__layout">
-                <div class="rank-list">
+            <div class="top-rated__layout" data-ranking-carousel>
+                <div class="rank-list" aria-label="Movie ranking by star rating">
                     @for (var index = 0; index < topRated.Count; index++)
                     {
                         var movie = topRated[index];
-                        <a class="rank-row" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId" data-title="@Safe(movie.Title, string.Empty).ToLowerInvariant()" data-genres="@GenreData(movie)">
+                        <a class="rank-row @(index == 0 ? "is-active" : string.Empty)"
+                           asp-controller="Home"
+                           asp-action="Details"
+                           asp-route-id="@movie.MovieId"
+                           data-rank-row="@index"
+                           data-title="@Safe(movie.Title, string.Empty).ToLowerInvariant()"
+                           data-genres="@GenreData(movie)"
+                           aria-current="@(index == 0 ? "true" : "false")">
                             <span class="rank-row__number">@(index + 1)</span>
                             <img src="@Poster(movie)" alt="@Safe(movie.Title, "Movie") poster" />
                             <span class="rank-row__copy">
                                 <strong>@Safe(movie.Title, "Untitled movie")</strong>
                                 <small>@Safe(movie.Genre, "Cinema pick")</small>
                             </span>
+                            <span class="rank-row__score"><i class="fa-solid fa-star"></i>@ReviewScoreLabel(movie)</span>
                         </a>
                     }
                 </div>
 
-                <article class="featured-card">
-                    <div class="featured-card__media" style="--featured-poster: url('@Poster(featured)');">
-                        <img src="@Poster(featured)" alt="@Safe(featured.Title, "Movie") poster" />
-                    </div>
-                    <div class="featured-card__body">
-                        <h3>@Safe(featured.Title, "COSMOS pick")</h3>
-                        <p class="featured-card__meta">@MovieMeta(featured)</p>
-                        <p>@Clamp(featured.Synopsis, 190)</p>
-                        <div class="featured-card__actions">
-                            <a class="movie-btn movie-btn--primary" asp-controller="Home" asp-action="Details" asp-route-id="@featured.MovieId">
-                                <i class="fa-solid fa-play"></i>
-                                Xem chi tiết
-                            </a>
-                            <button type="button" class="movie-btn movie-btn--quiet">
-                                <i class="fa-regular fa-bookmark"></i>
-                                Yêu thích
-                            </button>
-                        </div>
-                    </div>
-                </article>
+                <div class="featured-card-stack">
+                    @for (var index = 0; index < topRated.Count; index++)
+                    {
+                        var rankedMovie = topRated[index];
+
+                        <article class="featured-card @(index == 0 ? "is-active" : string.Empty)" data-rank-feature="@index" aria-hidden="@(index == 0 ? "false" : "true")">
+                            <div class="featured-card__media" style="--featured-poster: url('@Poster(rankedMovie)');">
+                                <img src="@Poster(rankedMovie)" alt="@Safe(rankedMovie.Title, "Movie") poster" />
+                                <div class="featured-card__score">
+                                    <i class="fa-solid fa-star" aria-hidden="true"></i>
+                                    <span>@ReviewAverageLabel(rankedMovie)<small>@ReviewCountLabel(rankedMovie)</small></span>
+                                </div>
+                            </div>
+                            <div class="featured-card__body">
+                                <h3>@Safe(rankedMovie.Title, "COSMOS pick")</h3>
+                                <p class="featured-card__meta">@MovieMeta(rankedMovie)</p>
+                                <p>@Clamp(rankedMovie.Synopsis, 190)</p>
+                                <div class="featured-card__actions">
+                                    <a class="movie-btn movie-btn--primary" asp-controller="Home" asp-action="Details" asp-route-id="@rankedMovie.MovieId">
+                                        <i class="fa-solid fa-play"></i>
+                                        Xem chi tiết
+                                    </a>
+                                </div>
+                            </div>
+                        </article>
+                    }
+                </div>
             </div>
         }
         else
@@ -303,10 +348,265 @@
     
 
     
+    <div class="movie-list-modal" id="nowShowingModal" aria-hidden="true">
+        <div class="movie-list-modal__panel" role="dialog" aria-modal="true" aria-labelledby="nowShowingModalTitle">
+            <div class="movie-list-modal__header">
+                <div>
+                    <span class="movie-eyebrow">COSMOS Cinema</span>
+                    <h2 id="nowShowingModalTitle">Phim đang chiếu</h2>
+                    <p>@allNowShowing.Count phim đang có lịch chiếu hoặc đã phát hành tại COSMOS.</p>
+                </div>
+                <button type="button" class="movie-list-modal__close" data-movie-list-close aria-label="Đóng danh sách phim">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <div class="movie-list-modal__body">
+                @if (allNowShowing.Any())
+                {
+                    <div class="movie-list-modal__grid">
+                        @foreach (var movie in allNowShowing)
+                        {
+                            var firstFutureShowtime = movie.Showtimes?
+                                .Where(showtime => showtime.Date.Date >= today)
+                                .OrderBy(showtime => showtime.Date)
+                                .ThenBy(showtime => showtime.StartTime)
+                                .FirstOrDefault();
+
+                            <article class="movie-card movie-card--modal" data-title="@Safe(movie.Title, string.Empty).ToLowerInvariant()" data-genres="@GenreData(movie)">
+                                <a class="movie-card__poster" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">
+                                    <img src="@Poster(movie)" alt="@Safe(movie.Title, "Movie") poster" loading="lazy" />
+                                </a>
+                                <div class="movie-card__body">
+                                    <a class="movie-card__title" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">@Safe(movie.Title, "Untitled movie")</a>
+                                    <p>@MovieMeta(movie)</p>
+                                    <div class="movie-card__rating">
+                                        @if (!string.IsNullOrWhiteSpace(movie.AgeRating))
+                                        {
+                                            <span class="movie-age">@movie.AgeRating</span>
+                                        }
+                                        <span class="movie-review-score"><i class="fa-solid fa-star"></i>@ReviewScoreLabel(movie)</span>
+                                        @if (firstFutureShowtime != null)
+                                        {
+                                            <span><i class="fa-regular fa-clock"></i>@firstFutureShowtime.StartTime.ToString("HH:mm", CultureInfo.InvariantCulture)</span>
+                                        }
+                                    </div>
+                                    @if (IsUpcoming(movie, today))
+                                    {
+                                        <a class="movie-card__button movie-card__button--outline" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">Chi tiết</a>
+                                    }
+                                    else
+                                    {
+                                        <form asp-controller="Booking" asp-action="SelectShowtime" method="get">
+                                            <input type="hidden" name="movieId" value="@movie.MovieId" />
+                                            @if (firstFutureShowtime != null)
+                                            {
+                                                <input type="hidden" name="showtimeId" value="@firstFutureShowtime.ShowtimeID" />
+                                            }
+                                            <button type="submit" class="movie-card__button">Đặt vé</button>
+                                        </form>
+                                    }
+                                </div>
+                            </article>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="movie-list-modal__empty">
+                        <i class="fa-regular fa-calendar-xmark" aria-hidden="true"></i>
+                        <h3>Chưa có phim đang chiếu</h3>
+                        <p>Lịch chiếu sẽ được cập nhật khi có dữ liệu mới từ hệ thống.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="movie-list-modal" id="comingSoonModal" aria-hidden="true">
+        <div class="movie-list-modal__panel" role="dialog" aria-modal="true" aria-labelledby="comingSoonModalTitle">
+            <div class="movie-list-modal__header">
+                <div>
+                    <span class="movie-eyebrow movie-eyebrow--upcoming">COSMOS Cinema</span>
+                    <h2 id="comingSoonModalTitle">Phim sắp chiếu</h2>
+                    <p>Có @allComingSoon.Count phim sắp được khởi chiếu tại rạp.</p>
+                </div>
+                <button type="button" class="movie-list-modal__close" data-movie-list-close aria-label="Đóng danh sách phim sắp chiếu">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <div class="movie-list-modal__body">
+                @if (allComingSoon.Any())
+                {
+                    <div class="movie-list-modal__grid">
+                        @foreach (var movie in allComingSoon)
+                        {
+                            <article class="movie-card movie-card--coming movie-card--modal" data-title="@Safe(movie.Title, string.Empty).ToLowerInvariant()" data-genres="@GenreData(movie)">
+                                <a class="movie-card__poster" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">
+                                    <img src="@Poster(movie)" alt="@Safe(movie.Title, "Movie") poster" loading="lazy" />
+                                </a>
+                                <div class="movie-card__body">
+                                    <span class="movie-date-badge"><i class="fa-regular fa-calendar"></i>@DateLabel(movie.ReleaseDate)</span>
+                                    <a class="movie-card__title" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">@Safe(movie.Title, "Untitled movie")</a>
+                                    <p>@Safe(movie.Genre, "Coming soon")</p>
+                                    <a class="movie-card__button movie-card__button--outline" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">Chi tiết</a>
+                                </div>
+                            </article>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="movie-list-modal__empty">
+                        <i class="fa-regular fa-calendar-xmark" aria-hidden="true"></i>
+                        <h3>Chưa có phim sắp chiếu</h3>
+                        <p>Các phim mới sẽ xuất hiện tại đây khi có ngày khởi chiếu trong hệ thống.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="trailer-modal" id="trailerModal" aria-hidden="true">
+        <div class="trailer-modal__content" role="dialog" aria-modal="true" aria-label="Trailer phim">
+            <button type="button" class="trailer-modal__close" data-trailer-close aria-label="Đóng trailer">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </button>
+            <iframe id="trailerIframe"
+                    title="Trailer phim"
+                    src=""
+                    allowfullscreen
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+            </iframe>
+        </div>
+    </div>
 </div>
 
 @section Scripts {
     <script>
+        (() => {
+            let activeTrigger = null;
+
+            const openModal = (modal, trigger, event) => {
+                event?.preventDefault();
+                activeTrigger = trigger;
+
+                modal.classList.add('active');
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+                modal.querySelector('[data-movie-list-close]')?.focus();
+            };
+
+            const closeModal = (modal) => {
+                if (!modal?.classList.contains('active')) {
+                    return;
+                }
+
+                modal.classList.remove('active');
+                modal.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+                activeTrigger?.focus();
+                activeTrigger = null;
+            };
+
+            document.querySelectorAll('[data-movie-list-open]').forEach((trigger) => {
+                trigger.addEventListener('click', (event) => {
+                    const targetId = trigger.dataset.movieListTarget;
+                    const modal = targetId ? document.getElementById(targetId) : null;
+
+                    if (modal) {
+                        openModal(modal, trigger, event);
+                    }
+                });
+            });
+
+            document.querySelectorAll('.movie-list-modal').forEach((modal) => {
+                modal.querySelectorAll('[data-movie-list-close]').forEach((button) => {
+                    button.addEventListener('click', () => closeModal(modal));
+                });
+
+                modal.addEventListener('click', (event) => {
+                    if (event.target === modal) {
+                        closeModal(modal);
+                    }
+                });
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    document.querySelectorAll('.movie-list-modal.active').forEach((modal) => closeModal(modal));
+                }
+            });
+        })();
+
+        function getEmbedUrl(url) {
+            if (!url) return '';
+
+            let match = url.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
+            if (match) return 'https://www.youtube.com/embed/' + match[1] + '?autoplay=1';
+
+            match = url.match(/[?&]v=([a-zA-Z0-9_-]+)/);
+            if (match) return 'https://www.youtube.com/embed/' + match[1] + '?autoplay=1';
+
+            match = url.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/);
+            if (match) return 'https://www.youtube.com/embed/' + match[1] + '?autoplay=1';
+
+            return url;
+        }
+
+        function openTrailer(trailerUrl) {
+            const modal = document.getElementById('trailerModal');
+            const iframe = document.getElementById('trailerIframe');
+
+            if (!trailerUrl || !modal || !iframe) {
+                return;
+            }
+
+            iframe.src = getEmbedUrl(trailerUrl);
+            modal.classList.add('active');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeTrailer() {
+            const modal = document.getElementById('trailerModal');
+            const iframe = document.getElementById('trailerIframe');
+
+            if (!modal || !iframe) {
+                return;
+            }
+
+            iframe.src = '';
+            modal.classList.remove('active');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+        }
+
+        (() => {
+            const modal = document.getElementById('trailerModal');
+
+            document.querySelectorAll('[data-trailer-trigger]').forEach((button) => {
+                button.addEventListener('click', () => openTrailer(button.dataset.trailerUrl));
+            });
+
+            document.querySelectorAll('[data-trailer-close]').forEach((button) => {
+                button.addEventListener('click', closeTrailer);
+            });
+
+            modal?.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    closeTrailer();
+                }
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    closeTrailer();
+                }
+            });
+        })();
+
         (() => {
             const slides = Array.from(document.querySelectorAll('.movie-hero__slide'));
             const dots = Array.from(document.querySelectorAll('[data-hero-dot]'));
@@ -329,6 +629,72 @@
             if (slides.length > 1) {
                 window.setInterval(() => showSlide(current + 1), 7000);
             }
+        })();
+
+        (() => {
+            const carousel = document.querySelector('[data-ranking-carousel]');
+            if (!carousel) return;
+
+            const rows = Array.from(carousel.querySelectorAll('[data-rank-row]'));
+            const features = Array.from(carousel.querySelectorAll('[data-rank-feature]'));
+            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+            let current = 0;
+            let timer = null;
+
+            if (rows.length <= 1 || features.length <= 1) return;
+
+            const showRank = (index) => {
+                current = (index + rows.length) % rows.length;
+
+                rows.forEach((row, rowIndex) => {
+                    const isActive = rowIndex === current;
+                    row.classList.toggle('is-active', isActive);
+                    row.setAttribute('aria-current', isActive ? 'true' : 'false');
+                });
+
+                features.forEach((feature, featureIndex) => {
+                    const isActive = featureIndex === current;
+                    feature.classList.toggle('is-active', isActive);
+                    feature.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+                });
+            };
+
+            const stop = () => {
+                if (timer) {
+                    window.clearInterval(timer);
+                    timer = null;
+                }
+            };
+
+            const start = () => {
+                if (reduceMotion.matches) return;
+                stop();
+                timer = window.setInterval(() => showRank(current + 1), 3000);
+            };
+
+            rows.forEach((row, rowIndex) => {
+                row.addEventListener('mouseenter', () => {
+                    stop();
+                    showRank(rowIndex);
+                });
+                row.addEventListener('focus', () => {
+                    stop();
+                    showRank(rowIndex);
+                });
+            });
+
+            carousel.addEventListener('mouseleave', start);
+            carousel.addEventListener('focusout', (event) => {
+                if (!carousel.contains(event.relatedTarget)) {
+                    start();
+                }
+            });
+            document.addEventListener('visibilitychange', () => {
+                document.hidden ? stop() : start();
+            });
+
+            showRank(0);
+            start();
         })();
 
         (() => {
@@ -433,6 +799,70 @@
         return movie.Duration > 0 ? $"{movie.Duration} min" : "Runtime TBA";
     }
 
+    private static bool IsUpcoming(MovieViewModel movie, DateTime today)
+    {
+        return movie.ReleaseDate.Date > today;
+    }
+
+    private static string HeroStatusLabel(MovieViewModel movie, DateTime today)
+    {
+        if (movie.ReleaseDate.Date > today)
+        {
+            return "Sắp chiếu tại COSMOS";
+        }
+
+        var hasTodayShowtime = movie.Showtimes?.Any(showtime => showtime.Date.Date == today) == true;
+        if (hasTodayShowtime)
+        {
+            return "Đang chiếu hôm nay tại COSMOS";
+        }
+
+        var hasFutureShowtime = movie.Showtimes?.Any(showtime => showtime.Date.Date > today) == true;
+        if (hasFutureShowtime)
+        {
+            return "Có lịch chiếu tại COSMOS";
+        }
+
+        return "Đang chiếu tại COSMOS";
+    }
+
+    private static string HeroStatusClass(MovieViewModel movie, DateTime today)
+    {
+        if (movie.ReleaseDate.Date > today)
+        {
+            return "movie-eyebrow--upcoming";
+        }
+
+        return movie.Showtimes?.Any(showtime => showtime.Date.Date == today) == true
+            ? "movie-eyebrow--live"
+            : string.Empty;
+    }
+
+    private static string HeroDateLabel(MovieViewModel movie, DateTime today)
+    {
+        if (movie.ReleaseDate.Date > today)
+        {
+            return $"Khởi chiếu {movie.ReleaseDate:dd/MM/yyyy}";
+        }
+
+        var nextShowtime = movie.Showtimes?
+            .Where(showtime => showtime.Date.Date >= today)
+            .OrderBy(showtime => showtime.Date)
+            .ThenBy(showtime => showtime.StartTime)
+            .FirstOrDefault();
+
+        if (nextShowtime == null)
+        {
+            return movie.ReleaseDate == default
+                ? "Lịch chiếu đang cập nhật"
+                : $"Khởi chiếu {movie.ReleaseDate:dd/MM/yyyy}";
+        }
+
+        return nextShowtime.Date.Date == today
+            ? $"Suất gần nhất {nextShowtime.StartTime:HH:mm}"
+            : $"Suất tiếp theo {nextShowtime.Date:dd/MM/yyyy}";
+    }
+
     private static string MovieMeta(MovieViewModel movie)
     {
         var parts = new List<string>();
@@ -515,15 +945,25 @@
         return builder.ToString().Normalize(NormalizationForm.FormC).Replace('đ', 'd').Replace('Đ', 'D');
     }
 
-    private static decimal CosmosScore(MovieViewModel movie)
+    private static string ReviewScoreLabel(MovieViewModel movie)
     {
-        if (movie == null)
-        {
-            return 8.6m;
-        }
+        return movie.ReviewCount > 0
+            ? $"{movie.AverageRating.ToString("0.#", CultureInfo.InvariantCulture)} ({movie.ReviewCount})"
+            : "Chưa có";
+    }
 
-        var seed = Math.Abs((movie.MovieId * 13) + movie.Duration);
-        return Math.Round(8.4m + (seed % 13) / 10m, 1);
+    private static string ReviewAverageLabel(MovieViewModel movie)
+    {
+        return movie.ReviewCount > 0
+            ? movie.AverageRating.ToString("0.#", CultureInfo.InvariantCulture)
+            : "0.0";
+    }
+
+    private static string ReviewCountLabel(MovieViewModel movie)
+    {
+        return movie.ReviewCount > 0
+            ? $"({movie.ReviewCount})"
+            : "(0)";
     }
 
     private static string DateLabel(DateTime date)

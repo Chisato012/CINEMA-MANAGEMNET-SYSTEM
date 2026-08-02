@@ -26,6 +26,18 @@ public class MovieViewModel
     [NotMapped]
     public string MovieDirector { get; set; }
 
+    [NotMapped]
+    public decimal AverageRating { get; set; }
+
+    [NotMapped]
+    public int ReviewCount { get; set; }
+
+    [NotMapped]
+    public MovieReviewSummaryViewModel ReviewSummary { get; set; } = new();
+
+    [NotMapped]
+    public List<MovieReviewViewModel> Reviews { get; set; } = new();
+
     //Thuộc tính lịch chiếu
     public ICollection<Showtimes> Showtimes { get; set; }
 

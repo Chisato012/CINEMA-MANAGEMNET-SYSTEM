@@ -391,38 +391,57 @@ h3 {
 /* Step 1 */
 .movie-hero {
     overflow: hidden;
+    background: #1f1d1b;
 }
 
 .movie-art {
-    min-height: 245px;
+    min-height: 310px;
     position: relative;
-    background:
-        linear-gradient(180deg, rgba(18, 18, 18, 0) 20%, #211f1e 100%),
-        radial-gradient(ellipse at 65% 8%, #f1c276 0, #b16935 18%, transparent 43%),
-        linear-gradient(155deg, transparent 35%, #2a160b 36% 52%, transparent 53%),
-        linear-gradient(205deg, transparent 38%, #6b351a 39% 53%, #1c110c 54%);
+    overflow: hidden;
+    border-bottom: 1px solid rgba(212, 163, 115, .18);
+    background: #181412;
 }
 
-.movie-art img {
-    width: 100%;
-    height: 360px;
-    display: block;
-    object-fit: cover;
-    object-position: center 22%;
+.movie-art::before {
+    content: "";
+    position: absolute;
+    inset: -24px;
+    background:
+        linear-gradient(90deg, rgba(18, 18, 18, .34), rgba(18, 18, 18, .04) 46%, rgba(18, 18, 18, .58)),
+        var(--booking-poster) center 26% / cover no-repeat;
+    filter: blur(12px) saturate(1.16);
+    transform: scale(1.08);
 }
 
 .movie-art::after {
     content: "";
     position: absolute;
     inset: 0;
-    background: repeating-linear-gradient(173deg, transparent 0 26px, rgba(255, 201, 143, .09) 27px 29px);
-    mix-blend-mode: screen;
+    background:
+        linear-gradient(180deg, rgba(18, 18, 18, .08) 0%, rgba(18, 18, 18, .16) 52%, #1f1d1b 100%),
+        linear-gradient(90deg, rgba(18, 18, 18, .2), transparent 44%, rgba(18, 18, 18, .5));
+}
+
+.movie-art__poster {
+    position: absolute;
+    left: 38px;
+    bottom: 0;
+    z-index: 1;
+    width: clamp(132px, 18vw, 180px);
+    aspect-ratio: 2 / 3;
+    height: auto;
+    display: block;
+    object-fit: cover;
+    border: 1px solid rgba(244, 187, 146, .34);
+    border-bottom: 0;
+    border-radius: 7px 7px 0 0;
+    box-shadow: 0 22px 42px rgba(8, 7, 6, .48);
 }
 
 .movie-copy {
     position: relative;
-    margin-top: -90px;
-    padding: 0 38px 38px;
+    margin-top: 0;
+    padding: 26px 38px 38px;
     z-index: 2;
 }
 
