@@ -15,12 +15,10 @@ public class HomeController : Controller
 {
 
     private readonly ApplicationDbContext _context;
-    private readonly IOfferService _offerService;
 
-    public HomeController(ApplicationDbContext context, IOfferService offerService)
+    public HomeController(ApplicationDbContext context)
     {
         _context = context;
-        _offerService = offerService;
     }
 
     public IActionResult Index()
@@ -194,52 +192,9 @@ public class HomeController : Controller
         return RedirectToAction(nameof(Details), new { id = movieId });
     }
 
-    public IActionResult Offers()
-    {
-        var today = DateTime.Today;
-        var offers = _offerService.GetOffers(today);
+    
 
-        var model = new OffersPageViewModel
-        {
-            Offers = offers,
-            FeaturedOffers = offers
-                .Where(offer => offer.IsFeatured && offer.Status == "active")
-                .Take(4)
-                .ToList(),
-            ExpiringSoonOffers = offers
-                .Where(offer => offer.IsExpiringSoon)
-                .OrderBy(offer => offer.EndDate)
-                .ToList(),
-            QuickBookingMovies = BuildQuickBookingMovies(today)
-        };
-
-        return View(model);
-    }
-
-    [HttpGet]
-    public IActionResult ValidateOfferCode(string? code)
-    {
-        var result = _offerService.ValidateCode(code, DateTime.Today);
-
-        return Json(new
-        {
-            result.IsValid,
-            result.Status,
-            result.Message,
-            Offer = result.Offer == null
-                ? null
-                : new
-                {
-                    result.Offer.Id,
-                    result.Offer.Title,
-                    result.Offer.Code,
-                    result.Offer.DisplayValue,
-                    result.Offer.ValidityLabel,
-                    result.Offer.Summary
-                }
-        });
-    }
-
+   
     private IQueryable<MovieViewModel> BuildMovieQuery()
     {
         return _context.Movies

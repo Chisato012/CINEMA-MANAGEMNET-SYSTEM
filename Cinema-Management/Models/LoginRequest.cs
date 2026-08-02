@@ -11,7 +11,5 @@ public class LoginRequest
     [Required(ErrorMessage = "Mật khẩu không được để trống")]
     public string Password { get; set; } = string.Empty;
 
-    public string CaptchaToken { get; set; } = string.Empty;
-
     public bool RememberMe { get; set; }
 }
