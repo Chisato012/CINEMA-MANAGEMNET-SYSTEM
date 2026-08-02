@@ -354,10 +354,6 @@ public class AccountController : Controller
     {
 
         ModelState.Remove(nameof(model.Role));
-        if (!ModelState.IsValid)
-        {
-            return View(model);
-        }
         var UserID = HttpContext.Session.GetInt32("UserID");
         if (UserID == null)
         {
@@ -369,6 +365,21 @@ public class AccountController : Controller
         if (user == null)
         {
             return NotFound();
+        }
+
+        if (model.DOB > DateTime.Now)
+        {
+            ModelState.AddModelError(nameof(model.DOB), "Ngày sinh không hợp lệ.");
+        }
+        if (model.FullName == null || model.FullName.Trim().Length > 50)
+        {
+            ModelState.AddModelError(nameof(model.FullName), "Họ và tên không được vượt quá 50 ký tự và để trống");
+        }
+
+        if (model.PhoneNumber == null)
+        {
+            ModelState.AddModelError(nameof(model.PhoneNumber), "Số điện thoại k được để trống");
+
         }
 
         var fullName = model.FullName?.Trim() ?? string.Empty;
