@@ -361,21 +361,18 @@ var renderStaticRooms = false;
             </p>
 
             <div class="schedule-modal-summary">
-                <span>Selected movie</span>
-                <strong id="scheduleMovieTitle">
-                    No movie selected
-                </strong>
+                <span>PHIM ĐÃ CHỌN</span>
+                <strong id="scheduleMovieTitle">No movie selected</strong>
                 <small id="scheduleMovieDuration">0 min</small>
             </div>
 
             <div class="form-group">
                 <label for="scheduleStartTime">Thời gian bắt đầu</label>
-                <input type="time" id="scheduleStartTime" min="08:00" max="23:00" step="60" required/>
-                <small class="schedule-helper">Suất chiếu phải bắt đầu và kết thúc trong khung giờ 08:00–23:00.</small>
+                <input type="time" id="scheduleStartTime" min="08:00" max="23:45" step="900" required />
             </div>
-
+            
             <div class="form-group">
-                <label>CÁC PHÒNG CHIẾU</label>
+                <label>TẤT CẢ PHÒNG CHIẾU</label>
                 <div class="schedule-room-tools">
                     <button type="button" class="schedule-room-tool" id="selectAllRooms">CHỌN TẤT CẢ</button>
                     <button type="button" class="schedule-room-tool" id="clearAllRooms">XOÁ</button>
@@ -404,38 +401,40 @@ var renderStaticRooms = false;
 </div>
 
 @section Scripts {
-<script>
-    const editorModal = document.getElementById('movieEditorModal');
-    const createModal = document.getElementById('movieCreateModal');
-    const scheduleModal = document.getElementById('movieScheduleModal');
-    const scheduleMovieForm = document.getElementById('movieScheduleForm');
-    const scheduleMovieTitle = document.getElementById('scheduleMovieTitle');
-    const scheduleMovieDuration = document.getElementById('scheduleMovieDuration');
-    const scheduleStartTimeInput = document.getElementById('scheduleStartTime');
-    const scheduleFormError = document.getElementById('scheduleFormError');
-    const selectAllRoomsButton = document.getElementById('selectAllRooms');
-    const clearAllRoomsButton = document.getElementById('clearAllRooms');
-    const btnAddMovie = document.getElementById('btnAddMovie');
-    const scheduleDateInput = document.getElementById('scheduleDate');
-    const btnSaveSchedule = document.getElementById('btnSaveSchedule');
-    const movieSearchInput = document.getElementById('movieSearchInput');
-    const movieSearchEmpty = document.getElementById('movieSearchEmpty');
-    const scheduleStartHour = 8;
-    const scheduleEndHour = 23;
-    const scheduleTotalMinutes = (scheduleEndHour - scheduleStartHour) * 60;
-    const scheduleSnapMinutes = 1;
-    const scheduleDefaultBasePrice = 90000;
+    <script>
+        const editorModal = document.getElementById('movieEditorModal');
+        const createModal = document.getElementById('movieCreateModal');
+        const scheduleModal = document.getElementById('movieScheduleModal');
+        const scheduleMovieForm = document.getElementById('movieScheduleForm');
+        const scheduleMovieTitle = document.getElementById('scheduleMovieTitle');
+        const scheduleMovieDuration = document.getElementById('scheduleMovieDuration');
+        const scheduleStartTimeInput = document.getElementById('scheduleStartTime');
+        let scheduleEndTimeInput = document.getElementById('scheduleEndTime');
+        const scheduleFormError = document.getElementById('scheduleFormError');
+        const selectAllRoomsButton = document.getElementById('selectAllRooms');
+        const clearAllRoomsButton = document.getElementById('clearAllRooms');
+        const btnAddMovie = document.getElementById('btnAddMovie');
+        const scheduleDateInput = document.getElementById('scheduleDate');
+        const btnSaveSchedule = document.getElementById('btnSaveSchedule');
+        const movieSearchInput = document.getElementById('movieSearchInput');
+        const movieSearchEmpty = document.getElementById('movieSearchEmpty');
+        const scheduleStartHour = 8;
+        const scheduleEndHour = 24;
+        const scheduleTotalMinutes = (scheduleEndHour - scheduleStartHour) * 60;
+        const scheduleSnapMinutes = 15;
+        const scheduleDefaultBasePrice = 90000;
+        
+        const closeBtns = document.querySelectorAll('.btn-close-modal');
+        const editBtns = document.querySelectorAll('.edit-movie-btn');
+        const scheduleMovieBtns = document.querySelectorAll('.schedule-movie-btn');
+        const scheduleRoomInputs = Array.from(document.querySelectorAll('input[name="scheduleRoom"]'));
+        const telemetryText = document.querySelector('.telemetry p');
+        let selectedScheduleMovie = null;
 
-    const closeBtns = document.querySelectorAll('.btn-close-modal');
-    const editBtns = document.querySelectorAll('.edit-movie-btn');
-    const scheduleMovieBtns = document.querySelectorAll('.schedule-movie-btn');
-    const scheduleRoomInputs = Array.from(document.querySelectorAll('input[name="scheduleRoom"]'));
-    const telemetryText = document.querySelector('.telemetry p');
-    let selectedScheduleMovie = null;
-
-    function setTelemetry(message) {
-        if (telemetryText) {
-            telemetryText.textContent = `TELEMETRY LOGS: ${message}`;
+        function setTelemetry(message) {
+            if (telemetryText) {
+                telemetryText.textContent = `TELEMETRY LOGS: ${message}`;
+            }
         }
     }
 
@@ -478,8 +477,27 @@ var renderStaticRooms = false;
             movieSearchEmpty.hidden = visibleCount > 0;
         }
 
-        if (keyword) {
-            setTelemetry(`Tim thay ${visibleCount} phim phu hop.`);
+        function getMoviePayloadById(movieId, fallbackBlock = null) {
+            const item = document.querySelector(`.movie-list-item[data-movie-id="${movieId}"]`);
+            if (item) {
+                return getMoviePayload(item);
+            }
+
+            return {
+                movieId: Number(movieId),
+                title: fallbackBlock?.querySelector('.schedule-block-title')?.textContent || 'Selected movie',
+                duration: Number(fallbackBlock?.dataset.duration || scheduleSnapMinutes)
+            };
+        }
+
+        function normalizeText(value) {
+            return (value || '')
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/đ/g, 'd')
+                .replace(/\s+/g, ' ')
+                .trim();
         }
     }
 
@@ -622,12 +640,38 @@ var renderStaticRooms = false;
         scheduleFormError.textContent = message || '';
         scheduleFormError.hidden = !message;
 
-        if (message) {
-            requestAnimationFrame(() => {
-                scheduleFormError.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
+        function createScheduleBlock({ showtimeId, movieId, title, duration, startMinutes, basePrice }) {
+            const block = document.createElement('div');
+            const safeDuration = Math.max(duration || scheduleSnapMinutes, scheduleSnapMinutes);
+            const safeStart = clampStart(startMinutes, safeDuration);
+
+            block.className = 'schedule-block';
+            block.dataset.showtimeId = showtimeId || '';
+            block.dataset.movieId = movieId;
+            block.dataset.title = title;
+            block.dataset.duration = safeDuration;
+            block.dataset.startTime = minutesToTime(safeStart);
+            block.dataset.endTime = minutesToTime(safeStart + safeDuration);
+            block.dataset.basePrice = basePrice || scheduleDefaultBasePrice;
+            block.style.left = `${(safeStart / scheduleTotalMinutes) * 100}%`;
+            block.style.width = `${(safeDuration / scheduleTotalMinutes) * 100}%`;
+            block.innerHTML = `
+                <button type="button" class="schedule-block-remove" title="Xoa lich">&times;</button>
+                <span class="schedule-block-title"></span>
+                <span class="schedule-block-time"></span>
+            `;
+            block.querySelector('.schedule-block-title').textContent = title;
+            block.querySelector('.schedule-block-time').textContent = `${block.dataset.startTime} - ${block.dataset.endTime}`;
+            block.querySelector('.schedule-block-remove').addEventListener('click', event => {
+                event.stopPropagation();
+                block.remove();
+                syncScheduleRoomStateForSelectedTime();
+            });
+            block.addEventListener('click', () => {
+                openScheduleModal(getMoviePayloadById(movieId, block), block.dataset.startTime);
+            });
+            return block;
+        }
 
                 scheduleFormError.focus({
                     preventScroll: true
@@ -680,31 +724,158 @@ var renderStaticRooms = false;
             return null;
         }
 
-        const rawMinutes = timeToMinutes(timeValue);
-        if (!Number.isFinite(rawMinutes)) {
-            return null;
+        function getRoomLabel(timeline, fallbackId) {
+            return timeline?.dataset.roomName || `Room ${fallbackId}`;
         }
 
-        if (rawMinutes < 0 || rawMinutes + duration > scheduleTotalMinutes) {
-            return null;
+        function getTimelineForRoomId(roomId) {
+            return document.querySelector(`.mr-timeline[data-room-id="${roomId}"], .mr-timeline[data-hall-number="${roomId}"]`);
         }
 
-        return rawMinutes;
-    }
+        function findMovieBlockAtStart(timeline, movieId, startMinutes) {
+            if (!timeline || !Number.isInteger(startMinutes)) {
+                return null;
+            }
 
-    function addMovieToSelectedRooms(event) {
-        event.preventDefault();
+            return Array.from(timeline.querySelectorAll('.schedule-block')).find(block =>
+                Number(block.dataset.movieId) === Number(movieId) &&
+                timeToMinutes(block.dataset.startTime) === startMinutes
+            ) || null;
+        }
+
+        function getScheduleRooms() {
+            return scheduleRoomInputs
+                .map(input => ({
+                    input,
+                    option: input.closest('.schedule-room-option'),
+                    roomId: Number(input.value),
+                    roomName: input.dataset.roomName || `Room ${input.value}`,
+                    timeline: getTimelineForRoomId(input.value)
+                }))
+                .filter(room => Number.isInteger(room.roomId) && room.roomId > 0 && room.timeline);
+        }
+
+        function syncScheduleRoomStateForSelectedTime() {
+            if (!selectedScheduleMovie || !scheduleStartTimeInput) {
+                return;
+            }
+
+            const duration = getSelectedScheduleDuration();
+            const startMinutes = normalizeScheduleStartMinutes(scheduleStartTimeInput.value, duration);
+            if (startMinutes === null) {
+                scheduleRoomInputs.forEach(input => {
+                    input.checked = false;
+                    input.disabled = false;
+                    input.closest('.schedule-room-option')?.classList.remove('is-pending', 'is-scheduled', 'is-conflict');
+                });
+                return;
+            }
+
+            const endMinutes = startMinutes + duration;
+            getScheduleRooms().forEach(room => {
+                const existingBlock = findMovieBlockAtStart(room.timeline, selectedScheduleMovie.movieId, startMinutes);
+                const conflictingBlock = Array.from(room.timeline.querySelectorAll('.schedule-block')).find(block => {
+                    if (block === existingBlock) {
+                        return false;
+                    }
+
+                    const blockStart = timeToMinutes(block.dataset.startTime);
+                    const blockEnd = timeToMinutes(block.dataset.endTime);
+                    return startMinutes < blockEnd && endMinutes > blockStart;
+                });
+
+                room.input.checked = Boolean(existingBlock);
+                room.input.disabled = Boolean(conflictingBlock && !existingBlock);
+                room.option?.classList.toggle('is-pending', Boolean(existingBlock));
+                room.option?.classList.toggle('is-scheduled', Boolean(existingBlock));
+                room.option?.classList.toggle('is-conflict', Boolean(conflictingBlock && !existingBlock));
+            });
+        }
+
+        function setScheduleFormError(message) {
+            if (!scheduleFormError) {
+                return;
+            }
+
+            scheduleFormError.textContent = message || '';
+            scheduleFormError.hidden = !message;
+        }
+
+        function ensureScheduleEndTimeField() {
+            if (!scheduleStartTimeInput || scheduleEndTimeInput) {
+                return;
+            }
+
+            const timeGroup = scheduleStartTimeInput.closest('.form-group');
+            if (!timeGroup) {
+                return;
+            }
+
+            const label = document.createElement('label');
+            label.htmlFor = 'scheduleEndTime';
+            label.className = 'schedule-end-label';
+            label.textContent = 'THỜI GIAN KẾT THÚC';
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.id = 'scheduleEndTime';
+            input.readOnly = true;
+            input.value = '--:--';
+
+            const helper = document.createElement('small');
+            helper.className = 'schedule-helper schedule-end-helper';
+
+            timeGroup.appendChild(label);
+            timeGroup.appendChild(input);
+            timeGroup.appendChild(helper);
+            scheduleEndTimeInput = input;
+        }
+
+        function getSelectedScheduleDuration() {
+            return Math.max(selectedScheduleMovie?.duration || scheduleSnapMinutes, scheduleSnapMinutes);
+        }
+
+        function updateScheduleEndTime() {
+            if (!scheduleEndTimeInput || !scheduleStartTimeInput) {
+                return;
+            }
+
+            const duration = getSelectedScheduleDuration();
+            const startMinutes = normalizeScheduleStartMinutes(scheduleStartTimeInput.value, duration);
+            scheduleEndTimeInput.value = startMinutes === null
+                ? '--:--'
+                : minutesToTime(startMinutes + duration);
+        }
+
+        function closeScheduleModal() {
+            scheduleModal?.classList.remove('show');
+            setScheduleFormError('');
+        }
+
+        function openScheduleModal(movie, startTime = '08:00') {
+            selectedScheduleMovie = movie;
+            if (scheduleMovieTitle) {
+                scheduleMovieTitle.textContent = movie.title;
+            }
+
+            if (scheduleMovieDuration) {
+                scheduleMovieDuration.textContent = `${movie.duration || scheduleSnapMinutes} min`;
+            }
+
+            if (scheduleStartTimeInput) {
+                scheduleStartTimeInput.value = startTime;
+            }
+
+            updateScheduleEndTime();
+            syncScheduleRoomStateForSelectedTime();
 
         if (!selectedScheduleMovie) {
             setScheduleFormError('Choose a movie before adding a schedule.');
             return;
         }
 
-        const duration = Math.max(selectedScheduleMovie.duration || scheduleSnapMinutes, scheduleSnapMinutes);
-        const startMinutes = normalizeScheduleStartMinutes(scheduleStartTimeInput?.value, duration);
-        if (startMinutes === null) {
-            setScheduleFormError('Suất chiếu phải nằm trong khung giờ từ 08:00 đến 23:00.');
-            return;
+        function getSelectedScheduleRooms() {
+            return getScheduleRooms().filter(room => room.input.checked && !room.input.disabled);
         }
 
         const rooms = getSelectedScheduleRooms();
@@ -735,27 +906,60 @@ var renderStaticRooms = false;
             addScheduleBlock(room.timeline, selectedScheduleMovie, startMinutes);
         });
 
-        setTelemetry(`Added "${selectedScheduleMovie.title}" at ${minutesToTime(startMinutes)} to ${rooms.length} room(s).`);
-        closeScheduleModal();
-    }
+            const endMinutes = startMinutes + duration;
+            const selectedRoomIds = new Set(getSelectedScheduleRooms().map(room => room.roomId));
+            const rooms = getScheduleRooms();
+            const additions = [];
+            const removals = [];
+            const conflicts = [];
 
-    movieSearchInput?.addEventListener('input', filterMoviesByName);
-    filterMoviesByName();
+            rooms.forEach(room => {
+                const existingBlock = findMovieBlockAtStart(room.timeline, selectedScheduleMovie.movieId, startMinutes);
+                const shouldSchedule = selectedRoomIds.has(room.roomId);
 
-    async function loadSchedule() {
-        document.querySelectorAll('.schedule-block').forEach(block => block.remove());
+                if (shouldSchedule && !existingBlock) {
+                    if (timelineHasOverlap(room.timeline, startMinutes, endMinutes)) {
+                        conflicts.push(room);
+                    } else {
+                        additions.push(room);
+                    }
+                }
 
-        const response = await fetch(`/Staff/GetSchedule?date=${encodeURIComponent(scheduleDateInput.value)}`);
-        if (!response.ok) {
-            setTelemetry('Khong tai duoc lich chieu.');
-            return;
+                if (!shouldSchedule && existingBlock) {
+                    removals.push(existingBlock);
+                }
+            });
+
+            if (selectedRoomIds.size === 0 && removals.length === 0) {
+                setScheduleFormError('Select at least one screening room, or uncheck an existing room to remove it.');
+                return;
+            }
+
+            if (conflicts.length > 0) {
+                setScheduleFormError(`Schedule overlaps in ${conflicts.map(room => getRoomLabel(room.timeline, room.roomId)).join(', ')}.`);
+                return;
+            }
+
+            removals.forEach(block => block.remove());
+            additions.forEach(room => {
+                addScheduleBlock(room.timeline, selectedScheduleMovie, startMinutes);
+            });
+
+            setTelemetry(`Updated "${selectedScheduleMovie.title}" at ${minutesToTime(startMinutes)}: added ${additions.length}, removed ${removals.length}.`);
+            closeScheduleModal();
         }
 
-        const showtimes = await response.json();
-        showtimes.forEach(showtime => {
-            const roomId = showtime.roomId || showtime.roomID || showtime.hallNumber;
-            const timeline = document.querySelector(`.mr-timeline[data-room-id="${roomId}"], .mr-timeline[data-hall-number="${roomId}"]`);
-            if (!timeline) {
+        movieSearchInput?.addEventListener('input', filterMoviesByName);
+        filterMoviesByName();
+        ensureScheduleEndTimeField();
+        updateScheduleEndTime();
+
+        async function loadSchedule() {
+            document.querySelectorAll('.schedule-block').forEach(block => block.remove());
+
+            const response = await fetch(`/Staff/GetSchedule?date=${encodeURIComponent(scheduleDateInput.value)}`);
+            if (!response.ok) {
+                setTelemetry('Khong tai duoc lich chieu.');
                 return;
             }
 
@@ -771,10 +975,9 @@ var renderStaticRooms = false;
         setTelemetry(`Da tai ${showtimes.length} suat chieu.`);
     }
 
-    function buildScheduleDateTime(time) {
-        const [hours, minutes] = time.split(':').map(Number);
-        const value = new Date(`${scheduleDateInput.value}T00:00:00`);
-        value.setMinutes(value.getMinutes() + (hours * 60) + minutes);
+            setTelemetry(`Da tai ${showtimes.length} suat chieu.`);
+            syncScheduleRoomStateForSelectedTime();
+        }
 
         const year = value.getFullYear();
         const month = String(value.getMonth() + 1).padStart(2, '0');
@@ -862,18 +1065,42 @@ var renderStaticRooms = false;
         createModal.classList.add('show');
     });
 
-    scheduleMovieBtns.forEach(btn => {
-        btn.addEventListener('click', event => {
-            const item = event.currentTarget.closest('.movie-list-item');
-            if (!item) {
-                return;
-            }
+        scheduleMovieForm?.addEventListener('submit', addMovieToSelectedRooms);
+        scheduleStartTimeInput?.addEventListener('input', () => {
+            updateScheduleEndTime();
+            syncScheduleRoomStateForSelectedTime();
+            setScheduleFormError('');
+        });
+        scheduleStartTimeInput?.addEventListener('change', () => {
+            updateScheduleEndTime();
+            syncScheduleRoomStateForSelectedTime();
+            setScheduleFormError('');
+        });
 
-            openScheduleModal(getMoviePayload(item));
+        scheduleRoomInputs.forEach(input => {
+            input.addEventListener('change', () => {
+                input.closest('.schedule-room-option')?.classList.toggle('is-pending', input.checked);
+                setScheduleFormError('');
+            });
+        });
+
+        selectAllRoomsButton?.addEventListener('click', () => {
+            scheduleRoomInputs.forEach(input => {
+                if (!input.disabled) {
+                    input.checked = true;
+                    input.closest('.schedule-room-option')?.classList.add('is-pending');
+                }
+            });
+            setScheduleFormError('');
         });
     });
 
-    scheduleMovieForm?.addEventListener('submit', addMovieToSelectedRooms);
+        clearAllRoomsButton?.addEventListener('click', () => {
+            scheduleRoomInputs.forEach(input => {
+                input.checked = false;
+                input.closest('.schedule-room-option')?.classList.remove('is-pending');
+            });
+        });
 
     selectAllRoomsButton?.addEventListener('click', () => {
         scheduleRoomInputs.forEach(input => {
