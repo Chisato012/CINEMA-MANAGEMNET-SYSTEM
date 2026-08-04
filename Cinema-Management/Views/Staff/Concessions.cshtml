@@ -69,7 +69,14 @@
                     </div>
                     <div class="item-info">
                         <div class="item-header">
-                            <h4>@item.ComboName</h4>
+                            <div style="display:flex;flex-direction:column;gap:6px;">
+                                <h4>@item.ComboName</h4>
+
+                                <span style="font-size:13px;color:#999;">
+                                    Số lượng: @item.Quantity
+                                </span>
+                            </div>
+
                             <span class="item-price">@price</span>
                         </div>
                         <div class="concession-actions">
