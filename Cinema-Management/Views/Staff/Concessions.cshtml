@@ -15,7 +15,7 @@
         <h2>QUẢN LÝ ĐỒ ĂN/UỐNG</h2>
         <span class="badge badge-outline">
             <i class="status-dot"></i>
-            ĐANG KẾT NỐI
+            DATABASE CONNECTED
         </span>
     </div>
     <div style="display:flex;gap:12px;">
@@ -52,7 +52,7 @@
         <div class="concessions-grid">
             @if (!Model.Items.Any())
             {
-                <div class="concessions-empty">Chua co mon bap nuoc nao trong database.</div>
+                <div class="concessions-empty">Chưa có món ăn uống nào trong database.</div>
             }
 
             @foreach (var item in Model.Items)

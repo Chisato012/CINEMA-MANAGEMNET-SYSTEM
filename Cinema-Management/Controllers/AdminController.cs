@@ -414,7 +414,7 @@ public class AdminController : Controller
             }
         }
 
-        // FIX: Chuẩn hoá và kiểm tra từng field; không lặp lại cùng một validation hai lần.
+        
         var normalizedFullName = FullName?.Trim() ?? string.Empty;
         var normalizedEmail = Email?.Trim() ?? string.Empty;
 
@@ -447,7 +447,6 @@ public class AdminController : Controller
         {
             ModelState.AddModelError("PhoneNumber", "Số điện thoại không hợp lệ. Vui lòng nhập số điện thoại bắt đầu bằng '0' và có 10 chữ số.");
         }
-        // FIX: Mật khẩu Update là tuỳ chọn, nhưng nếu nhập thì vẫn phải đúng định dạng.
         if (!string.IsNullOrWhiteSpace(PasswordHash) &&
             !Regex.IsMatch(PasswordHash, @"^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$"))
         {
