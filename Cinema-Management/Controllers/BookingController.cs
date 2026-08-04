@@ -219,6 +219,8 @@ public class BookingController : Controller
         var now = DateTime.Now;
         // Truy vấn thông tin các suất chiếu của phim
         var showtimes = _context.Showtimes
+            .AsNoTracking()
+            .Include(s => s.Room)
             .Where(s => s.MovieID == movieId && s.Date >= DateTime.Today && s.StartTime >= now)
             .OrderBy(s => s.Date)
             .ThenBy(s => s.StartTime)
@@ -232,7 +234,7 @@ public class BookingController : Controller
             ShowtimeId = s.ShowtimeID,
             Date = s.Date.ToString("yyyy-MM-dd"),
             Time = s.StartTime.ToString("HH:mm"),
-            Format = "2D" //Giả sử tất cả các suất chiếu đều là 2D, nếu có nhiều định dạng khác nhau thì cần truy vấn từ cơ sở dữ liệu
+            RoomName = s.Room?.RoomName ?? $"Phòng {s.RoomID}"
         }).ToList();
 
         //Các ngày có thể có suất chiếu của phim

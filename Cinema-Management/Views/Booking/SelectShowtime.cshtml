@@ -122,9 +122,9 @@
                                             <label class="choice time-choice @(isSelected ? "selected" : "")">
                                                 <input type="radio" name="ShowtimeId" value="@showtime.ShowtimeId"
                                                        data-date="@showtime.Date" data-time="@showtime.Time"
-                                                       data-format="@showtime.Format" checked="@isSelected" required />
+                                                       data-format="@showtime.RoomName" checked="@isSelected" required />
                                                 <strong>@showtime.Time</strong>
-                                                <span>@showtime.Format</span>
+                                                <span>@showtime.RoomName</span>
                                             </label>
                                         }
                                     </div>

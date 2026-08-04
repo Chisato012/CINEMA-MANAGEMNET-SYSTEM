@@ -116,7 +116,7 @@ public sealed class ShowtimeChoiceViewModel
     public int ShowtimeId { get; set; }
     public string Date { get; set; } = string.Empty;
     public string Time { get; set; } = string.Empty;
-    public string Format { get; set; } = string.Empty;
+    public string RoomName { get; set; } = string.Empty;
 }
 
 public sealed class SelectShowtimeRequest
