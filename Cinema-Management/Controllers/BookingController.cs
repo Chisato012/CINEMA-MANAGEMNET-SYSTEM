@@ -508,14 +508,19 @@ public class BookingController : Controller
             .GroupBy(item => item.ComboId)
             .ToDictionary(group => group.Key, group => group.First().Quantity);
 
-        var concession = _context.Combos.AsNoTracking().OrderBy(c => c.ComboName)
-            .ToList().Select(combo => new ConcessionItemViewModel
+        var concession = _context.Combos
+            .AsNoTracking()
+            .OrderBy(combo => combo.ComboName)
+            .Select(combo => new ConcessionItemViewModel
             {
                 Id = combo.ComboID,                     // Mã combo lấy từ DB.
                 Name = combo.ComboName,                 // Tên combo lấy từ DB.
                 Price = combo.ComboPrice,               // Giá luôn lấy từ DB.
-                SelectedQuantity = savedQuantities      // Khôi phục số lượng nếu đã chọn.
-                    .GetValueOrDefault(combo.ComboID, 0)
+                StockQuantity = Math.Max(0, combo.Quantity), // Số lượng tồn kho lấy từ DB.
+                SelectedQuantity = Math.Clamp(          // Khôi phục số lượng nhưng không vượt tồn kho.
+                    savedQuantities.GetValueOrDefault(combo.ComboID, 0),
+                    0,
+                    Math.Max(0, combo.Quantity))
             }).ToList();
 
         var model = _context.Movies.Where(m => m.MovieId == selectedMovieId.Value)
@@ -1176,6 +1181,32 @@ public class BookingController : Controller
                 return new PaymentCompletionResult(false, null, "Mot hoac nhieu ghe vua duoc nguoi khac dat.");
             }
 
+            // TRỪ TỒN KHO COMBO SAU KHI THANH TOÁN ĐƯỢC XÁC NHẬN:
+            // SelectConcessionsRequest.Items được lưu dưới dạng List<ConcessionRequest> trong PaymentIntent.
+            // BuildBookingDraftAsync map danh sách đó thành draft.ComboQuantities:
+            // key = ConcessionRequest.ComboId, value = ConcessionRequest.Quantity.
+            foreach (var combo in draft.SelectedCombos)
+            {
+                var purchasedQuantity = draft.ComboQuantities[combo.ComboID];
+
+                // Cập nhật trực tiếp trong database kèm điều kiện đủ tồn kho để tránh tồn kho âm
+                // khi có nhiều giao dịch cùng mua một combo tại cùng thời điểm.
+                var updatedRows = await _context.Combos
+                    .Where(item => item.ComboID == combo.ComboID && item.Quantity >= purchasedQuantity)
+                    .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.Quantity, item => item.Quantity - purchasedQuantity));
+
+                if (updatedRows != 1)
+                {
+                    // Nếu bất kỳ combo nào không còn đủ hàng, rollback cả tồn kho đã trừ trước đó
+                    // và không tạo Booking/Payment thành công.
+                    await transaction.RollbackAsync();
+                    return new PaymentCompletionResult(
+                        false,
+                        null,
+                        $"Combo '{combo.ComboName}' không còn đủ số lượng tồn kho.");
+                }
+            }
+
             var paymentMethod = await GetOrCreatePaymentMethodAsync(paymentMethodName);
             var nowUtc = DateTime.UtcNow;
 
@@ -1334,6 +1365,16 @@ public class BookingController : Controller
         if (selectedCombos.Count != selectedComboIds.Count)
         {
             return (null, "Danh sach combo khong hop le.");
+        }
+
+        // Kiểm tra sớm tồn kho khi tạo/đọc lại bản nháp thanh toán.
+        // CompletePaymentIntentAsync vẫn kiểm tra và trừ kho nguyên tử lần cuối để chống mua đồng thời.
+        var insufficientCombo = selectedCombos.FirstOrDefault(combo =>
+            comboQuantities[combo.ComboID] > Math.Max(0, combo.Quantity));
+
+        if (insufficientCombo != null)
+        {
+            return (null, $"Combo '{insufficientCombo.ComboName}' không còn đủ số lượng tồn kho.");
         }
 
         var ticketSubtotal = seatPrices.Values.Sum();

@@ -949,12 +949,29 @@ h3 {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
     margin-top: 14px;
+}
+
+.product-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
 }
 
 .price {
     color: var(--peach);
     font: 600 11px var(--mono);
+}
+
+.stock {
+    color: #aaa099;
+    font: 500 10px var(--mono);
+}
+
+.stock.out-of-stock {
+    color: #d96b6b;
 }
 
 .quantity {
@@ -976,6 +993,11 @@ h3 {
 .quantity button.plus {
     background: var(--primary);
     border-color: var(--primary-light);
+}
+
+.quantity button:disabled {
+    cursor: not-allowed;
+    opacity: .45;
 }
 
 .quantity-value {
@@ -2077,4 +2099,3 @@ h3 {
         height: 88px;
     }
 }
-
