@@ -16,6 +16,9 @@ public class BookingController : Controller
         @"(?<![A-Z0-9])COSMOS(?:\d{20}|[A-F0-9]{26})(?![A-Z0-9])",
         RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly JsonSerializerOptions WebhookJsonOptions = new(JsonSerializerDefaults.Web);
+    private const int SeatHoldMinutes = 10;
+    private const string SeatHoldExpiresAtUtcSessionKey = "SeatHoldExpiresAtUtc";
+    private const string SeatHoldExpiredMessage = "Your booking session has expired. Please select a movie again.";
 
     private readonly ApplicationDbContext _context;
     private readonly IWebHostEnvironment _environment;
@@ -281,6 +284,11 @@ public class BookingController : Controller
         HttpContext.Session.SetString("SelectedFormat", request.Format);
         HttpContext.Session.SetString("SelectedDate", showtime.Date.ToString("yyyy-MM-dd"));
         HttpContext.Session.SetString("SelectedTime", showtime.StartTime.ToString("HH:mm"));
+        HttpContext.Session.Remove("SelectedSeats");
+        HttpContext.Session.Remove("SelectedConcessions");
+        HttpContext.Session.Remove("PaymentReference");
+        HttpContext.Session.Remove("PaymentExpiresAtUtc");
+        HttpContext.Session.Remove(SeatHoldExpiresAtUtcSessionKey);
         if (!string.IsNullOrWhiteSpace(request.OfferCode))
         {
             HttpContext.Session.SetString("SelectedOfferCode", request.OfferCode.Trim().ToUpperInvariant());
@@ -368,8 +376,18 @@ public class BookingController : Controller
         var selectedShowtimeId = HttpContext.Session.GetInt32("SelectedShowtimeId");
         var selectedMovieId = HttpContext.Session.GetInt32("SelectedMovieId");
 
+        if (!selectedShowtimeId.HasValue || !selectedMovieId.HasValue)
+        {
+            return RedirectToAction(nameof(Index));
+        }
+
         //Lấy suất chiếu từ cơ sở dữ liệu dựa trên showtimeId và movieId
         var showtime = _context.Showtimes.Include(s => s.Room).FirstOrDefault(s => s.ShowtimeID == selectedShowtimeId && s.MovieID == selectedMovieId);
+        if (showtime == null)
+        {
+            return NotFound();
+        }
+
         //Lấy danh sách ghế trong phòng chiếu
         var seats = _context.Seats.Where(s => s.RoomID == showtime.RoomID).OrderBy(s => s.SeatCode).ToList();
         //Lấy danh sách ghế đã được đặt trong suất chiếu này
@@ -379,11 +397,17 @@ public class BookingController : Controller
             .ToList();
 
         //Ghế đc chọn
+        selectedSeats ??= [];
         selectedSeats = selectedSeats
         .Where(code => seats.Any(s => s.SeatCode == code))
         .Where(code => !occupiedSeatCodes.Contains(code))
         .Distinct()
         .ToList();
+
+        if (selectedSeats.Count == 0)
+        {
+            return RedirectToAction(nameof(SelectSeats));
+        }
 
         //Lấy ra seatTypePricing để tính giá vé dựa trên loại ghế
         var seatTypePricing = _context.SeatTypePricings.ToDictionary(st => st.SeatType, st => st.Multiplier);
@@ -434,6 +458,12 @@ public class BookingController : Controller
         }
 
         HttpContext.Session.SetString("SelectedSeats", string.Join(",", selectedSeats));
+        HttpContext.Session.SetString(
+            SeatHoldExpiresAtUtcSessionKey,
+            DateTime.UtcNow.AddMinutes(SeatHoldMinutes).ToString("O", CultureInfo.InvariantCulture));
+        HttpContext.Session.Remove("SelectedConcessions");
+        HttpContext.Session.Remove("PaymentReference");
+        HttpContext.Session.Remove("PaymentExpiresAtUtc");
 
 
         return RedirectToAction("SelectConcessions");
@@ -462,6 +492,12 @@ public class BookingController : Controller
         if (string.IsNullOrWhiteSpace(selectedSeatsRaw))
         {
             return RedirectToAction(nameof(SelectSeats));
+        }
+
+        var seatHoldExpiresAtUtc = GetSeatHoldExpiresAtUtc();
+        if (!seatHoldExpiresAtUtc.HasValue || IsSeatHoldExpired(seatHoldExpiresAtUtc.Value))
+        {
+            return RedirectAfterSeatHoldExpired();
         }
 
         //Chuyển chuỗi các Code ghế 
@@ -527,6 +563,7 @@ public class BookingController : Controller
                 CinemaFormat = selectedFormat ?? "2D",
                 SelectedSeats = selectedSeats,
                 ShowtimeId = selectedShowtimeId,
+                BookingExpiresAtUtc = seatHoldExpiresAtUtc.Value,
                 OccupiedSeats = occupiedSeatCodes,
 
                 //Gán giá vé
@@ -570,6 +607,11 @@ public class BookingController : Controller
         if (!selectedShowtimeId.HasValue || string.IsNullOrWhiteSpace(selectedSeatsRaw))
         {
             return RedirectToAction(nameof(SelectSeats));
+        }
+
+        if (HasExpiredSeatHold())
+        {
+            return RedirectAfterSeatHoldExpired();
         }
 
         //Chuẩn hoá dữ liệu và gửi lên combo
@@ -623,6 +665,12 @@ public class BookingController : Controller
         if (string.IsNullOrWhiteSpace(selectedSeatsRaw))
         {
             return RedirectToAction(nameof(SelectSeats));
+        }
+
+        var seatHoldExpiresAtUtc = GetSeatHoldExpiresAtUtc();
+        if (!seatHoldExpiresAtUtc.HasValue || IsSeatHoldExpired(seatHoldExpiresAtUtc.Value))
+        {
+            return RedirectAfterSeatHoldExpired();
         }
 
         //Chuyển chuỗi các Code ghế 
@@ -680,6 +728,7 @@ public class BookingController : Controller
                 SelectedTime = selectedTime ?? "",
                 CinemaFormat = selectedFormat ?? "",
                 SelectedSeats = selectedSeats,
+                BookingExpiresAtUtc = seatHoldExpiresAtUtc.Value,
                 OccupiedSeats = occupiedSeatCodes,
 
                 //Giá vé
@@ -728,6 +777,11 @@ public class BookingController : Controller
         if (!movieId.HasValue || !showtimeId.HasValue || string.IsNullOrWhiteSpace(selectedSeats))
         {
             return RedirectToAction(nameof(SelectSeats));
+        }
+
+        if (HasExpiredSeatHold())
+        {
+            return RedirectAfterSeatHoldExpired();
         }
 
         // SEPAY DYNAMIC PAYMENT: create a pending payment record before showing QR.
@@ -1516,6 +1570,84 @@ public class BookingController : Controller
         public decimal TotalAmount => TicketSubtotal + ConcessionSubtotal;
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ExpireSeatHold()
+    {
+        await ExpireCurrentPaymentIntentAsync();
+        ExpireSeatHoldSession();
+
+        return Json(new
+        {
+            redirectUrl = Url.Action(nameof(Index), "Booking")
+        });
+    }
+
+    private DateTime? GetSeatHoldExpiresAtUtc()
+    {
+        var rawValue = HttpContext.Session.GetString(SeatHoldExpiresAtUtcSessionKey);
+        if (string.IsNullOrWhiteSpace(rawValue))
+        {
+            return null;
+        }
+
+        return DateTime.TryParse(
+            rawValue,
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.RoundtripKind,
+            out var expiresAtUtc)
+            ? expiresAtUtc.ToUniversalTime()
+            : null;
+    }
+
+    private static bool IsSeatHoldExpired(DateTime expiresAtUtc)
+    {
+        return expiresAtUtc <= DateTime.UtcNow;
+    }
+
+    private bool HasExpiredSeatHold()
+    {
+        var expiresAtUtc = GetSeatHoldExpiresAtUtc();
+        return !expiresAtUtc.HasValue || IsSeatHoldExpired(expiresAtUtc.Value);
+    }
+
+    private IActionResult RedirectAfterSeatHoldExpired()
+    {
+        ExpireSeatHoldSession();
+        return RedirectToAction(nameof(Index), "Booking");
+    }
+
+    private void ExpireSeatHoldSession()
+    {
+        ClearBookingSession();
+        TempData["AlertError"] = SeatHoldExpiredMessage;
+    }
+
+    private async Task ExpireCurrentPaymentIntentAsync()
+    {
+        var userId = HttpContext.Session.GetInt32("UserID");
+        var paymentReference = HttpContext.Session.GetString("PaymentReference");
+
+        if (!userId.HasValue || string.IsNullOrWhiteSpace(paymentReference))
+        {
+            return;
+        }
+
+        var paymentIntent = await _context.PaymentIntents
+            .FirstOrDefaultAsync(intent =>
+                intent.PaymentReference == paymentReference &&
+                intent.UserID == userId.Value);
+
+        if (paymentIntent == null || paymentIntent.Status != "Pending" || paymentIntent.BookingID.HasValue)
+        {
+            return;
+        }
+
+        paymentIntent.Status = "Expired";
+        paymentIntent.ExpiresAtUtc = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+    }
+
 
     // POST: Booking/CancelBooking
     // Huỷ tiến trình đặt vé hiện tại và xóa dữ liệu Booking trong Session.
@@ -1562,10 +1694,12 @@ public class BookingController : Controller
             "SelectedDate",
             "SelectedTime",
             "SelectedFormat",
+            "SelectedOfferCode",
             "SelectedSeats",
             "SelectedConcessions",
             "PaymentReference",
-            "PaymentExpiresAtUtc"
+            "PaymentExpiresAtUtc",
+            SeatHoldExpiresAtUtcSessionKey
         };
 
         foreach (var key in bookingSessionKeys)

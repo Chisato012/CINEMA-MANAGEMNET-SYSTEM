@@ -1,4 +1,4 @@
-﻿@model BookingViewModel 
+@model BookingViewModel 
 @* Quang UI An BE *@
 @using System.Globalization
 @{
@@ -7,6 +7,7 @@
     var currentStep = 3;
     var stepLabels = new[] { "Thông tin phim", "Ghế ngồi", "Đồ ăn/uống", "Thanh toán" };
     var selectedAddons = Model.Concessions.Where(item => item.SelectedQuantity > 0).ToList();
+    var seatHoldExpiresAtUtc = Model.BookingExpiresAtUtc.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -23,6 +24,11 @@
         <div class="shell header-row">
             <div class="brand"><span class="brand-mark" aria-hidden="true"></span> Cosmos Cinema</div>
             <div class="booking-header-actions">
+                <div class="booking-timer seat-hold-timer" data-seat-hold-timer data-expires-at="@seatHoldExpiresAtUtc" aria-live="polite">
+                    <span class="status-dot" aria-hidden="true"></span>
+                    <span class="timer-label">Seat hold</span>
+                    <strong data-seat-hold-countdown>10:00</strong>
+                </div>
                 <form asp-controller="Booking" asp-action="CancelBooking" method="post" class="cancel-form">
                     @Html.AntiForgeryToken()
 
@@ -131,6 +137,9 @@
                     </form>
                 </div>
             </main>
+            <div class="toast seat-hold-toast" data-seat-hold-expired-toast role="alert" aria-live="assertive">
+                Your booking session has expired. Please select a movie again.
+            </div>
         </body>
         <script>
             //form chứa toàn bộ combo
@@ -146,12 +155,67 @@
 
             // Tổng tiền vé và phí được truyền từ Razor qua data attribute.
             const ticketTotal = Number(contentSummary.dataset.ticketTotal);
+            const seatHoldTimer = document.querySelector("[data-seat-hold-timer]");
+            const seatHoldCountdown = document.querySelector("[data-seat-hold-countdown]");
+            const seatHoldToast = document.querySelector("[data-seat-hold-expired-toast]");
+            const seatHoldExpiresAt = seatHoldTimer ? new Date(seatHoldTimer.dataset.expiresAt).getTime() : NaN;
+            const expireSeatHoldUrl = "@Url.Action("ExpireSeatHold", "Booking")";
+            const bookingIndexUrl = "@Url.Action("Index", "Booking")";
+            const requestVerificationToken = concessionForm?.querySelector('input[name="__RequestVerificationToken"]')?.value
+                ?? document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                ?? "";
+            let seatHoldExpired = false;
 
             // Định dạng tiền giống giao diện hiện tại.
             const moneyFormatter = new Intl.NumberFormat("vi-VN", {
                 style: "currency",
                 currency: "VND"
             });
+
+            function updateSeatHoldTimer() {
+                if (!Number.isFinite(seatHoldExpiresAt) || seatHoldExpired) {
+                    return;
+                }
+
+                const remaining = seatHoldExpiresAt - Date.now();
+                const totalSeconds = Math.max(0, Math.ceil(remaining / 1000));
+                const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+                const seconds = String(totalSeconds % 60).padStart(2, "0");
+
+                if (seatHoldCountdown) {
+                    seatHoldCountdown.textContent = `${minutes}:${seconds}`;
+                }
+
+                seatHoldTimer?.classList.toggle("is-danger", remaining <= 60000);
+
+                if (remaining > 0) {
+                    return;
+                }
+
+                seatHoldExpired = true;
+                seatHoldToast?.classList.add("show");
+                document.querySelectorAll("button, input, select, textarea").forEach(control => {
+                    control.disabled = true;
+                });
+
+                const formData = new FormData();
+                if (requestVerificationToken) {
+                    formData.append("__RequestVerificationToken", requestVerificationToken);
+                }
+
+                fetch(expireSeatHoldUrl, {
+                    method: "POST",
+                    body: formData,
+                    credentials: "same-origin"
+                })
+                    .then(response => response.ok ? response.json() : null)
+                    .then(data => {
+                        window.setTimeout(() => window.location.assign(data?.redirectUrl || bookingIndexUrl), 1600);
+                    })
+                    .catch(() => {
+                        window.setTimeout(() => window.location.assign(bookingIndexUrl), 1600);
+                    });
+            }
 
             //chuyển 1 chuỗi số thành tiền tệ
             function formatMoney(value) {
@@ -216,8 +280,10 @@
                 })
             })
 
+            updateSeatHoldTimer();
+            window.setInterval(updateSeatHoldTimer, 1000);
+            updateSummary();
     
         </script>
 
     </html>
-

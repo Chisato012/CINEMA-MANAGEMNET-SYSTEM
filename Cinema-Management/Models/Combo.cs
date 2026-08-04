@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace Cinema_Management.Models;
 
@@ -19,7 +18,4 @@ public class Combo
     public decimal ComboPrice { get; set; }
 
     public ICollection<BookingCombo> BookingCombos { get; set; } = new List<BookingCombo>();
-
-    public int Quantity {get; set;}
-
 }

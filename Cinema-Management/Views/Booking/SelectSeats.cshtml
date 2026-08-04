@@ -283,13 +283,18 @@
             return sum + Number(seat.dataset.price || 0);
         }, 0);
 
-        const total = subtotal;
+        const fee = selectedSeats.length * convenienceFeePerTicket;
+        const total = subtotal + fee;
 
         //set các giá trị tiền vào các biến hiển thị
         ticketCount.textContent = `Số lượng ghế (${selectedSeats.length})`;
         ticketSubtotal.textContent = money(subtotal);
-        seatFee.textContent = money(fee);
-        seatTotal.textContent = money(total);
+        if (seatFee) {
+            seatFee.textContent = money(fee);
+        }
+        if (seatTotal) {
+            seatTotal.textContent = money(total);
+        }
 
         if (selectedSeats.length == 0) {
             confirmButton.disabled = true;
@@ -314,6 +319,6 @@
         });
     });
 
-    @* // Chạy lần đầu để giữ trạng thái nếu model đã có SelectedSeats
-        syncSelectedSeats(); *@
+    // Chạy lần đầu để giữ trạng thái nếu model đã có SelectedSeats.
+    syncSelectedSeats();
 </script>

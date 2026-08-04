@@ -1,4 +1,4 @@
-﻿:root {
+﻿﻿﻿:root {
     --bg: #121212;
     --surface-low: #191817;
     --surface: #211f1e;
@@ -156,6 +156,23 @@ select:focus-visible {
 
 .booking-timer.is-danger strong {
     animation: timerTextPulse .5s ease-in-out infinite;
+}
+
+.seat-hold-timer {
+    min-height: 40px;
+    border-color: rgba(212, 163, 115, .36);
+    background: linear-gradient(135deg, rgba(212, 163, 115, .13), rgba(10, 10, 10, .34));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 12px 26px rgba(0, 0, 0, .16);
+}
+
+.seat-hold-timer.is-danger {
+    border-color: rgba(216, 122, 115, .7);
+    background: linear-gradient(135deg, rgba(216, 122, 115, .16), rgba(10, 10, 10, .42));
+}
+
+.seat-hold-toast {
+    border-left-color: var(--danger);
+    color: var(--cream);
 }
 
 .cancel-button {
@@ -2077,4 +2094,3 @@ h3 {
         height: 88px;
     }
 }
-
