@@ -536,7 +536,10 @@ public class StaffController : Controller
             return BadRequest();
         }
 
-        var combo = await _context.Combos.FindAsync(id);
+        var combo = await _context.Combos
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.ComboID == id);
+
         if (combo == null)
         {
             return NotFound();
@@ -544,7 +547,11 @@ public class StaffController : Controller
 
         ViewBag.ActiveTab = "concessions";
         ViewBag.ConcessionFormMode = "edit";
-        return View("Concessions", await LoadConcessionsViewModelAsync(combo));
+
+        return View(
+            "Concessions",
+            await LoadConcessionsViewModelAsync(combo)
+        );
     }
 
     [HttpPost]
@@ -570,6 +577,7 @@ public class StaffController : Controller
 
         combo.ComboName = model.ComboName;
         combo.ComboPrice = model.ComboPrice;
+        combo.Quantity = model.Quantity;
 
         await _context.SaveChangesAsync();
 

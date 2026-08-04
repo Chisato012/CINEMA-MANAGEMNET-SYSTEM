@@ -1,5 +1,6 @@
 @using System.Globalization
 @model Cinema_Management.Models.ConcessionsViewModel
+@using System.Globalization
 @* Quang UI Bắc BE *@
 @{
     ViewData["Title"] = "POS Concessions Register";
@@ -26,7 +27,7 @@
     </div>
 </header>
 
-<div class="concessions-layout">
+<div class="concessions-layout" style="grid-template-columns: minmax(0, 1fr);">
     <div class="concessions-main">
         <div class="pos-stats">
             <div class="stat-card">
@@ -46,12 +47,7 @@
             </div>
         </div>
 
-        <div class="category-tabs" data-concession-tabs>
-            <button class="tab-btn active" type="button" data-category="all">Tất cả</button>
-            <button class="tab-btn" type="button" data-category="Drinks">Drinks</button>
-            <button class="tab-btn" type="button" data-category="Popcorn">Popcorn</button>
-            <button class="tab-btn" type="button" data-category="Combos">Combos</button>
-        </div>
+        
 
         <div class="concessions-grid">
             @if (!Model.Items.Any())
@@ -61,14 +57,12 @@
 
             @foreach (var item in Model.Items)
             {
+                
                 var price = item.ComboPrice.ToString("N0", culture) + " VND";
                 var dataPrice = item.ComboPrice.ToString(CultureInfo.InvariantCulture);
 
                 <div class="concession-item concession-card"
-                     draggable="true"
                      data-combo-id="@item.ComboID"
-                     data-combo-name="@item.ComboName"
-                     data-combo-price="@dataPrice"
                      data-category="all">
                     <div class="item-img-wrap concession-placeholder" aria-hidden="true">
                         <span>@GetPlaceholderText(item.ComboName)</span>
@@ -83,43 +77,17 @@
                                asp-controller="Staff"
                                asp-action="EditConcession"
                                asp-route-id="@item.ComboID"
-                               title="Sua mon"
+                               title="Sửa món"
                                aria-label="Sua mon @item.ComboName">Sửa</a>
-                            <button class="btn-add" type="button">THÊM VÀO GIỎ</button>
+                            
                         </div>
                     </div>
                 </div>
             }
         </div>
     </div>
-
-    <div class="receipt-sidebar">
-        <div class="receipt-header">
-            <h4>GIỎ HÀNG</h4>
-            <span class="badge badge-primary">POS READY</span>
-        </div>
-
-        <div id="cartDropZone" class="cart-drop-zone">
-            KÉO MÓN VÀO ĐÂY ĐỂ THÊM VÀO GIỎ HÀNG
-        </div>
-
-        <div id="cartItems" class="receipt-cart-items"></div>
-
-        <div class="receipt-footer">
-            <div class="receipt-total">
-                <span>TỔNG GIÁ TRỊ<br>(Đã tính thuế)</span>
-                <strong id="cartTotal">0 VND</strong>
-            </div>
-            <div class="receipt-actions">
-                <button id="resetCartButton" class="btn-secondary" style="flex:1" type="button">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
-                    LÀM MỚI
-                </button>
-                <button class="btn-primary" style="flex:2;justify-content:center">THANH TOÁN</button>
-            </div>
-        </div>
-    </div>
 </div>
+    
 
 @if (showForm)
 {
@@ -127,8 +95,8 @@
         <div class="modal-dialog">
             <div class="modal-header">
                 <div>
-                    <p class="modal-pretitle">Bap nuoc</p>
-                    <h3>@(isEdit ? "Sua mon" : "Them mon")</h3>
+                    <p class="modal-pretitle">Bắp nước</p>
+                    <h3>@(isEdit ? "Sửa món" : "Thêm món")</h3>
                 </div>
                 <a class="btn-close-modal" asp-controller="Staff" asp-action="Concessions" aria-label="Dong">×</a>
             </div>
@@ -137,19 +105,35 @@
                 <div class="modal-body">
                     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                     <div class="form-group">
-                        <label for="ComboName">Ten mon</label>
+                        <label for="ComboName">Tên món</label>
                         <input id="ComboName" name="ComboName" value="@Model.Form.ComboName" maxlength="150" />
                         @Html.ValidationMessage("ComboName", null, new { @class = "text-danger" })
                     </div>
                     <div class="form-group">
-                        <label for="ComboPrice">Gia mon</label>
-                        <input id="ComboPrice" name="ComboPrice" value="@Model.Form.ComboPrice" type="number" min="0.01" step="1000" />
+                        <label for="ComboPrice">Giá món</label>
+                        <input id="ComboPrice"
+                               name="ComboPrice"
+                               value="@Model.Form.ComboPrice.ToString("0", CultureInfo.InvariantCulture)"
+                               type="number"
+                               min="1"
+                               step="1" />
                         @Html.ValidationMessage("ComboPrice", null, new { @class = "text-danger" })
+                    </div>
+                    <div class="form-group">
+                        <label for="Quantity">Số lượng</label>
+                        <input id="Quantity"
+                               name="Quantity"
+                               value="@Model.Form.Quantity"
+                               type="number"
+                               min="0"
+                               step="1"
+                               required />
+                        @Html.ValidationMessage("Quantity", null, new { @class = "text-danger" })
                     </div>
                 </div>
                 <div class="modal-footer">
                     <a class="btn-secondary btn-close-modal" asp-controller="Staff" asp-action="Concessions">Huy</a>
-                    <button class="btn-primary" type="submit">@(isEdit ? "Cap nhat" : "Them mon")</button>
+                    <button class="btn-primary" type="submit">@(isEdit ? "Cập nhật" : "Thêm món")</button>
                 </div>
             </form>
         </div>
@@ -171,9 +155,8 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
     <script>
-        // UI-only category mapping.
-        // Categories are not stored in the database.
         const concessionCategoryMap = {
             1: "Popcorn",
             2: "Popcorn",
@@ -190,229 +173,32 @@
             13: "Combos"
         };
 
-        let cart = [];
         const cards = document.querySelectorAll('.concession-card');
-        const cartDropZone = document.getElementById('cartDropZone');
-        const cartItems = document.getElementById('cartItems');
-        const cartTotal = document.getElementById('cartTotal');
-        const resetCartButton = document.getElementById('resetCartButton');
 
         cards.forEach(function (card) {
             const comboId = Number(card.dataset.comboId);
-            card.dataset.category = concessionCategoryMap[comboId] ?? "Combos";
-
-            card.addEventListener('dragstart', function (event) {
-                const product = getProductFromCard(card);
-                event.dataTransfer.setData('application/json', JSON.stringify(product));
-                event.dataTransfer.effectAllowed = 'copy';
-            });
+            card.dataset.category =
+                concessionCategoryMap[comboId] ?? "Combos";
         });
 
-        document.querySelectorAll('[data-concession-tabs] .tab-btn').forEach(function (button) {
-            button.addEventListener('click', function () {
-                var category = button.dataset.category;
-                document.querySelectorAll('[data-concession-tabs] .tab-btn').forEach(function (tab) {
-                    tab.classList.toggle('active', tab === button);
+        document
+            .querySelectorAll('[data-concession-tabs] .tab-btn')
+            .forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const category = button.dataset.category;
+
+                    document
+                        .querySelectorAll('[data-concession-tabs] .tab-btn')
+                        .forEach(function (tab) {
+                            tab.classList.toggle('active', tab === button);
+                        });
+
+                    cards.forEach(function (card) {
+                        card.hidden =
+                            category !== 'all' &&
+                            card.dataset.category !== category;
+                    });
                 });
-                cards.forEach(function (card) {
-                    const shouldShow = category === 'all' || card.dataset.category === category;
-                    card.hidden = !shouldShow;
-                });
             });
-        });
-
-        document.querySelectorAll('.btn-add').forEach(function (button) {
-            button.addEventListener('click', function () {
-                const card = button.closest('.concession-card');
-                if (!card) {
-                    return;
-                }
-
-                addToCart(getProductFromCard(card));
-            });
-        });
-
-        cartDropZone.addEventListener('dragenter', function (event) {
-            event.preventDefault();
-            cartDropZone.classList.add('is-drag-over');
-        });
-
-        cartDropZone.addEventListener('dragover', function (event) {
-            event.preventDefault();
-            event.dataTransfer.dropEffect = 'copy';
-            cartDropZone.classList.add('is-drag-over');
-        });
-
-        cartDropZone.addEventListener('dragleave', function () {
-            cartDropZone.classList.remove('is-drag-over');
-        });
-
-        cartDropZone.addEventListener('drop', function (event) {
-            event.preventDefault();
-            cartDropZone.classList.remove('is-drag-over');
-
-            const rawProduct = event.dataTransfer.getData('application/json');
-            if (!rawProduct) {
-                return;
-            }
-
-            try {
-                addToCart(JSON.parse(rawProduct));
-            } catch {
-                return;
-            }
-        });
-
-        cartItems.addEventListener('click', function (event) {
-            const button = event.target.closest('[data-cart-action]');
-            if (!button) {
-                return;
-            }
-
-            const comboId = Number(button.dataset.comboId);
-            if (button.dataset.cartAction === 'increase') {
-                increaseQuantity(comboId);
-            } else if (button.dataset.cartAction === 'decrease') {
-                decreaseQuantity(comboId);
-            } else if (button.dataset.cartAction === 'remove') {
-                removeFromCart(comboId);
-            }
-        });
-
-        resetCartButton.addEventListener('click', function () {
-            cart = [];
-            renderCart();
-        });
-
-        function getProductFromCard(card) {
-            return {
-                comboId: Number(card.dataset.comboId),
-                comboName: card.dataset.comboName || '',
-                comboPrice: Number(card.dataset.comboPrice)
-            };
-        }
-
-        function addToCart(product) {
-            const existingItem = cart.find(function (item) {
-                return item.comboId === product.comboId;
-            });
-
-            if (existingItem) {
-                existingItem.quantity += 1;
-            } else {
-                cart.push({
-                    comboId: product.comboId,
-                    comboName: product.comboName,
-                    comboPrice: product.comboPrice,
-                    quantity: 1
-                });
-            }
-
-            renderCart();
-        }
-
-        function increaseQuantity(comboId) {
-            const item = cart.find(function (cartItem) {
-                return cartItem.comboId === comboId;
-            });
-
-            if (item) {
-                item.quantity += 1;
-                renderCart();
-            }
-        }
-
-        function decreaseQuantity(comboId) {
-            const item = cart.find(function (cartItem) {
-                return cartItem.comboId === comboId;
-            });
-
-            if (!item) {
-                return;
-            }
-
-            item.quantity -= 1;
-            if (item.quantity <= 0) {
-                removeFromCart(comboId);
-                return;
-            }
-
-            renderCart();
-        }
-
-        function removeFromCart(comboId) {
-            cart = cart.filter(function (item) {
-                return item.comboId !== comboId;
-            });
-            renderCart();
-        }
-
-        function renderCart() {
-            cartItems.replaceChildren();
-
-            if (cart.length === 0) {
-                const emptyMessage = document.createElement('div');
-                emptyMessage.className = 'cart-empty-compact';
-                emptyMessage.textContent = 'Chua co mon trong gio';
-                cartItems.appendChild(emptyMessage);
-                cartTotal.textContent = formatVnd(0);
-                return;
-            }
-
-            cart.forEach(function (item) {
-                const row = document.createElement('div');
-                row.className = 'cart-line-item';
-
-                const name = document.createElement('strong');
-                name.className = 'cart-line-name';
-                name.textContent = item.comboName;
-
-                const meta = document.createElement('span');
-                meta.className = 'cart-line-meta';
-                meta.textContent = formatVnd(item.comboPrice) + ' x ' + item.quantity;
-
-                const subtotal = document.createElement('span');
-                subtotal.className = 'cart-line-subtotal';
-                subtotal.textContent = 'Thanh tien: ' + formatVnd(item.comboPrice * item.quantity);
-
-                const controls = document.createElement('div');
-                controls.className = 'cart-line-controls';
-
-                const decrease = createCartButton('-', 'decrease', item.comboId);
-                const quantity = document.createElement('span');
-                quantity.className = 'cart-line-quantity';
-                quantity.textContent = item.quantity.toString();
-                const increase = createCartButton('+', 'increase', item.comboId);
-                const remove = createCartButton('Xoa', 'remove', item.comboId);
-
-                controls.append(decrease, quantity, increase, remove);
-                row.append(name, meta, subtotal, controls);
-                cartItems.appendChild(row);
-            });
-
-            cartTotal.textContent = formatVnd(calculateTotal());
-        }
-
-        function createCartButton(text, action, comboId) {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'cart-control-btn';
-            button.dataset.cartAction = action;
-            button.dataset.comboId = comboId.toString();
-            button.textContent = text;
-            return button;
-        }
-
-        function calculateTotal() {
-            return cart.reduce(function (sum, item) {
-                return sum + item.comboPrice * item.quantity;
-            }, 0);
-        }
-
-        function formatVnd(value) {
-            return new Intl.NumberFormat('vi-VN').format(value) + ' VND';
-        }
-
-        renderCart();
     </script>
 }
