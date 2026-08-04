@@ -9,7 +9,7 @@ using Cinema_Management.ViewModels;
 using System.Text.Json.Serialization;
 
 namespace Cinema_Management.Controllers;
-// Bắc BE
+ 
 
 public class StaffController : Controller
 {
@@ -212,7 +212,7 @@ public class StaffController : Controller
         var scheduleDate = request.Date.Date;
         var roomsById = await _context.Rooms
             .Select(r => new { r.RoomID, r.RoomName })
-            .ToDictionaryAsync(r => r.RoomID, r => r.RoomName); //Lấy ra danh sách các phòng chiếu từ cơ sở dữ liệu và lưu vào từ điển để kiểm tra hợp lệ
+            .ToDictionaryAsync(r => r.RoomID, r => r.RoomName);  
         var invalidItems = request.Items
             .Select((item, index) => new { Item = item, Index = index })
             .Where(x => x.Item.MovieID <= 0 || x.Item.RoomID <= 0)
@@ -742,12 +742,12 @@ public class StaffController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // private async Task LoadDropdowns(MovieViewModel? movie = null)
-    // {
-    //     ViewBag.Countries = new SelectList(await _context.Countries.ToListAsync(), "CountryID", "CountryName", movie?.CountryID);
-    //     ViewBag.Languages = new SelectList(await _context.Languages.ToListAsync(), "LanguageID", "LanguageName", movie?.LanguageID);
-    //     ViewBag.AgeRatings = new SelectList(AgeRatings, movie?.AgeRating);
-    // }
+     
+     
+     
+     
+     
+     
 
     public sealed class SaveScheduleRequest
     {

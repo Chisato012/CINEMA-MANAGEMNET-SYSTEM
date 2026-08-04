@@ -33,7 +33,6 @@ public class BookingController : Controller
         _configuration = configuration;
 
     }
-    //===== CODE INDEX CỦA QUANG ==========
     public IActionResult Index(int? movieId, DateTime? date)
     {
         var today = DateTime.Today;
@@ -190,7 +189,6 @@ public class BookingController : Controller
     }
 
 
-    //====== CODE CÁC BƯỚC THANH TOÁN CỦA AN =========
     public IActionResult SelectShowtime(int movieId)
     {
         // Truy vấn thông tin phim
@@ -721,7 +719,7 @@ public class BookingController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> StartPayment() // GENERATE PAYMENT CODE
+    public async Task<IActionResult> StartPayment() 
     {
         var userId = HttpContext.Session.GetInt32("UserID");
         var movieId = HttpContext.Session.GetInt32("SelectedMovieId");
@@ -764,7 +762,6 @@ public class BookingController : Controller
 
     public async Task<IActionResult> Payment()
     {
-        //Lấy ra lại các thông tin từ session
         var selectedMovieId = HttpContext.Session.GetInt32("SelectedMovieId");
         var selectedShowtimeId = HttpContext.Session.GetInt32("SelectedShowtimeId");
         var selectedDate = HttpContext.Session.GetString("SelectedDate");
@@ -921,9 +918,6 @@ public class BookingController : Controller
     }
 
 
-    //========== CODE SEPAY CỦA HƯNG ========== 
-    // POST: Booking/CompleteDevPayment
-    // Action giả lập thanh toán thành công trong môi trường Development.
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CompleteDevPayment(string paymentReference)

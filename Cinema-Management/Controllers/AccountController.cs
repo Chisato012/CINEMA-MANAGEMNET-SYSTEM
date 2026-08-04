@@ -9,7 +9,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cinema_Management.Controllers;
-// BE Bắc
+ 
 public class AccountController : Controller
 {
     private static readonly HashSet<string> DevelopmentPasswordlessEmails =
@@ -329,7 +329,7 @@ public class AccountController : Controller
             : email.Trim().ToLowerInvariant();
     }
 
-    //Get: Lấy ra thông tin tài khoản gửi đến profile
+     
     public IActionResult Profile()
     {
         var userID = HttpContext.Session.GetInt32("UserID");
@@ -347,7 +347,7 @@ public class AccountController : Controller
         return View(user);
 
     }
-    //Post: Cập nhật tk
+     
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult Profile(User model)
@@ -359,7 +359,7 @@ public class AccountController : Controller
         {
             return RedirectToAction("Login");
         }
-        //Lấy ra user
+         
         var user = _context.Users.Find(UserID.Value);
 
         if (user == null)

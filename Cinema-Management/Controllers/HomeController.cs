@@ -23,7 +23,7 @@ public class HomeController : Controller
 
     public IActionResult Index()
     {
-        // Truy vấn dữ liệu và map sang View Model
+         
         var movies = _context.Movies
             .Select(m => new MovieViewModel
             {
@@ -32,14 +32,14 @@ public class HomeController : Controller
                 Duration = m.Duration,
                 PosterURL = m.PosterURL,
                 ReleaseDate = m.ReleaseDate,
-                // Gom tên các thể loại nối với nhau bằng dấu phẩy
+                 
                 Genre = string.Join(", ", m.MovieGenres.Select(mg => mg.Genre.Name))
             })
             .ToList();
 
         ApplyReviewSummaries(movies);
 
-        // Gửi danh sách này sang View
+         
         return View(movies);
     }
 
@@ -97,7 +97,7 @@ public class HomeController : Controller
             .Where(m => m.MovieId == id)
             .Select(m => new MovieViewModel
             {
-                // VẾ TRÁI (MovieViewModel) = VẾ PHẢI (Entity/Database)
+                 
                 MovieId = m.MovieId,
                 Title = m.Title,
                 Duration = m.Duration,
@@ -109,11 +109,11 @@ public class HomeController : Controller
 
                 Showtimes = m.Showtimes,
 
-                // Load thông tin từ 3 bảng khác
+                 
                 Language = m.Language,
                 Country = m.Country,
 
-                // Format 
+                 
                 Genre = string.Join(", ", m.MovieGenres.Select(mg => mg.Genre.Name)),
                 MovieDirector = string.Join(", ", m.MovieDirectors.Select(md => md.Person.FullName)),
                 MovieCast = string.Join(", ", m.MovieCasts.Select(mc => mc.Person.FullName))
@@ -399,7 +399,7 @@ public class HomeController : Controller
     }
 
 
-    // Giá vé Controller
+     
     public IActionResult TicketPricing()
     {
         var viewModel = new TicketPricingViewModel

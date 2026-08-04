@@ -10,7 +10,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Cinema_Management.Controllers;
 
-// BE của An
+ 
 public class AdminController : Controller
 {
     private readonly ApplicationDbContext _context;
@@ -26,13 +26,12 @@ public class AdminController : Controller
         return View();
     }
 
-    //Action cho trang doanh thu
+     
     public IActionResult Analytics(string? month, int? movieId)
     {
-        //Khai báo 2 biến thời gian
+        
         DateTime? fromDate = null;
         DateTime? toDate = null;
-        //Kiểm tra điều kiện
         if (!string.IsNullOrWhiteSpace(month) &&
         DateTime.TryParseExact(month, "yyyy-MM", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedMonth))
         {
@@ -44,69 +43,69 @@ public class AdminController : Controller
             month = null;
         }
 
-        // paymentRows là query chính để tính tổng doanh thu.
-        // Chỉ lấy Payment đã thanh toán thành công và Booking đã xác nhận.
+         
+         
         var paymentRows = _context.Payments.AsNoTracking()
             .Where(p => p.Status == "Success"
                 && p.Booking != null
                 && p.Booking.Status == "Confirmed");
 
-        // Nếu người dùng chọn tháng, lọc payment theo PaymentDate trong tháng đó.
+         
         if (fromDate.HasValue && toDate.HasValue)
         {
             paymentRows = paymentRows.Where(p => p.PaymentDate >= fromDate.Value && p.PaymentDate < toDate.Value);
         }
 
-        // Nếu người dùng chọn phim, chỉ lấy các payment thuộc booking có vé của phim đó.
+         
         if (movieId.HasValue)
         {
             paymentRows = paymentRows.Where(p =>
                 p.Booking!.Tickets.Any(t => t.Showtime != null && t.Showtime.MovieID == movieId.Value));
         }
 
-        //ticketRows là query chính để đếm số vé bán ra.
-        // Chỉ tính vé thuộc Booking đã Confirmed và có ít nhất một Payment Success.
+         
+         
         var ticketRows = _context.Tickets.AsNoTracking()
             .Where(t => t.Booking != null && t.Booking.Status == "Confirmed" && t.Booking.Payments.Any(p => p.Status == "Success"))
             .Select(t => new
             {
                 t.TicketID,
 
-                // Lấy MovieID thông qua quan hệ Ticket -> Showtime -> Movie.
+                 
                 MovieId = t.Showtime!.MovieID,
 
-                // Lấy ngày thanh toán thành công đầu tiên của booking để dùng lọc theo tháng.
+                 
                 PaidAt = t.Booking!.Payments
                 .Where(p => p.Status == "Success")
                 .Min(p => p.PaymentDate)
             });
 
-        // Nếu có lọc tháng, chỉ đếm vé có ngày thanh toán nằm trong tháng đó.
+         
         if (fromDate.HasValue && toDate.HasValue)
         {
             ticketRows = ticketRows.Where(t => t.PaidAt >= fromDate.Value && t.PaidAt < toDate.Value);
         }
 
-        // Nếu có lọc phim, chỉ đếm vé của phim được chọn.
+         
         if (movieId.HasValue)
         {
             ticketRows = ticketRows.Where(t => t.MovieId == movieId.Value);
         }
 
-        // timelinePayments dùng để vẽ/thống kê doanh thu theo từng tháng.
-        // Query này không lọc theo selected month, vì cần nhìn được biểu đồ nhiều tháng.
+         
+         
         var timelinePayments = _context.Payments.AsNoTracking()
             .Where(p => p.Status == "Success"
                 && p.Booking != null
                 && p.Booking.Status == "Confirmed");
 
-        // Nếu chọn phim, biểu đồ doanh thu theo tháng cũng chỉ hiện doanh thu của phim đó.
+         
         if (movieId.HasValue)
         {
             timelinePayments = timelinePayments.Where(p =>
                 p.Booking!.Tickets.Any(t => t.Showtime != null && t.Showtime.MovieID == movieId.Value));
         }
-        // revenueByMonth gom nhóm Payment theo năm/tháng và tính tổng Amount.
+         
         var revenueByMonth = timelinePayments
             .GroupBy(p => new { p.PaymentDate.Year, p.PaymentDate.Month })
             .Select(g => new
@@ -127,8 +126,8 @@ public class AdminController : Controller
             })
             .ToList();
 
-        // months dùng để render dropdown chọn tháng.
-        // Chỉ lấy các tháng thật sự có payment thành công.
+         
+         
         var months = _context.Payments.AsNoTracking()
             .Where(p => p.Status == "Success"
                 && p.Booking != null
@@ -144,7 +143,7 @@ public class AdminController : Controller
                 Text = $"Tháng {x.Month:00}/{x.Year}"
             })
             .ToList();
-        // movies dùng để render dropdown chọn phim.
+         
         var movies = _context.Movies.AsNoTracking()
             .OrderBy(m => m.Title)
             .Select(m => new AnalyticsMovieOption
@@ -154,27 +153,27 @@ public class AdminController : Controller
             })
             .ToList();
 
-        // model là dữ liệu tổng hợp cuối cùng gửi sang Analytics.cshtml.
+         
         var model = new AdminAnalyticsViewModel
         {
-            // Lưu lại filter hiện tại để view biết option nào đang được chọn.
+             
             SelectedMonth = month,
             SelectedMovieId = movieId,
 
-            // Tổng doanh thu sau khi áp dụng filter tháng/phim.
+             
             TotalRevenue = paymentRows.Sum(p => (decimal?)p.Amount) ?? 0m,
 
-            // Tổng số vé bán ra sau khi áp dụng filter tháng/phim.
+             
             TotalTicketsSold = ticketRows.Count(),
 
-            // Tổng số booking đã thanh toán thành công, dùng Distinct để tránh 1 booking có nhiều payment bị đếm trùng.
+             
             ConfirmedBookings = paymentRows.Select(p => p.BookingID).Distinct().Count(),
 
-            // Dữ liệu dropdown.
+             
             Months = months,
             Movies = movies,
 
-            // Dữ liệu biểu đồ/bảng doanh thu theo tháng.
+             
             RevenueByMonth = revenueByMonth
         };
         return View(model);
@@ -190,10 +189,10 @@ public class AdminController : Controller
         }
         var StaffQuery = _context.Users
         .Where(u => u.Role == "Staff")
-        .OrderBy(u => u.UserID); //truy vấn từ usersDB
+        .OrderBy(u => u.UserID);  
 
         var totalCount = StaffQuery.Count();
-        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize); //tìm ra tổng số trang
+        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);  
 
         if (totalPages > 0 && page > totalPages)
         {
@@ -201,8 +200,8 @@ public class AdminController : Controller
         }
 
         var staffList = StaffQuery
-        .Skip((page - 1) * pageSize) //skip ra số nhân viên tối đa 5
-        .Take(pageSize) //lấy ra 5 nhân viên
+        .Skip((page - 1) * pageSize) 
+        .Take(pageSize)  
         .ToList();
 
         ViewBag.TotalCount = totalCount;
@@ -216,7 +215,7 @@ public class AdminController : Controller
 
     public IActionResult Settings()
     {
-        //lấy ra ID từ session
+        
         var userId = HttpContext.Session.GetInt32("UserID");
 
         if (userId == null)
@@ -224,7 +223,7 @@ public class AdminController : Controller
             return RedirectToAction("Login", "Account");
         }
 
-        //Tìm tk admin trong bảng user
+        
         var admin = _context.Users.FirstOrDefault(u => u.UserID == userId.Value && u.Role == "Admin");
 
         if (admin == null)
@@ -233,14 +232,14 @@ public class AdminController : Controller
             return RedirectToAction("Index");
         }
 
-        //gửi dữ liệu sang view
+         
         return View(admin);
     }
 
-    //Hàm sửa tài khoản cho admin, các tham số truyền vào lấy từ view thông qua thuộc tính thẻ name
+     
     public IActionResult UpdateSettings(string FullName, string Email, string? Password, string? newPassword)
     {
-        //lấy ra ID từ session
+         
         var userId = HttpContext.Session.GetInt32("UserID");
 
         if (userId == null)
@@ -248,7 +247,7 @@ public class AdminController : Controller
             return RedirectToAction("Login", "Account");
         }
 
-        //Tìm tk admin trong bảng user
+         
         var admin = _context.Users.FirstOrDefault(u => u.UserID == userId.Value && u.Role == "Admin");
 
         if (admin == null)
@@ -271,21 +270,21 @@ public class AdminController : Controller
             return RedirectToAction("Settings");
         }
 
-        //cập nhật thông tin
+         
         admin.FullName = FullName.Trim();
         admin.Email = Email.Trim();
 
-        //nếu muốn đổi mật khẩu mới
+         
         if (!string.IsNullOrWhiteSpace(newPassword))
         {
-            //bắt buộc nhập mk cũ
+             
             if (string.IsNullOrWhiteSpace(Password))
             {
                 TempData["ErrorMessage"] = "Vui lòng nhập mật khẩu cũ";
                 return RedirectToAction("Settings");
             }
 
-            //Kiểm tra xem mật khẩu cũ đúng không
+             
             var oldPasswordCorrect = BCrypt.Net.BCrypt.Verify(Password, admin.PasswordHash);
 
             if (!oldPasswordCorrect)
@@ -294,14 +293,14 @@ public class AdminController : Controller
                 return RedirectToAction("Settings");
             }
 
-            //Hash mật khẩu mới trước khi lưu
-            //Mật khẩu lấy từ DB cũ                             //mật khẩu lấy từ view
+             
+             
             admin.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
         }
 
         _context.SaveChanges();
 
-        //cập nhật lại email nếu admin đổi email
+         
         HttpContext.Session.SetString("UserEmail", admin.Email);
 
         TempData["SuccessMessage"] = "Cập nhật tài khoản thành công";
@@ -313,11 +312,11 @@ public class AdminController : Controller
     [ValidateAntiForgeryToken]
     public IActionResult CreateStaff(string? FullName, string? Email, string? PhoneNumber, string? PasswordHash, DateTime? DOB, int page = 1)
     {
-        // FIX: Chuẩn hoá dữ liệu một lần để kiểm tra trùng và lưu DB nhất quán.
+         
         var normalizedFullName = FullName?.Trim() ?? string.Empty;
         var normalizedEmail = Email?.Trim() ?? string.Empty;
 
-        // FIX: Thêm lỗi theo từng field và không return sớm để UI hiển thị tất cả lỗi cùng lúc.
+         
         if (string.IsNullOrWhiteSpace(normalizedFullName))
         {
             ModelState.AddModelError("FullName", "Tên không được để trống.");
@@ -346,7 +345,7 @@ public class AdminController : Controller
         }
 
         string namePattern = @"^[\p{L}\s]+$";
-        // FIX: Chỉ chạy Regex khi tên có dữ liệu để tránh Regex.IsMatch nhận null/rỗng.
+         
         if (!string.IsNullOrWhiteSpace(normalizedFullName) && !Regex.IsMatch(normalizedFullName, namePattern))
         {
             ModelState.AddModelError("FullName", "Tên chỉ được chứa chữ cái và khoảng trắng.");
@@ -366,7 +365,7 @@ public class AdminController : Controller
         {
             ViewBag.OpenModal = "create";
 
-            // FIX: Giữ lại dữ liệu đã nhập khi render lại Create modal; không giữ lại mật khẩu.
+             
             ViewBag.CreateFullName = FullName;
             ViewBag.CreateEmail = Email;
             ViewBag.CreatePhoneNumber = PhoneNumber;
@@ -391,7 +390,7 @@ public class AdminController : Controller
         _context.SaveChanges();
 
         TempData["SuccessMessage"] = "Tạo tài khoản thành công!";
-        // FIX: Redirect sang GET sau khi lưu thành công để refresh không gửi lại POST/ModelState cũ.
+         
         return RedirectToAction(nameof(Staff), new { page });
     }
 
@@ -399,7 +398,7 @@ public class AdminController : Controller
     [ValidateAntiForgeryToken]
     public IActionResult UpdateStaff(int? UserID, string? FullName, string? Email, string? PhoneNumber, string? PasswordHash, DateTime? DOB, int page = 1)
     {
-        // FIX: Dùng int? để tự xử lý UserID rỗng, tránh lỗi mặc định "The value '' is invalid.".
+         
         User? staff = null;
         if (!UserID.HasValue)
         {
@@ -462,7 +461,7 @@ public class AdminController : Controller
         {
             ViewBag.OpenModal = "edit";
 
-            // FIX: Giữ UserID và dữ liệu đã nhập để lần submit kế tiếp không gửi UserID rỗng.
+             
             ViewBag.EditUserID = UserID;
             ViewBag.EditFullName = FullName;
             ViewBag.EditEmail = Email;
@@ -473,7 +472,7 @@ public class AdminController : Controller
             return View("Staff", staffList);
         }
 
-        // FIX: ModelState hợp lệ đồng nghĩa staff đã tồn tại; dấu ! loại cảnh báo nullable của compiler.
+         
         staff!.FullName = normalizedFullName;
         staff.Email = normalizedEmail;
         staff.PhoneNumber = string.IsNullOrWhiteSpace(PhoneNumber) ? null : PhoneNumber.Trim();
