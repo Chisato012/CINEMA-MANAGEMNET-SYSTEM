@@ -81,7 +81,10 @@ public class MlNetGenreRecommendationService : IGenreRecommendationService
 
     public static string GetDefaultModelPath(string contentRootPath)
     {
-        return Path.GetFullPath(Path.Combine(contentRootPath, "..", "ML", "artifacts", "movie_genre_model.zip"));
+        return Path.Combine(
+            MovieGenreModelTrainer.GetMlRootPath(contentRootPath),
+            "artifacts",
+            "movie_genre_model.zip");
     }
 
     private ITransformer? LoadModel()
