@@ -4,6 +4,9 @@ using Cinema_Management.Models;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using System.Text.RegularExpressions;
+using System.ComponentModel.DataAnnotations;
 
 namespace Cinema_Management.Controllers;
 
@@ -307,29 +310,80 @@ public class AdminController : Controller
     }
 
     [HttpPost]
-    public IActionResult CreateStaff(string FullName, string Email, string? PhoneNumber, string PasswordHash, bool Status, string Role, DateTime? DOB)
+    [ValidateAntiForgeryToken]
+    public IActionResult CreateStaff(string? FullName, string? Email, string? PhoneNumber, string? PasswordHash, DateTime? DOB, int page = 1)
     {
-        if (string.IsNullOrWhiteSpace(FullName) || string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(PasswordHash))
+        // FIX: Chuẩn hoá dữ liệu một lần để kiểm tra trùng và lưu DB nhất quán.
+        var normalizedFullName = FullName?.Trim() ?? string.Empty;
+        var normalizedEmail = Email?.Trim() ?? string.Empty;
+
+        // FIX: Thêm lỗi theo từng field và không return sớm để UI hiển thị tất cả lỗi cùng lúc.
+        if (string.IsNullOrWhiteSpace(normalizedFullName))
         {
-            TempData["ErrorMessage"] = "Vui lòng điền đầy đủ thông tin bắt buộc!";
-            return RedirectToAction("Staff");
+            ModelState.AddModelError("FullName", "Tên không được để trống.");
         }
 
-        var exists = _context.Users.Any(u => u.Email == Email);
-        if (exists)
+        if (string.IsNullOrWhiteSpace(normalizedEmail))
         {
-            TempData["ErrorMessage"] = "Email đã tồn tại!";
-            return RedirectToAction("Staff");
+            ModelState.AddModelError("Email", "Email không được để trống.");
+        }
+        else if (!new EmailAddressAttribute().IsValid(normalizedEmail))
+        {
+            ModelState.AddModelError("Email", "Email không đúng định dạng.");
+        }
+        else if (_context.Users.Any(u => u.Email == normalizedEmail))
+        {
+            ModelState.AddModelError("Email", "Email đã tồn tại!");
+        }
+
+        if (string.IsNullOrWhiteSpace(PasswordHash))
+        {
+            ModelState.AddModelError("PasswordHash", "Mật khẩu không được để trống.");
+        }
+        else if (!Regex.IsMatch(PasswordHash, @"^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$"))
+        {
+            ModelState.AddModelError("PasswordHash", "Mật khẩu cần ít nhất 8 ký tự, gồm 1 chữ hoa, 1 số và 1 ký tự đặc biệt.");
+        }
+
+        string namePattern = @"^[\p{L}\s]+$";
+        // FIX: Chỉ chạy Regex khi tên có dữ liệu để tránh Regex.IsMatch nhận null/rỗng.
+        if (!string.IsNullOrWhiteSpace(normalizedFullName) && !Regex.IsMatch(normalizedFullName, namePattern))
+        {
+            ModelState.AddModelError("FullName", "Tên chỉ được chứa chữ cái và khoảng trắng.");
+        }
+
+        const string phonePattern = @"^0[0-9]{9}$";
+        if (!string.IsNullOrWhiteSpace(PhoneNumber) && !Regex.IsMatch(PhoneNumber.Trim(), phonePattern))
+        {
+            ModelState.AddModelError("PhoneNumber", "Số điện thoại không hợp lệ. Vui lòng nhập số điện thoại bắt đầu bằng '0' và có 10 chữ số.");
+        }
+        if (DOB.HasValue && (DOB.Value.Date > DateTime.Today.AddYears(-16) || DOB.Value.Date < new DateTime(1930, 1, 1)))
+        {
+            ModelState.AddModelError("DOB", "Ngày sinh không hợp lệ. Vui lòng chọn ngày sinh trước ngày hiện tại và lớn hơn 16 tuổi");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            ViewBag.OpenModal = "create";
+
+            // FIX: Giữ lại dữ liệu đã nhập khi render lại Create modal; không giữ lại mật khẩu.
+            ViewBag.CreateFullName = FullName;
+            ViewBag.CreateEmail = Email;
+            ViewBag.CreatePhoneNumber = PhoneNumber;
+            ViewBag.CreateDOB = DOB?.ToString("yyyy-MM-dd");
+
+            var staffList = LoadStaffPage(page);
+            return View("Staff", staffList);
         }
 
         var newUser = new User
         {
-            FullName = FullName.Trim(),
-            Email = Email.Trim(),
+            FullName = normalizedFullName,
+            Email = normalizedEmail,
             PhoneNumber = string.IsNullOrWhiteSpace(PhoneNumber) ? null : PhoneNumber.Trim(),
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(PasswordHash),
-            Status = Status,
-            Role = string.IsNullOrWhiteSpace(Role) ? "Staff" : Role,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(PasswordHash!),
+            Status = true,
+            Role = "Staff",
             DOB = DOB
         };
 
@@ -337,38 +391,94 @@ public class AdminController : Controller
         _context.SaveChanges();
 
         TempData["SuccessMessage"] = "Tạo tài khoản thành công!";
-        return RedirectToAction("Staff");
+        // FIX: Redirect sang GET sau khi lưu thành công để refresh không gửi lại POST/ModelState cũ.
+        return RedirectToAction(nameof(Staff), new { page });
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult UpdateStaff(int UserID, string FullName, string Email, string? PhoneNumber, string? PasswordHash, bool Status, string Role, DateTime? DOB, int page = 1)
+    public IActionResult UpdateStaff(int? UserID, string? FullName, string? Email, string? PhoneNumber, string? PasswordHash, DateTime? DOB, int page = 1)
     {
-        if (string.IsNullOrWhiteSpace(FullName) || string.IsNullOrWhiteSpace(Email))
+        // FIX: Dùng int? để tự xử lý UserID rỗng, tránh lỗi mặc định "The value '' is invalid.".
+        User? staff = null;
+        if (!UserID.HasValue)
         {
-            TempData["ErrorMessage"] = "Vui lòng điền đầy đủ thông tin bắt buộc!";
-            return RedirectToAction("Staff", new { page });
+            ModelState.AddModelError("UserID", "Không xác định được nhân viên cần cập nhật.");
+        }
+        else
+        {
+            staff = _context.Users.FirstOrDefault(u => u.UserID == UserID.Value && u.Role == "Staff");
+            if (staff == null)
+            {
+                ModelState.AddModelError("UserID", "Không tìm thấy tài khoản nhân viên!");
+            }
         }
 
-        var staff = _context.Users.FirstOrDefault(u => u.UserID == UserID);
-        if (staff == null)
+        // FIX: Chuẩn hoá và kiểm tra từng field; không lặp lại cùng một validation hai lần.
+        var normalizedFullName = FullName?.Trim() ?? string.Empty;
+        var normalizedEmail = Email?.Trim() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(normalizedFullName))
         {
-            TempData["ErrorMessage"] = "Không tìm thấy tài khoản nhân viên!";
-            return RedirectToAction("Staff", new { page });
+            ModelState.AddModelError("FullName", "Tên không được để trống.");
         }
 
-        var emailExists = _context.Users.Any(u => u.Email == Email && u.UserID != UserID);
-        if (emailExists)
+        if (string.IsNullOrWhiteSpace(normalizedEmail))
         {
-            TempData["ErrorMessage"] = "Email đã tồn tại!";
-            return RedirectToAction("Staff", new { page });
+            ModelState.AddModelError("Email", "Email không được để trống.");
+        }
+        else if (!new EmailAddressAttribute().IsValid(normalizedEmail))
+        {
+            ModelState.AddModelError("Email", "Email không đúng định dạng.");
+        }
+        else if (_context.Users.Any(u => u.Email == normalizedEmail && u.UserID != UserID))
+        {
+            ModelState.AddModelError("Email", "Email đã tồn tại!");
         }
 
-        staff.FullName = FullName.Trim();
-        staff.Email = Email.Trim();
+        string namePattern = @"^[\p{L}\s]+$";
+        if (!string.IsNullOrWhiteSpace(normalizedFullName) && !Regex.IsMatch(normalizedFullName, namePattern))
+        {
+            ModelState.AddModelError("FullName", "Tên chỉ được chứa chữ cái và khoảng trắng.");
+        }
+
+        const string phonePattern = @"^0[0-9]{9}$";
+        if (!string.IsNullOrWhiteSpace(PhoneNumber) && !Regex.IsMatch(PhoneNumber.Trim(), phonePattern))
+        {
+            ModelState.AddModelError("PhoneNumber", "Số điện thoại không hợp lệ. Vui lòng nhập số điện thoại bắt đầu bằng '0' và có 10 chữ số.");
+        }
+        // FIX: Mật khẩu Update là tuỳ chọn, nhưng nếu nhập thì vẫn phải đúng định dạng.
+        if (!string.IsNullOrWhiteSpace(PasswordHash) &&
+            !Regex.IsMatch(PasswordHash, @"^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$"))
+        {
+            ModelState.AddModelError("PasswordHash", "Mật khẩu cần ít nhất 8 ký tự, gồm 1 chữ hoa, 1 số và 1 ký tự đặc biệt.");
+        }
+
+        if (DOB.HasValue && (DOB.Value.Date > DateTime.Today.AddYears(-16) || DOB.Value.Date < new DateTime(1930, 1, 1)))
+        {
+            ModelState.AddModelError("DOB", "Ngày sinh không hợp lệ. Vui lòng chọn ngày sinh trước ngày hiện tại và lớn hơn 16 tuổi");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            ViewBag.OpenModal = "edit";
+
+            // FIX: Giữ UserID và dữ liệu đã nhập để lần submit kế tiếp không gửi UserID rỗng.
+            ViewBag.EditUserID = UserID;
+            ViewBag.EditFullName = FullName;
+            ViewBag.EditEmail = Email;
+            ViewBag.EditPhoneNumber = PhoneNumber;
+            ViewBag.EditDOB = DOB?.ToString("yyyy-MM-dd");
+
+            var staffList = LoadStaffPage(page);
+            return View("Staff", staffList);
+        }
+
+        // FIX: ModelState hợp lệ đồng nghĩa staff đã tồn tại; dấu ! loại cảnh báo nullable của compiler.
+        staff!.FullName = normalizedFullName;
+        staff.Email = normalizedEmail;
         staff.PhoneNumber = string.IsNullOrWhiteSpace(PhoneNumber) ? null : PhoneNumber.Trim();
-        staff.Status = Status;
-        staff.Role = string.IsNullOrWhiteSpace(Role) ? "Staff" : Role;
+        staff.Role = "Staff";
         staff.DOB = DOB;
 
         if (!string.IsNullOrWhiteSpace(PasswordHash))
@@ -380,5 +490,32 @@ public class AdminController : Controller
 
         TempData["SuccessMessage"] = "Cập nhật tài khoản thành công!";
         return RedirectToAction("Staff", new { page });
+    }
+
+    private List<User> LoadStaffPage(int page)
+    {
+        const int pageSize = 5;
+
+        var staffQuery = _context.Users
+            .Where(u => u.Role == "Staff")
+            .OrderBy(u => u.UserID);
+
+        var totalCount = staffQuery.Count();
+        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+        page = Math.Max(page, 1);
+
+        if (totalPages > 0)
+            page = Math.Min(page, totalPages);
+
+        ViewBag.TotalCount = totalCount;
+        ViewBag.CurrentPage = page;
+        ViewBag.TotalPages = totalPages;
+        ViewBag.PageSize = pageSize;
+
+        return staffQuery
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
     }
 }

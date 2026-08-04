@@ -2,7 +2,7 @@
     ViewData["Title"] = "Trang cá nhân";
     var fullName = Context.Session.GetString("UserFullName") ?? "Khách hàng COSMOS";
     var email = Context.Session.GetString("UserEmail");
-    var role = Context.Session.GetString("UserRole") ?? "Khách hàng";
+    var role = Context.Session.GetString("Ussle") ?? "Khách hàng";
     var avatarInitial = !string.IsNullOrWhiteSpace(fullName)
         ? fullName.Trim()[0].ToString().ToUpperInvariant()
         : "C";
