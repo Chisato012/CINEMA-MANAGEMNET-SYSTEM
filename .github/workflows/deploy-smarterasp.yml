@@ -3,7 +3,7 @@ name: Deploy to SmarterASP
 on:
   push:
     branches:
-      - sprint-5
+      - main
   workflow_dispatch:
 
 jobs:
