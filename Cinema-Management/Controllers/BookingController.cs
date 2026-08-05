@@ -1364,7 +1364,6 @@ public class BookingController : Controller
         }
 
         // Kiểm tra sớm tồn kho khi tạo/đọc lại bản nháp thanh toán.
-        // CompletePaymentIntentAsync vẫn kiểm tra và trừ kho nguyên tử lần cuối để chống mua đồng thời.
         var insufficientCombo = selectedCombos.FirstOrDefault(combo =>
             comboQuantities[combo.ComboID] > Math.Max(0, combo.Quantity));
 
