@@ -22,8 +22,31 @@ jobs:
       - name: Restore
         run: dotnet restore Cinema-Management/Cinema-Management.csproj
 
+      - name: Train recommendation model
+        run: >-
+          dotnet run
+          --project Cinema-Management/Cinema-Management.csproj
+          --configuration Release
+          --no-restore
+          --
+          --train-recommendation-model
+
       - name: Publish
         run: dotnet publish Cinema-Management/Cinema-Management.csproj -c Release -o publish
+
+      - name: Include ML assets in deployment package
+        shell: bash
+        run: |
+          test -s ML/ml_recommendation_train.csv
+          test -s ML/artifacts/movie_genre_model.zip
+          unzip -t ML/artifacts/movie_genre_model.zip
+
+          mkdir -p publish/ML
+          cp -R ML/. publish/ML/
+          find publish/ML -name .DS_Store -delete
+
+          test -s publish/ML/ml_recommendation_train.csv
+          test -s publish/ML/artifacts/movie_genre_model.zip
 
       - name: Create production SePay configuration
         env:

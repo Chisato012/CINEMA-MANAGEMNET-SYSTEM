@@ -107,6 +107,7 @@ public sealed class ConcessionItemViewModel
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public decimal Price { get; set; } //Đơn giá combo
+    public int StockQuantity { get; set; } //Số lượng combo còn trong kho
     public int SelectedQuantity { get; set; } //Số lượng khách chọn 
 }
 
@@ -115,7 +116,7 @@ public sealed class ShowtimeChoiceViewModel
     public int ShowtimeId { get; set; }
     public string Date { get; set; } = string.Empty;
     public string Time { get; set; } = string.Empty;
-    public string Format { get; set; } = string.Empty;
+    public string RoomName { get; set; } = string.Empty;
 }
 
 public sealed class SelectShowtimeRequest
@@ -132,18 +133,20 @@ public sealed class SeatRequest
     public string SeatId { get; init; } = string.Empty;
 }
 
-//1 combo gửi từ giao diện về controller
+// Một combo được gửi từ SelectConcessions.cshtml về BookingController.
+// ComboId map tới Combo.ComboID; Quantity là số lượng khách chọn mua.
 public sealed class ConcessionRequest
 {
-    public int ComboId { get;set;}
+    public int ComboId { get; set; }
     public int Quantity { get; set; }
 }
 
 
-//Danh sách combo trong 1lần post 
+// Model nhận toàn bộ danh sách combo trong một lần POST SelectConcessions.
+// Sau đó controller serialize Items vào Session/PaymentIntent để dùng lại khi thanh toán thành công.
 public sealed class SelectConcessionsRequest
 {
-    public List<ConcessionRequest> Items {get; set;} =[]; 
+    public List<ConcessionRequest> Items { get; set; } = [];
 }
 
 public sealed class StepRequest

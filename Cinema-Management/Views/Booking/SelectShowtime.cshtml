@@ -17,6 +17,7 @@
         : string.Empty;
     var minDate = availableDateValues.FirstOrDefault() ?? DateTime.Today.ToString("yyyy-MM-dd");
     var maxDate = availableDateValues.LastOrDefault() ?? DateTime.Today.ToString("yyyy-MM-dd");
+    var posterUrl = string.IsNullOrWhiteSpace(Model.PosterURL) ? "/img/poster/poster1.png" : Model.PosterURL;
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -64,7 +65,8 @@
             <p class="eyebrow">Step 1 of 4 · Choose a screening</p>
             <div class="detail-grid">
                 <section class="card movie-hero" aria-labelledby="movieTitle">
-                    <div class="movie-art" ">
+                    <div class="movie-art" style="--booking-poster: url('@posterUrl');">
+                        <img class="movie-art__poster" src="@posterUrl" alt="Poster phim @Model.MovieTitle" />
                     </div>
                     <div class="movie-copy">
                         <h1 id="movieTitle">@Model.MovieTitle</h1>
@@ -120,9 +122,9 @@
                                             <label class="choice time-choice @(isSelected ? "selected" : "")">
                                                 <input type="radio" name="ShowtimeId" value="@showtime.ShowtimeId"
                                                        data-date="@showtime.Date" data-time="@showtime.Time"
-                                                       data-format="@showtime.Format" checked="@isSelected" required />
+                                                       data-format="@showtime.RoomName" checked="@isSelected" required />
                                                 <strong>@showtime.Time</strong>
-                                                <span>@showtime.Format</span>
+                                                <span>@showtime.RoomName</span>
                                             </label>
                                         }
                                     </div>

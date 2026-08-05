@@ -9,7 +9,7 @@ using Cinema_Management.ViewModels;
 using System.Text.Json.Serialization;
 
 namespace Cinema_Management.Controllers;
-// Bắc BE
+ 
 
 public class StaffController : Controller
 {
@@ -35,6 +35,9 @@ public class StaffController : Controller
     private const decimal DefaultBasePrice = StandardWeekdayBasePrice;
     private const string DefaultPosterUrl = "/img/poster/yourname400x600.png";
     private const string DefaultTrailerUrl = "#";
+    private static readonly TimeSpan ScheduleOpeningTime = new(8, 0, 0);
+    private static readonly TimeSpan ScheduleClosingTime = new(23, 0, 0);
+    private const string ScheduleTimeRangeError = "Suất chiếu phải nằm trong khung giờ từ 08:00 đến 23:00.";
 
 
     public async Task<IActionResult> Index()
@@ -209,7 +212,7 @@ public class StaffController : Controller
         var scheduleDate = request.Date.Date;
         var roomsById = await _context.Rooms
             .Select(r => new { r.RoomID, r.RoomName })
-            .ToDictionaryAsync(r => r.RoomID, r => r.RoomName); //Lấy ra danh sách các phòng chiếu từ cơ sở dữ liệu và lưu vào từ điển để kiểm tra hợp lệ
+            .ToDictionaryAsync(r => r.RoomID, r => r.RoomName);  
         var invalidItems = request.Items
             .Select((item, index) => new { Item = item, Index = index })
             .Where(x => x.Item.MovieID <= 0 || x.Item.RoomID <= 0)
@@ -256,13 +259,18 @@ public class StaffController : Controller
             }
 
             var movie = movies[item.MovieID];
-            var endTime = TryParseScheduleDateTime(request.Date, item.EndTime, out var parsedEndTime)
-                ? parsedEndTime
-                : startTime.AddMinutes(movie.Duration);
+            var endTime = startTime.AddMinutes(movie.Duration);
+            var openingTime = scheduleDate.Add(ScheduleOpeningTime);
+            var closingTime = scheduleDate.Add(ScheduleClosingTime);
 
-            if (endTime <= startTime)
+            if (movie.Duration <= 0 || endTime <= startTime)
             {
                 return BadRequest(new { message = "Gio ket thuc phai lon hon gio bat dau." });
+            }
+
+            if (startTime < openingTime || endTime > closingTime)
+            {
+                return BadRequest(new { message = ScheduleTimeRangeError });
             }
 
             parsedEntries.Add(new SaveScheduleEntry
@@ -276,6 +284,9 @@ public class StaffController : Controller
                 BasePrice = GetBasePriceByRoomAndDate(roomName, scheduleDate)
             });
         }
+
+        await using var transaction = await _context.Database.BeginTransactionAsync(
+            System.Data.IsolationLevel.Serializable);
 
         var oldShowtimes = await _context.Showtimes
             .Where(s => s.Date == scheduleDate)
@@ -354,17 +365,59 @@ public class StaffController : Controller
             .Concat(parsedEntries)
             .ToList();
 
-        var hasOverlap = finalEntries
-            .GroupBy(s => s.RoomID)
-            .Any(group =>
-            {
-                var ordered = group.OrderBy(s => s.StartTime).ToList();
-                return ordered.Zip(ordered.Skip(1), (current, next) => current.EndTime > next.StartTime).Any(x => x);
-            });
+        var outOfRangeEntry = finalEntries.FirstOrDefault(entry =>
+            entry.StartTime < scheduleDate.Add(ScheduleOpeningTime)
+            || entry.EndTime > scheduleDate.Add(ScheduleClosingTime));
 
-        if (hasOverlap)
+        if (outOfRangeEntry != null)
         {
-            return BadRequest(new { message = "Lich chieu bi trung gio trong cung phong chieu." });
+            return BadRequest(new { message = ScheduleTimeRangeError });
+        }
+
+        SaveScheduleEntry? conflictingEntry = null;
+        string? conflictingRoomLabel = null;
+
+        foreach (var roomGroup in finalEntries.GroupBy(entry => entry.RoomID))
+        {
+            var ordered = roomGroup.OrderBy(entry => entry.StartTime).ToList();
+            for (var currentIndex = 0; currentIndex < ordered.Count && conflictingEntry == null; currentIndex++)
+            {
+                for (var nextIndex = currentIndex + 1; nextIndex < ordered.Count; nextIndex++)
+                {
+                    var current = ordered[currentIndex];
+                    var next = ordered[nextIndex];
+
+                    if (next.StartTime >= current.EndTime)
+                    {
+                        break;
+                    }
+
+                    if (next.StartTime < current.EndTime && next.EndTime > current.StartTime)
+                    {
+                        conflictingEntry = current;
+                        var roomName = roomsById.TryGetValue(roomGroup.Key, out var name)
+                            ? name
+                            : roomGroup.Key.ToString();
+                        conflictingRoomLabel = roomName.StartsWith("Phòng", StringComparison.OrdinalIgnoreCase)
+                            ? roomName
+                            : $"Phòng {roomName}";
+                        break;
+                    }
+                }
+            }
+
+            if (conflictingEntry != null)
+            {
+                break;
+            }
+        }
+
+        if (conflictingEntry != null)
+        {
+            return BadRequest(new
+            {
+                message = $"{conflictingRoomLabel} đã có lịch chiếu từ {conflictingEntry.StartTime:HH:mm} đến {conflictingEntry.EndTime:HH:mm}."
+            });
         }
 
         var removableShowtimes = oldShowtimes
@@ -390,6 +443,7 @@ public class StaffController : Controller
         try
         {
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
         }
         catch (DbUpdateException ex)
         {
@@ -482,7 +536,10 @@ public class StaffController : Controller
             return BadRequest();
         }
 
-        var combo = await _context.Combos.FindAsync(id);
+        var combo = await _context.Combos
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.ComboID == id);
+
         if (combo == null)
         {
             return NotFound();
@@ -490,7 +547,11 @@ public class StaffController : Controller
 
         ViewBag.ActiveTab = "concessions";
         ViewBag.ConcessionFormMode = "edit";
-        return View("Concessions", await LoadConcessionsViewModelAsync(combo));
+
+        return View(
+            "Concessions",
+            await LoadConcessionsViewModelAsync(combo)
+        );
     }
 
     [HttpPost]
@@ -516,6 +577,7 @@ public class StaffController : Controller
 
         combo.ComboName = model.ComboName;
         combo.ComboPrice = model.ComboPrice;
+        combo.Quantity = model.Quantity;
 
         await _context.SaveChangesAsync();
 
@@ -680,12 +742,12 @@ public class StaffController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // private async Task LoadDropdowns(MovieViewModel? movie = null)
-    // {
-    //     ViewBag.Countries = new SelectList(await _context.Countries.ToListAsync(), "CountryID", "CountryName", movie?.CountryID);
-    //     ViewBag.Languages = new SelectList(await _context.Languages.ToListAsync(), "LanguageID", "LanguageName", movie?.LanguageID);
-    //     ViewBag.AgeRatings = new SelectList(AgeRatings, movie?.AgeRating);
-    // }
+     
+     
+     
+     
+     
+     
 
     public sealed class SaveScheduleRequest
     {

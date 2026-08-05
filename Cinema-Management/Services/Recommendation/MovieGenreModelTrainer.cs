@@ -63,7 +63,20 @@ public static class MovieGenreModelTrainer
 
     public static string GetDefaultDataPath(string contentRootPath)
     {
-        return Path.GetFullPath(Path.Combine(contentRootPath, "..", "ML", "ml_recommendation_train.csv"));
+        return Path.Combine(GetMlRootPath(contentRootPath), "ml_recommendation_train.csv");
+    }
+
+    public static string GetMlRootPath(string contentRootPath)
+    {
+        // Gói publish đặt ML ngay trong content root. Khi chạy từ source, ML là
+        // folder ngang hàng với project Cinema-Management nên giữ fallback cũ.
+        var publishedMlRoot = Path.GetFullPath(Path.Combine(contentRootPath, "ML"));
+        if (Directory.Exists(publishedMlRoot))
+        {
+            return publishedMlRoot;
+        }
+
+        return Path.GetFullPath(Path.Combine(contentRootPath, "..", "ML"));
     }
 
     private static IEstimator<ITransformer> BuildPipeline(MLContext mlContext)

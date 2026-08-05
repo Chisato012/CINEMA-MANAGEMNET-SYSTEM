@@ -16,9 +16,9 @@ public class ChatbotController : ControllerBase
         _chatbotService = chatbotService;
     }
 
-    // Endpoint duy nhất của chatbot gợi ý phim.
-    // Frontend gửi 4 lựa chọn cố định, backend dùng ML.NET để chọn thể loại
-    // rồi lọc phim phù hợp từ SQL Server.
+     
+     
+     
     [HttpPost("recommend")]
     public async Task<ActionResult<ChatbotResponse>> Recommend(
         [FromBody] GenreRecommendationInput request,

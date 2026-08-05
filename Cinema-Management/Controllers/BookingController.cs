@@ -4,7 +4,7 @@ using Cinema_Management.Models.Sepay;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json; 
+using System.Text.Json;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -33,12 +33,12 @@ public class BookingController : Controller
         _configuration = configuration;
 
     }
-    //===== CODE INDEX CỦA QUANG ==========
     public IActionResult Index(int? movieId, DateTime? date)
     {
         var today = DateTime.Today;
         var selectedDate = (date ?? today).Date;
         var lastDate = today.AddDays(13);
+        var now = DateTime.Now;
 
         var showtimeQuery = _context.Showtimes
             .AsNoTracking()
@@ -51,7 +51,7 @@ public class BookingController : Controller
             .Include(s => s.Room!)
                 .ThenInclude(r => r.Seats)
             .Include(s => s.Tickets)
-            .Where(s => s.Date >= today && s.Date <= lastDate);
+            .Where(s => s.Date >= today && s.Date <= lastDate && s.StartTime >= now);
 
         if (movieId.HasValue)
         {
@@ -189,7 +189,6 @@ public class BookingController : Controller
     }
 
 
-    //====== CODE CÁC BƯỚC THANH TOÁN CỦA AN =========
     public IActionResult SelectShowtime(int movieId)
     {
         // Truy vấn thông tin phim
@@ -215,9 +214,12 @@ public class BookingController : Controller
             return NotFound();
         }
 
+        var now = DateTime.Now;
         // Truy vấn thông tin các suất chiếu của phim
         var showtimes = _context.Showtimes
-            .Where(s => s.MovieID == movieId && s.Date >= DateTime.Today)
+            .AsNoTracking()
+            .Include(s => s.Room)
+            .Where(s => s.MovieID == movieId && s.Date >= DateTime.Today && s.StartTime >= now)
             .OrderBy(s => s.Date)
             .ThenBy(s => s.StartTime)
             .ToList();
@@ -230,7 +232,7 @@ public class BookingController : Controller
             ShowtimeId = s.ShowtimeID,
             Date = s.Date.ToString("yyyy-MM-dd"),
             Time = s.StartTime.ToString("HH:mm"),
-            Format = "2D" //Giả sử tất cả các suất chiếu đều là 2D, nếu có nhiều định dạng khác nhau thì cần truy vấn từ cơ sở dữ liệu
+            RoomName = s.Room?.RoomName ?? $"Phòng {s.RoomID}"
         }).ToList();
 
         //Các ngày có thể có suất chiếu của phim
@@ -264,7 +266,16 @@ public class BookingController : Controller
 
         if (showtime == null)
         {
-            return NotFound();
+            TempData["AlertError"] = "Bạn chưa chọn suất chiếu. Vui lòng chọn ngày và giờ chiếu trước.";
+
+            return RedirectToAction(
+                nameof(Index),
+                new
+                {
+                    movieId = request.MovieId > 0
+                        ? request.MovieId
+                        : (int?)null
+                });
         }
 
         HttpContext.Session.SetInt32("SelectedShowtimeId", showtime.ShowtimeID);
@@ -497,14 +508,19 @@ public class BookingController : Controller
             .GroupBy(item => item.ComboId)
             .ToDictionary(group => group.Key, group => group.First().Quantity);
 
-        var concession = _context.Combos.AsNoTracking().OrderBy(c => c.ComboName)
-            .ToList().Select(combo => new ConcessionItemViewModel
+        var concession = _context.Combos
+            .AsNoTracking()
+            .OrderBy(combo => combo.ComboName)
+            .Select(combo => new ConcessionItemViewModel
             {
                 Id = combo.ComboID,                     // Mã combo lấy từ DB.
                 Name = combo.ComboName,                 // Tên combo lấy từ DB.
                 Price = combo.ComboPrice,               // Giá luôn lấy từ DB.
-                SelectedQuantity = savedQuantities      // Khôi phục số lượng nếu đã chọn.
-                    .GetValueOrDefault(combo.ComboID, 0)
+                StockQuantity = Math.Max(0, combo.Quantity), // Số lượng tồn kho lấy từ DB.
+                SelectedQuantity = Math.Clamp(          // Khôi phục số lượng nhưng không vượt tồn kho.
+                    savedQuantities.GetValueOrDefault(combo.ComboID, 0),
+                    0,
+                    Math.Max(0, combo.Quantity))
             }).ToList();
 
         var model = _context.Movies.Where(m => m.MovieId == selectedMovieId.Value)
@@ -703,7 +719,7 @@ public class BookingController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> StartPayment() // GENERATE PAYMENT CODE
+    public async Task<IActionResult> StartPayment() 
     {
         var userId = HttpContext.Session.GetInt32("UserID");
         var movieId = HttpContext.Session.GetInt32("SelectedMovieId");
@@ -746,7 +762,6 @@ public class BookingController : Controller
 
     public async Task<IActionResult> Payment()
     {
-        //Lấy ra lại các thông tin từ session
         var selectedMovieId = HttpContext.Session.GetInt32("SelectedMovieId");
         var selectedShowtimeId = HttpContext.Session.GetInt32("SelectedShowtimeId");
         var selectedDate = HttpContext.Session.GetString("SelectedDate");
@@ -903,9 +918,6 @@ public class BookingController : Controller
     }
 
 
-    //========== CODE SEPAY CỦA HƯNG ========== 
-    // POST: Booking/CompleteDevPayment
-    // Action giả lập thanh toán thành công trong môi trường Development.
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CompleteDevPayment(string paymentReference)
@@ -1165,6 +1177,32 @@ public class BookingController : Controller
                 return new PaymentCompletionResult(false, null, "Mot hoac nhieu ghe vua duoc nguoi khac dat.");
             }
 
+            // TRỪ TỒN KHO COMBO SAU KHI THANH TOÁN ĐƯỢC XÁC NHẬN:
+            // SelectConcessionsRequest.Items được lưu dưới dạng List<ConcessionRequest> trong PaymentIntent.
+            // BuildBookingDraftAsync map danh sách đó thành draft.ComboQuantities:
+            // key = ConcessionRequest.ComboId, value = ConcessionRequest.Quantity.
+            foreach (var combo in draft.SelectedCombos)
+            {
+                var purchasedQuantity = draft.ComboQuantities[combo.ComboID];
+
+                // Cập nhật trực tiếp trong database kèm điều kiện đủ tồn kho để tránh tồn kho âm
+                // khi có nhiều giao dịch cùng mua một combo tại cùng thời điểm.
+                var updatedRows = await _context.Combos
+                    .Where(item => item.ComboID == combo.ComboID && item.Quantity >= purchasedQuantity)
+                    .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.Quantity, item => item.Quantity - purchasedQuantity));
+
+                if (updatedRows != 1)
+                {
+                    // Nếu bất kỳ combo nào không còn đủ hàng, rollback cả tồn kho đã trừ trước đó
+                    // và không tạo Booking/Payment thành công.
+                    await transaction.RollbackAsync();
+                    return new PaymentCompletionResult(
+                        false,
+                        null,
+                        $"Combo '{combo.ComboName}' không còn đủ số lượng tồn kho.");
+                }
+            }
+
             var paymentMethod = await GetOrCreatePaymentMethodAsync(paymentMethodName);
             var nowUtc = DateTime.UtcNow;
 
@@ -1323,6 +1361,15 @@ public class BookingController : Controller
         if (selectedCombos.Count != selectedComboIds.Count)
         {
             return (null, "Danh sach combo khong hop le.");
+        }
+
+        // Kiểm tra sớm tồn kho khi tạo/đọc lại bản nháp thanh toán.
+        var insufficientCombo = selectedCombos.FirstOrDefault(combo =>
+            comboQuantities[combo.ComboID] > Math.Max(0, combo.Quantity));
+
+        if (insufficientCombo != null)
+        {
+            return (null, $"Combo '{insufficientCombo.ComboName}' không còn đủ số lượng tồn kho.");
         }
 
         var ticketSubtotal = seatPrices.Values.Sum();
@@ -1508,42 +1555,42 @@ public class BookingController : Controller
     }
 
 
-// POST: Booking/CancelBooking
-// Huỷ tiến trình đặt vé hiện tại và xóa dữ liệu Booking trong Session.
-[HttpPost]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> CancelBooking()
-{
-    // Lấy người dùng và mã thanh toán của tiến trình hiện tại.
-    var userId = HttpContext.Session.GetInt32("UserID");
-    var paymentReference = HttpContext.Session.GetString("PaymentReference");
-
-    // Chỉ cập nhật PaymentIntent khi đã đăng nhập và đã tạo phiên QR.
-    if (userId.HasValue && !string.IsNullOrWhiteSpace(paymentReference))
+    // POST: Booking/CancelBooking
+    // Huỷ tiến trình đặt vé hiện tại và xóa dữ liệu Booking trong Session.
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CancelBooking()
     {
-        var paymentIntent = await _context.PaymentIntents.FirstOrDefaultAsync(intent => intent.PaymentReference == paymentReference && intent.UserID == userId.Value);
+        // Lấy người dùng và mã thanh toán của tiến trình hiện tại.
+        var userId = HttpContext.Session.GetInt32("UserID");
+        var paymentReference = HttpContext.Session.GetString("PaymentReference");
 
-        // Không được huỷ giao dịch đã thanh toán thành công.
-        if (paymentIntent != null && paymentIntent.Status == "Pending" && !paymentIntent.BookingID.HasValue)
+        // Chỉ cập nhật PaymentIntent khi đã đăng nhập và đã tạo phiên QR.
+        if (userId.HasValue && !string.IsNullOrWhiteSpace(paymentReference))
         {
-            // Dùng Expired
-            paymentIntent.Status = "Expired";
+            var paymentIntent = await _context.PaymentIntents.FirstOrDefaultAsync(intent => intent.PaymentReference == paymentReference && intent.UserID == userId.Value);
 
-            // Đặt thời hạn về hiện tại để webhook không hoàn tất intent này.
-            paymentIntent.ExpiresAtUtc = DateTime.UtcNow;
+            // Không được huỷ giao dịch đã thanh toán thành công.
+            if (paymentIntent != null && paymentIntent.Status == "Pending" && !paymentIntent.BookingID.HasValue)
+            {
+                // Dùng Expired
+                paymentIntent.Status = "Expired";
 
-            await _context.SaveChangesAsync();
+                // Đặt thời hạn về hiện tại để webhook không hoàn tất intent này.
+                paymentIntent.ExpiresAtUtc = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+            }
         }
+
+        // Hàm này đã có sẵn trong BookingController.
+        // Chỉ xóa dữ liệu đặt vé, không xóa Session đăng nhập.
+        ClearBookingSession();
+
+        TempData["BookingMessage"] = "Đã huỷ quá trình đặt vé.";
+
+        return RedirectToAction("Index", "Home");
     }
-
-    // Hàm này đã có sẵn trong BookingController.
-    // Chỉ xóa dữ liệu đặt vé, không xóa Session đăng nhập.
-    ClearBookingSession();
-
-    TempData["BookingMessage"] = "Đã huỷ quá trình đặt vé.";
-
-    return RedirectToAction("Index", "Home");
-}
     private void ClearBookingSession()
     {
         var bookingSessionKeys = new[]

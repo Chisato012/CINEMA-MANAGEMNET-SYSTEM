@@ -7,8 +7,6 @@ using Cinema_Management.Services;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -42,24 +40,8 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// Dùng để gọi API Cloudflare Turnstile
-builder.Services.AddHttpClient();
 
-builder.Services.Configure<EmailSettings>(
-    builder.Configuration.GetSection("EmailSettings"));
-builder.Services.AddScoped<IEmailService, SmtpEmailService>();
-builder.Services.AddSingleton<IOfferService, MockOfferService>();
-
-var googleClientId =
-    builder.Configuration["Authentication:Google:ClientId"];
-
-var googleClientSecret =
-    builder.Configuration["Authentication:Google:ClientSecret"];
-
-// Trong moi truong Development, neu chua cau hinh Google OAuth
-// thi khong dang ky Google authentication de ung dung van chay.
-// Cookie authentication va che do dang nhap gia lap van hoat dong.
-var authenticationBuilder = builder.Services
+builder.Services
     .AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme =
@@ -76,42 +58,6 @@ var authenticationBuilder = builder.Services
         options.LoginPath = "/Account/Login";
         options.AccessDeniedPath = "/Account/AccessDenied";
     });
-
-// Production phai cau hinh ClientId va ClientSecret that
-// truoc khi bat lai dang nhap Google.
-if (!string.IsNullOrWhiteSpace(googleClientId) &&
-    !string.IsNullOrWhiteSpace(googleClientSecret))
-{
-    authenticationBuilder.AddGoogle(options =>
-    {
-        options.ClientId = googleClientId;
-        options.ClientSecret = googleClientSecret;
-        options.CallbackPath = "/signin-google";
-        options.SaveTokens = false;
-        options.Events.OnCreatingTicket = context =>
-        {
-            if (context.User.TryGetProperty("email_verified", out var emailVerified))
-            {
-                var identity = context.Principal?.Identity as ClaimsIdentity;
-                identity?.AddClaim(new Claim(
-                    "urn:google:email_verified",
-                    emailVerified.ToString()));
-            }
-
-            return Task.CompletedTask;
-        };
-        options.Events.OnRemoteFailure = context =>
-        {
-            context.HandleResponse();
-            context.Response.Redirect("/Account/GoogleLoginFailed");
-            return Task.CompletedTask;
-        };
-    });
-}
-
-// Lấy chuỗi kết nối từ appsettings.Development.json hoặc appsettings.json
-// Dùng để gọi API Cloudflare Turnstile ở luồng đăng nhập/đăng ký.
-builder.Services.AddHttpClient();
 
 // Service ML.NET singleton chỉ cần load một lần.
 // ChatbotService giới hạn lại, phụ thuộc ApplicationDbContext của từng request.

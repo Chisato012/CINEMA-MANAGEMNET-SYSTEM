@@ -5,6 +5,9 @@
     ViewBag.ActiveNav = "staff";
 }
 @* Hoàng UI An BE *@
+<head>
+    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
+</head>
 <style>
     .staff-page-fade {
         animation: staffFadeIn 180ms ease-out;
@@ -48,20 +51,7 @@
         </div>
     }
 
-    <!-- Filters Area -->
-    <div class="mb-6 flex flex-wrap gap-4">
-        <div class="relative w-full max-w-sm">
-            <input type="text" placeholder="Tìm kiếm..." class="w-full cinematic-input px-0 py-2 text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none" />
-        </div>
-        <div class="relative">
-            <select class="cinematic-input px-0 py-2 pr-8 min-w-[150px] text-on-surface bg-transparent focus:outline-none cursor-pointer appearance-none">
-                <option value="" class="bg-surface-container">Vai trò</option>
-                <option value="manager" class="bg-surface-container">Admin</option>
-                <option value="staff" class="bg-surface-container">Staff</option>
-            </select>
-            <span class="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">arrow_drop_down</span>
-        </div>
-    </div>
+
 
     <!-- Data Table -->
     <div class="bg-surface-container-low rounded-xl border border-outline-variant/30 overflow-hidden shadow-2xl cinematic-glow">
@@ -210,20 +200,24 @@
         @* form sửa tài khoản *@
         <form class="p-6 space-y-5" method="post" asp-controller="Admin" asp-action="UpdateStaff">
             @Html.AntiForgeryToken()
-            <input type="hidden" id="editUserID" name="UserID" />
+            @* FIX: Giữ lại UserID sau khi POST lỗi; khi mở modal bình thường JS vẫn ghi đè bằng ID của dòng được chọn. *@
+            <input type="hidden" id="editUserID" name="UserID" value="@ViewBag.EditUserID" />
             <input type="hidden" name="page" value="@ViewBag.CurrentPage" />
 
             <div class="relative">
                 <label class="block font-mono text-xs text-on-surface-variant mb-1 uppercase tracking-wider">Tên</label>
-                <input type="text" id="editFullName" name="FullName" placeholder="Họ và tên" class="w-full cinematic-input px-0 py-2 text-on-surface focus:outline-none" required />
+                <input type="text" id="editFullName" name="FullName" value="@ViewBag.EditFullName" placeholder="Họ và tên" class="w-full cinematic-input px-0 py-2 text-on-surface focus:outline-none" required />
+                <small id="name-error" class="auth-field-error"></small>
             </div>
             <div class="relative">
                 <label class="block font-mono text-xs text-on-surface-variant mb-1 uppercase tracking-wider">Email</label>
-                <input type="email" id="editEmail" name="Email" placeholder="name@cosmos.com" class="w-full cinematic-input px-0 py-2 text-on-surface focus:outline-none" required />
+                <input type="email" id="editEmail" name="Email" value="@ViewBag.EditEmail" placeholder="name@cosmos.com" class="w-full cinematic-input px-0 py-2 text-on-surface focus:outline-none" required />
+                <small id="email-error" class="auth-field-error"></small>
             </div>
             <div class="relative">
                 <label class="block font-mono text-xs text-on-surface-variant mb-1 uppercase tracking-wider">SĐT</label>
-                <input type="tel" id="editPhoneNumber" name="PhoneNumber" placeholder="0901234567" class="w-full cinematic-input px-0 py-2 text-on-surface focus:outline-none" />
+                <input type="tel" id="editPhoneNumber" name="PhoneNumber" value="@ViewBag.EditPhoneNumber" placeholder="0901234567" class="w-full cinematic-input px-0 py-2 text-on-surface focus:outline-none" />
+                <small id="phone-error" class="auth-field-error"></small>
             </div>
             <div class="relative">
                 <label class="block font-mono text-xs text-on-surface-variant mb-1 uppercase tracking-wider">Mật khẩu mới</label>
@@ -231,28 +225,9 @@
             </div>
             <div class="relative">
                 <label class="block font-mono text-xs text-on-surface-variant mb-1 uppercase tracking-wider">Ngày sinh</label>
-                <input type="date" id="editDOB" name="DOB" class="w-full cinematic-input px-0 py-2 text-on-surface focus:outline-none" />
+                <input type="date" id="editDOB" name="DOB" value="@ViewBag.EditDOB" class="w-full cinematic-input px-0 py-2 text-on-surface focus:outline-none" />
             </div>
-            <div class="relative">
-                <label class="block font-mono text-xs text-on-surface-variant mb-1 uppercase tracking-wider">Trạng thái</label>
-                <div class="relative">
-                    <select id="editStatus" name="Status" class="w-full cinematic-input px-0 py-2 bg-transparent text-on-surface focus:outline-none cursor-pointer appearance-none">
-                        <option value="true" class="bg-surface-container text-on-surface-variant">Active</option>
-                        <option value="false" class="bg-surface-container text-on-surface-variant">Off-Duty</option>
-                    </select>
-                    <span class="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">arrow_drop_down</span>
-                </div>
-            </div>
-            <div class="relative">
-                <label class="block font-mono text-xs text-on-surface-variant mb-1 uppercase tracking-wider">Vai trò</label>
-                <div class="relative">
-                    <select id="editRole" name="Role" class="w-full cinematic-input px-0 py-2 bg-transparent text-on-surface focus:outline-none cursor-pointer appearance-none" required>
-                        <option value="Admin" class="bg-surface-container">Admin</option>
-                        <option value="Staff" class="bg-surface-container">Staff</option>
-                    </select>
-                    <span class="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">arrow_drop_down</span>
-                </div>
-            </div>
+
             <div class="pt-4 flex justify-end gap-3 mt-4 border-t border-outline-variant/30">
                 <button type="button" onclick="toggleEditModal(false)" class="px-5 py-2 font-mono text-xs text-on-surface-variant border border-outline-variant rounded hover:bg-surface-variant transition-colors">
                     Huỷ
@@ -261,6 +236,7 @@
                     Lưu thay đổi
                 </button>
             </div>
+            <div asp-validation-summary="All" class="auth-field-error mb-4"></div>
         </form>
     </div>
 </div>
@@ -278,18 +254,25 @@
             </button>
         </div>
 
-        <form class="p-6 space-y-5" method="post" action="/Admin/CreateStaff">
+        @* FIX: Dùng tag helper để action URL đúng cả khi ứng dụng có PathBase. *@
+        <form class="p-6 space-y-5" method="post" asp-controller="Admin" asp-action="CreateStaff">
+            @Html.AntiForgeryToken()
+            @* FIX: Giữ trang hiện tại nếu Create validation thất bại. *@
+            <input type="hidden" name="page" value="@ViewBag.CurrentPage" />
             <div class="relative">
                 <label class="block font-mono text-xs text-on-surface-variant mb-1 uppercase tracking-wider">Tên</label>
-                <input type="text" name="FullName" placeholder="Họ và tên" class="w-full cinematic-input px-0 py-2 text-on-surface focus:outline-none" required />
+                <input type="text" name="FullName" value="@ViewBag.CreateFullName" placeholder="Họ và tên" class="w-full cinematic-input px-0 py-2 text-on-surface focus:outline-none" required />
+                <small id="name-error" class="auth-field-error"></small>
             </div>
             <div class="relative">
                 <label class="block font-mono text-xs text-on-surface-variant mb-1 uppercase tracking-wider">Email</label>
-                <input type="email" name="Email" placeholder="name@cosmos.com" class="w-full cinematic-input px-0 py-2 text-on-surface focus:outline-none" required />
+                <input type="email" name="Email" value="@ViewBag.CreateEmail" placeholder="name@cosmos.com" class="w-full cinematic-input px-0 py-2 text-on-surface focus:outline-none" required />
+                <small id="email-error" class="auth-field-error"></small>
             </div>
             <div class="relative">
                 <label class="block font-mono text-xs text-on-surface-variant mb-1 uppercase tracking-wider">SĐT</label>
-                <input type="tel" name="PhoneNumber" placeholder="0901234567" class="w-full cinematic-input px-0 py-2 text-on-surface focus:outline-none" />
+                <input type="tel" name="PhoneNumber" value="@ViewBag.CreatePhoneNumber" placeholder="0901234567" class="w-full cinematic-input px-0 py-2 text-on-surface focus:outline-none" />
+                <small id="phone-error" class="auth-field-error"></small>
             </div>
             <div class="relative">
                 <label class="block font-mono text-xs text-on-surface-variant mb-1 uppercase tracking-wider">Mật khẩu</label>
@@ -297,28 +280,7 @@
             </div>
             <div class="relative">
                 <label class="block font-mono text-xs text-on-surface-variant mb-1 uppercase tracking-wider">Ngày sinh</label>
-                <input type="date" name="DOB" class="w-full cinematic-input px-0 py-2 text-on-surface focus:outline-none" />
-            </div>
-            <div class="relative">
-                <label class="block font-mono text-xs text-on-surface-variant mb-1 uppercase tracking-wider">Trạng thái</label>
-                <div class="relative">
-                    <select name="Status" class="w-full cinematic-input px-0 py-2 bg-transparent text-on-surface focus:outline-none cursor-pointer appearance-none">
-                        <option value="true" class="bg-surface-container text-on-surface-variant">Active</option>
-                        <option value="false" class="bg-surface-container text-on-surface-variant">Off-Duty</option>
-                    </select>
-                    <span class="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">arrow_drop_down</span>
-                </div>
-            </div>
-            <div class="relative">
-                <label class="block font-mono text-xs text-on-surface-variant mb-1 uppercase tracking-wider">Vai trò</label>
-                <div class="relative">
-                    <select name="Role" class="w-full cinematic-input px-0 py-2 bg-transparent text-on-surface focus:outline-none cursor-pointer appearance-none" required>
-                        <option value="" class="bg-surface-container text-on-surface-variant">Chọn vai trò</option>
-                        <option value="Admin" class="bg-surface-container">Admin</option>
-                        <option value="Staff" class="bg-surface-container">Staff</option>
-                    </select>
-                    <span class="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">arrow_drop_down</span>
-                </div>
+                <input type="date" name="DOB" value="@ViewBag.CreateDOB" class="w-full cinematic-input px-0 py-2 text-on-surface focus:outline-none" />
             </div>
             <div class="pt-4 flex justify-end gap-3 mt-4 border-t border-outline-variant/30">
                 <button type="button" onclick="toggleModal(false)" class="px-5 py-2 font-mono text-xs text-on-surface-variant border border-outline-variant rounded hover:bg-surface-variant transition-colors">
@@ -328,6 +290,7 @@
                     Tạo tài khoản
                 </button>
             </div>
+            <div asp-validation-summary="All" class="auth-field-error mb-4"></div>
         </form>
     </div>
 </div>
@@ -359,12 +322,23 @@
             document.getElementById('editEmail').value = data.email || '';
             document.getElementById('editPhoneNumber').value = data.phoneNumber || '';
             document.getElementById('editDOB').value = data.dob || '';
-            document.getElementById('editStatus').value = data.status === 'false' ? 'false' : 'true';
-            document.getElementById('editRole').value = data.role || 'Staff';
             document.getElementById('editPasswordHash').value = '';
             toggleEditModal(true);
         }
-
+       document.addEventListener("DOMContentLoaded", function () {
+        @if (ViewBag.OpenModal as string == "create")
+        {
+            <text>toggleModal(true);</text>
+        }
+        else if (ViewBag.OpenModal as string == "edit")
+        {
+            <text>toggleEditModal(true);</text>
+        }
+        });
 
     </script>
+    <script src="~/js/auth.js" asp-append-version="true"></script>
+
+
+
 }

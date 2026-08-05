@@ -2,7 +2,7 @@
     ViewData["Title"] = "Trang cá nhân";
     var fullName = Context.Session.GetString("UserFullName") ?? "Khách hàng COSMOS";
     var email = Context.Session.GetString("UserEmail");
-    var role = Context.Session.GetString("UserRole") ?? "Khách hàng";
+    var role = Context.Session.GetString("Ussle") ?? "Khách hàng";
     var avatarInitial = !string.IsNullOrWhiteSpace(fullName)
         ? fullName.Trim()[0].ToString().ToUpperInvariant()
         : "C";
@@ -16,6 +16,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - COSMOS CINEMA</title>
+    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
     <style>
             :root {
                 --home-bg: #121210;
@@ -154,7 +156,7 @@
         @if (TempData["SuccessMessage"] is string successMessage)
         {
             <script>
-                        alert(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(successMessage)));
+                alert(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(successMessage)));
             </script>
         }
         <form class="profile-infomation profile-content" id="profile-information" asp-action="Profile"
@@ -163,21 +165,24 @@
             <div class="profile-row">
                 <div class="profile-item w50">
                     <h6>Họ và tên</h6>
-                    <input type="text" asp-for="FullName">
+                    <input type="text" asp-for="FullName" id="name-input">
+                    <small id="name-error" class="auth-field-error"></small>
                 </div>
                 <div class="profile-item w50">
                     <h6>Email</h6>
-                    <input type="text" asp-for="Email">
+                    <input type="email" asp-for="Email" id="email-input" readonly>
+                    <small id="email-error" class="auth-field-error"></small>
                 </div>
             </div>
             <div class="profile-row">
                 <div class="profile-item w50">
                     <h6>Số điện thoại</h6>
-                    <input type="text" asp-for="PhoneNumber">
+                    <input type="text" asp-for="PhoneNumber" id="phone-input">
+                    <small id="phone-error" class="auth-field-error"></small>
                 </div>
                 <div class="profile-item w50">
                     <h6>Ngày sinh</h6>
-                    <input type="date" asp-for="DOB">
+                    <input type="date" asp-for="DOB" readonly>
                 </div>
             </div>
             <button type="submit">
@@ -280,7 +285,10 @@
             });
         });
     });
+
 </script>
+
+<script src="~/js/auth.js" asp-append-version="true"></script>
 
 </html>
 

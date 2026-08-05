@@ -9,7 +9,6 @@
     var occupiedSeats = Model.OccupiedSeats.ToHashSet(StringComparer.OrdinalIgnoreCase);
 
 
-    //Các biến lấy ra các hàng ghế theo loại ghế và sắp xếp theo thứ tự chữ cái của hàng ghế
     var regularRows = Model.SeatChoices
         .Where(s => s.SeatType == "Regular")
         .GroupBy(s => s.SeatCode.Substring(0, 1))

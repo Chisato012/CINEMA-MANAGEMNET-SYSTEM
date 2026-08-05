@@ -366,8 +366,7 @@
 
 .forgot-link,
 .auth-switch-copy a,
-.auth-secondary-link,
-.btn-resend-confirmation {
+.auth-secondary-link {
     color: var(--auth-accent);
     font-weight: 800;
     text-decoration: none;
@@ -381,8 +380,7 @@
 
 .forgot-link:hover,
 .auth-switch-copy a:hover,
-.auth-secondary-link:hover,
-.btn-resend-confirmation:hover {
+.auth-secondary-link:hover {
     color: #FFDCC5;
 }
 
@@ -418,12 +416,6 @@
     padding-left: 1.1rem;
 }
 
-.auth-turnstile {
-    display: grid;
-    gap: 0.5rem;
-    min-height: 4.25rem;
-}
-
 .auth-check {
     align-items: center;
     color: rgba(255, 237, 227, 0.72);
@@ -454,11 +446,9 @@
 .auth-input:focus,
 .auth-password-toggle:focus-visible,
 .btn-submit:focus-visible,
-.btn-google-login:focus-visible,
 .auth-switch-copy a:focus-visible,
 .forgot-link:focus-visible,
-.auth-secondary-link:focus-visible,
-.btn-resend-confirmation:focus-visible {
+.auth-secondary-link:focus-visible {
     outline: 2px solid rgba(255, 220, 197, 0.82);
     outline-offset: 3px;
 }
@@ -491,9 +481,7 @@
 
 .btn-submit:active,
 .auth-tab:active,
-.auth-password-toggle:active,
-.btn-google-login:active,
-.btn-resend-confirmation:active {
+.auth-password-toggle:active {
     transform: translateY(0) scale(0.98);
 }
 
@@ -503,71 +491,12 @@
     opacity: 0.72;
 }
 
-.auth-resend-form {
-    margin-top: 1rem;
-    text-align: center;
-}
-
-.btn-resend-confirmation {
-    background: transparent;
-    border: 0;
-    cursor: pointer;
-    font-size: 0.85rem;
-    padding: 0;
-}
-
 .auth-switch-copy {
     color: rgba(255, 237, 227, 0.62);
     font-size: 0.9rem;
     line-height: 1.55;
     margin: 1rem 0 0;
     text-align: center;
-}
-
-.auth-divider {
-    align-items: center;
-    color: rgba(255, 237, 227, 0.48);
-    display: flex;
-    font-size: 0.8rem;
-    gap: 0.8rem;
-    margin: 1.2rem 0 1rem;
-}
-
-.auth-divider::before,
-.auth-divider::after {
-    background-color: rgba(255, 220, 197, 0.14);
-    content: "";
-    flex: 1;
-    height: 1px;
-}
-
-.btn-google-login {
-    align-items: center;
-    background-color: #FFEDE3;
-    border: 1px solid rgba(255, 220, 197, 0.44);
-    border-radius: 8px;
-    color: #301400;
-    display: inline-flex;
-    font-weight: 900;
-    gap: 0.75rem;
-    justify-content: center;
-    min-height: 3.35rem;
-    text-decoration: none;
-    transition: background-color 0.24s var(--auth-ease), border-color 0.24s var(--auth-ease), transform 0.24s var(--auth-ease);
-    width: 100%;
-}
-
-.btn-google-login:hover {
-    background-color: #FFDCC5;
-    border-color: rgba(255, 237, 227, 0.62);
-    color: #301400;
-    transform: translateY(-1px);
-}
-
-.google-logo {
-    flex: 0 0 1.25rem;
-    height: 1.25rem;
-    width: 1.25rem;
 }
 
 .auth-container,
