@@ -1,12 +1,15 @@
 using Cinema_Management.Data;
 using Cinema_Management.Services.Chatbot;
 using Cinema_Management.Services.Recommendation;
+using Cinema_Management.Services.Email;
+using Cinema_Management.Services.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Cinema_Management.Models;
 using Cinema_Management.Services;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -41,7 +44,7 @@ builder.Services.AddSession(options =>
 });
 
 
-builder.Services
+var authenticationBuilder = builder.Services
     .AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme =
@@ -61,8 +64,29 @@ builder.Services
 
 // Service ML.NET singleton chỉ cần load một lần.
 // ChatbotService giới hạn lại, phụ thuộc ApplicationDbContext của từng request.
+var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
+var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+
+if (!string.IsNullOrWhiteSpace(googleClientId)
+    && !string.IsNullOrWhiteSpace(googleClientSecret))
+{
+    authenticationBuilder.AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
+    {
+        options.ClientId = googleClientId;
+        options.ClientSecret = googleClientSecret;
+        options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.SaveTokens = false;
+        options.ClaimActions.MapJsonKey("urn:google:email_verified", "email_verified");
+    });
+}
+
 builder.Services.AddSingleton<IGenreRecommendationService, MlNetGenreRecommendationService>();
 builder.Services.AddScoped<IChatbotService, ChatbotService>();
+builder.Services.Configure<SmtpEmailOptions>(
+    builder.Configuration.GetSection("Email:Smtp"));
+builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
+builder.Services.AddScoped<EmailVerificationService>();
+builder.Services.AddScoped<UserSignInService>();
 
 var connectionString = builder.Configuration
                            .GetConnectionString("DefaultConnection")

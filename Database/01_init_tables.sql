@@ -1,4 +1,4 @@
-fif not exists (select * from sys.databases where name = 'MovieTicketDB')
+if not exists (select * from sys.databases where name = 'MovieTicketDB')
 begin
     create database MovieTicketDB;
     print N'Đã tạo mới database';
@@ -152,7 +152,7 @@ create table Users (
   UserID       int          PRIMARY KEY IDENTITY(1, 1),
   FullName    nvarchar(150) NOT NULL,
   Email        varchar(200)  UNIQUE NOT NULL,
-  PasswordHash varchar(512)  NOT NULL,
+  PasswordHash varchar(512)  NULL,
   PhoneNumber  varchar(15),
   DOB          date,
   Status       bit           DEFAULT (1),
@@ -164,7 +164,7 @@ create table Users (
 
     EmailVerificationTokenExpiresAt DATETIME2 NULL,
 
-    EmailVerificationTokenHash VARCHAR(512) NULL,
+    EmailVerificationTokenHash VARCHAR(64) NULL,
 
     ExternalProvider NVARCHAR(50) NULL,
 

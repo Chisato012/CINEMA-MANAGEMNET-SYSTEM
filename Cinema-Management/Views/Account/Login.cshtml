@@ -25,6 +25,17 @@
 
             <div asp-validation-summary="ModelOnly" class="auth-validation-summary"></div>
 
+            @if (!string.IsNullOrWhiteSpace(ViewBag.UnconfirmedEmail as string))
+            {
+                <div class="auth-info-panel">
+                    <p>Email nay chua duoc xac minh. Hay gui lai email xac minh neu ban chua nhan duoc.</p>
+                    <form asp-controller="Account" asp-action="ResendVerificationEmail" method="post">
+                        <input type="hidden" name="email" value="@ViewBag.UnconfirmedEmail" />
+                        <button type="submit" class="auth-inline-button">Gui lai email xac minh</button>
+                    </form>
+                </div>
+            }
+
             <form class="auth-form" asp-controller="Account" asp-action="Login" method="post">
                 <div class="auth-field">
                     <label asp-for="Email" class="auth-label">Địa chỉ email</label>
@@ -89,6 +100,17 @@
 
                 <button type="submit" class="btn btn-submit">Đăng nhập</button>
             </form>
+
+            @if (ViewBag.GoogleLoginEnabled == true)
+            {
+                <div class="auth-divider"><span>hoac</span></div>
+                <form asp-controller="GoogleAuth" asp-action="Login" method="post">
+                    <input type="hidden" name="returnUrl" value="@Context.Request.Query["ReturnUrl"]" />
+                    <button type="submit" class="btn-google">
+                        <span>Đăng nhập với google</span>
+                    </button>
+                </form>
+            }
 
             <p class="auth-switch-copy">
                 Chưa có tài khoản?
