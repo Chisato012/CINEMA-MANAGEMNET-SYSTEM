@@ -1,7 +1,8 @@
-using System.Security.Claims;
 using System.Text.RegularExpressions;
 using Cinema_Management.Data;
 using Cinema_Management.Models;
+using Cinema_Management.Services.Authentication;
+using Cinema_Management.Services.Email;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
@@ -21,22 +22,31 @@ public class AccountController : Controller
         };
     private readonly IWebHostEnvironment _environment;
     private readonly ApplicationDbContext _context;
+    private readonly IConfiguration _configuration;
+    private readonly EmailVerificationService _emailVerificationService;
+    private readonly UserSignInService _userSignInService;
     private readonly ILogger<AccountController> _logger;
 
     public AccountController(
         IWebHostEnvironment environment,
         ApplicationDbContext context,
+        IConfiguration configuration,
+        EmailVerificationService emailVerificationService,
+        UserSignInService userSignInService,
         ILogger<AccountController> logger)
     {
         _environment = environment;
         _context = context;
+        _configuration = configuration;
+        _emailVerificationService = emailVerificationService;
+        _userSignInService = userSignInService;
         _logger = logger;
     }
 
     [HttpGet]
     public IActionResult Login()
     {
-        ViewBag.ShowDevelopmentPasswordlessLoginMessage = _environment.IsDevelopment();
+        PopulateAuthViewData();
         return View();
     }
 
@@ -63,7 +73,7 @@ public class AccountController : Controller
 
         if (!ModelState.IsValid)
         {
-            ViewBag.ShowDevelopmentPasswordlessLoginMessage = _environment.IsDevelopment();
+            PopulateAuthViewData();
             return View(model);
         }
 
@@ -94,7 +104,7 @@ public class AccountController : Controller
                     user?.Role ?? "(none)");
             }
 
-            ViewBag.ShowDevelopmentPasswordlessLoginMessage = _environment.IsDevelopment();
+            PopulateAuthViewData();
             ModelState.AddModelError(string.Empty, "Sai email hoặc mật khẩu");
             TempData["AlertError"] = "Sai email hoặc mật khẩu. Vui lòng thử lại.";
             return View(model);
@@ -109,13 +119,26 @@ public class AccountController : Controller
                     user.Role);
             }
 
-            ViewBag.ShowDevelopmentPasswordlessLoginMessage = _environment.IsDevelopment();
+            PopulateAuthViewData();
             ModelState.AddModelError(string.Empty, "Tài khoản đã bị khóa");
             TempData["AlertError"] = "Tài khoản của bạn đã bị khóa.";
             return View(model);
         }
 
-        SignInWithSession(user, model.RememberMe);
+        if (!user.EmailConfirmed)
+        {
+            PopulateAuthViewData(user.Email);
+            ModelState.AddModelError(
+                string.Empty,
+                "Tài khoản chưa xác minh email. Vui lòng kiểm tra hộp thư hoặc gửi lại email xác minh.");
+            TempData["AlertError"] = "Vui lòng xác minh email trước khi đăng nhập.";
+            return View(model);
+        }
+
+        await _userSignInService.SignInAsync(
+            HttpContext,
+            user,
+            model.RememberMe);
 
         var role = user.Role;
         if (isDevelopmentPasswordlessLogin)
@@ -153,6 +176,11 @@ public class AccountController : Controller
             return Unauthorized("Tài khoản đã bị khóa");
         }
 
+        if (!user.EmailConfirmed)
+        {
+            return Unauthorized("Tai khoan chua xac minh email");
+        }
+
         return Ok(new
         {
             message = "Đăng nhập thành công",
@@ -178,6 +206,7 @@ public class AccountController : Controller
     [HttpGet]
     public IActionResult Register()
     {
+        PopulateAuthViewData();
         return View();
     }
 
@@ -187,6 +216,7 @@ public class AccountController : Controller
     {
         if (!ModelState.IsValid)
         {
+            PopulateAuthViewData();
             return View(model);
         }
 
@@ -196,6 +226,7 @@ public class AccountController : Controller
         if (emailExists)
         {
             AddDuplicateAccountError();
+            PopulateAuthViewData();
             return View(model);
         }
 
@@ -207,7 +238,8 @@ public class AccountController : Controller
             DOB = model.DateOfBirth,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password),
             Role = "KhachHang",
-            Status = true
+            Status = true,
+            EmailConfirmed = false
         };
 
         _context.Users.Add(user);
@@ -215,51 +247,133 @@ public class AccountController : Controller
         try
         {
             await _context.SaveChangesAsync(cancellationToken);
-            TempData["AlertSuccess"] = "Đăng ký thành công. Bạn có thể đăng nhập ngay.";
         }
         catch (DbUpdateException exception) when (IsDuplicateAccountError(exception))
         {
             AddDuplicateAccountError();
+            PopulateAuthViewData();
+            return View(model);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(
+                exception,
+                "Failed to create account for email {Email}.",
+                email);
+            TempData["AlertError"] = "Chưa tạo được tài khoản, vui lòng thử lại.";
+            PopulateAuthViewData();
             return View(model);
         }
 
+        var token = _emailVerificationService.GenerateAndApplyToken(user);
+
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            await SendVerificationEmailAsync(user, token, cancellationToken);
+            TempData["AlertSuccess"] = "Đăng ký thành công. Vui lòng kiểm tra email để xác nhận tài khoản.";
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(
+                exception,
+                "Failed to send verification email for user {UserId}.",
+                user.UserID);
+            TempData["AlertError"] = "Tài khoản đã được tạo nhưng chưa gửi được email xác minh. Vui lòng thử gửi lại.";
+        }
+
+        return RedirectToAction(nameof(EmailVerificationSent), new { email = user.Email });
+    }
+
+    [HttpGet]
+    public IActionResult EmailVerificationSent(string email)
+    {
+        ViewBag.Email = email;
+        return View();
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ConfirmEmail(
+        int userId,
+        string token,
+        CancellationToken cancellationToken)
+    {
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.UserID == userId, cancellationToken);
+
+        if (user == null || !_emailVerificationService.IsTokenValid(user, token))
+        {
+            TempData["AlertError"] = "Lien ket xac minh email khong hop le hoac da het han.";
+            return RedirectToAction(nameof(Login));
+        }
+
+        _emailVerificationService.MarkEmailConfirmed(user);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        TempData["AlertSuccess"] = "Xac minh email thanh cong. Ban co the dang nhap.";
         return RedirectToAction(nameof(Login));
     }
 
-    private void SignInWithSession(User user, bool rememberMe = false)
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResendVerificationEmail(
+        string email,
+        CancellationToken cancellationToken)
     {
-        HttpContext.Session.SetString("UserEmail", user.Email);
-        HttpContext.Session.SetString("UserFullName", user.FullName);
-        HttpContext.Session.SetString("UserRole", user.Role);
-        HttpContext.Session.SetInt32("UserID", user.UserID);
-        HttpContext.Session.SetString("RememberMe", rememberMe.ToString());
+        var normalizedEmail = NormalizeEmail(email);
 
-        var claims = new List<Claim>
+        if (string.IsNullOrWhiteSpace(normalizedEmail))
         {
-            new Claim(ClaimTypes.NameIdentifier, user.UserID.ToString()),
-            new Claim(ClaimTypes.Name, user.FullName),
-            new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.Role)
-        };
+            TempData["AlertError"] = "Vui long nhap email de gui lai xac minh.";
+            return RedirectToAction(nameof(Login));
+        }
 
-        var identity = new ClaimsIdentity(
-            claims,
-            CookieAuthenticationDefaults.AuthenticationScheme);
-        var principal = new ClaimsPrincipal(identity);
-        var properties = new AuthenticationProperties
+        var user = await FindUserByNormalizedEmailAsync(
+            normalizedEmail,
+            cancellationToken);
+
+        if (user == null)
         {
-            IsPersistent = rememberMe,
-            ExpiresUtc = rememberMe
-                ? DateTimeOffset.UtcNow.AddDays(30)
-                : null
-        };
+            TempData["AlertSuccess"] = "Nếu email tồn tại, hệ thống sẽ gửi lại email xác minh.";
+            return RedirectToAction(nameof(Login));
+        }
 
-        HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                principal,
-                properties)
-            .GetAwaiter()
-            .GetResult();
+        if (user.EmailConfirmed)
+        {
+            TempData["AlertSuccess"] = "Email này đã được xác minh. Bạn có thể đăng nhập.";
+            return RedirectToAction(nameof(Login));
+        }
+
+        if (!user.Status)
+        {
+            TempData["AlertError"] = "Tài khoản của bạn đã bị khóa.";
+            return RedirectToAction(nameof(Login));
+        }
+
+        if (!_emailVerificationService.CanSendVerificationEmail(user))
+        {
+            TempData["AlertError"] = "Vui lòng đợi một chút trước khi gửi lại email xác minh.";
+            return RedirectToAction(nameof(EmailVerificationSent), new { email = user.Email });
+        }
+
+        var token = _emailVerificationService.GenerateAndApplyToken(user);
+
+        try
+        {
+            await SendVerificationEmailAsync(user, token, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
+            TempData["AlertSuccess"] = "Đã gửi lại email xác minh. Vui lòng kiểm tra hộp thư.";
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(
+                exception,
+                "Failed to resend verification email for user {UserId}.",
+                user.UserID);
+            TempData["AlertError"] = "Chua gui duoc email xac minh. Vui long thu lai sau.";
+        }
+
+        return RedirectToAction(nameof(EmailVerificationSent), new { email = user.Email });
     }
 
     private IActionResult RedirectByRole(string role)
@@ -270,6 +384,48 @@ public class AccountController : Controller
             "Staff" => RedirectToAction("Index", "Staff"),
             _ => RedirectToAction("Index", "Home")
         };
+    }
+
+    private async Task SendVerificationEmailAsync(
+        User user,
+        string token,
+        CancellationToken cancellationToken)
+    {
+        var verificationLink = Url.Action(
+            nameof(ConfirmEmail),
+            "Account",
+            new
+            {
+                userId = user.UserID,
+                token
+            },
+            Request.Scheme);
+
+        if (string.IsNullOrWhiteSpace(verificationLink))
+        {
+            throw new InvalidOperationException(
+                "Could not generate email verification link.");
+        }
+
+        await _emailVerificationService.SendVerificationEmailAsync(
+            user,
+            verificationLink,
+            cancellationToken);
+    }
+
+    private void PopulateAuthViewData(string? unconfirmedEmail = null)
+    {
+        ViewBag.ShowDevelopmentPasswordlessLoginMessage = _environment.IsDevelopment();
+        ViewBag.GoogleLoginEnabled = IsGoogleLoginEnabled();
+        ViewBag.UnconfirmedEmail = unconfirmedEmail;
+    }
+
+    private bool IsGoogleLoginEnabled()
+    {
+        return !string.IsNullOrWhiteSpace(
+                   _configuration["Authentication:Google:ClientId"])
+               && !string.IsNullOrWhiteSpace(
+                   _configuration["Authentication:Google:ClientSecret"]);
     }
 
     private Task<User?> FindUserByNormalizedEmailAsync(

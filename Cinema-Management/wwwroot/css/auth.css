@@ -446,6 +446,8 @@
 .auth-input:focus,
 .auth-password-toggle:focus-visible,
 .btn-submit:focus-visible,
+.btn-google:focus-visible,
+.auth-inline-button:focus-visible,
 .auth-switch-copy a:focus-visible,
 .forgot-link:focus-visible,
 .auth-secondary-link:focus-visible {
@@ -479,9 +481,102 @@
     transform: translateY(-1px);
 }
 
+.auth-divider {
+    align-items: center;
+    color: rgba(255, 237, 227, 0.48);
+    display: grid;
+    font-size: 0.78rem;
+    font-weight: 800;
+    gap: 0.75rem;
+    grid-template-columns: 1fr auto 1fr;
+    margin: 1rem 0;
+    text-transform: uppercase;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    background-color: rgba(255, 220, 197, 0.14);
+    content: "";
+    height: 1px;
+}
+
+.btn-google,
+.auth-inline-button {
+    align-items: center;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    font-weight: 900;
+    justify-content: center;
+    line-height: 1;
+    text-decoration: none;
+    transition: background-color 0.24s var(--auth-ease), border-color 0.24s var(--auth-ease), color 0.24s var(--auth-ease), transform 0.24s var(--auth-ease);
+}
+
+.btn-google {
+    background-color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    color: #202124;
+    gap: 0.7rem;
+    min-height: 3.35rem;
+    padding: 0.95rem 1.2rem;
+    width: 100%;
+}
+
+.btn-google:hover {
+    background-color: #f8fafd;
+    border-color: #fff;
+    color: #202124;
+    transform: translateY(-1px);
+}
+
+.btn-google-mark {
+    align-items: center;
+    border: 1px solid #dadce0;
+    border-radius: 50%;
+    color: #4285f4;
+    display: inline-flex;
+    font-family: Arial, sans-serif;
+    font-size: 1rem;
+    height: 1.5rem;
+    justify-content: center;
+    width: 1.5rem;
+}
+
+.auth-info-panel {
+    background-color: rgba(214, 160, 121, 0.1);
+    border: 1px solid rgba(214, 160, 121, 0.24);
+    border-radius: 8px;
+    color: rgba(255, 237, 227, 0.82);
+    display: grid;
+    gap: 0.75rem;
+    line-height: 1.55;
+    margin-bottom: 1rem;
+    padding: 0.85rem 0.95rem;
+}
+
+.auth-info-panel p {
+    margin: 0;
+}
+
+.auth-inline-button {
+    background-color: transparent;
+    border: 1px solid rgba(255, 220, 197, 0.24);
+    color: var(--auth-accent);
+    min-height: 2.45rem;
+    padding: 0.65rem 0.9rem;
+}
+
+.auth-inline-button:hover {
+    background-color: rgba(255, 220, 197, 0.08);
+    color: #FFDCC5;
+}
+
 .btn-submit:active,
 .auth-tab:active,
-.auth-password-toggle:active {
+.auth-password-toggle:active,
+.btn-google:active,
+.auth-inline-button:active {
     transform: translateY(0) scale(0.98);
 }
 

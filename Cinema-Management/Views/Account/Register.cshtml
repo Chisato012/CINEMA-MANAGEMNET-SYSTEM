@@ -144,6 +144,16 @@
                         <button type="submit" class="btn btn-submit">Tạo tài khoản</button>
                     </form>
 
+                    @if (ViewBag.GoogleLoginEnabled == true)
+                    {
+                        <div class="auth-divider"><span>hoac</span></div>
+                        <form asp-controller="GoogleAuth" asp-action="Login" method="post">
+                            <button type="submit" class="btn-google">
+                                <span>Đăng nhập với google</span>
+                            </button>
+                        </form>
+                    }
+
                     <p class="auth-switch-copy">
                         Đã có tài khoản?
                         <a asp-controller="Account" asp-action="Login">Đăng nhập</a>

@@ -269,7 +269,7 @@ namespace Cinema_Management.Migrations
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)")
-                        .HasDefaultValue("Customer");
+                        .HasDefaultValue("KhachHang");
 
                     b.Property<bool>("Status")
                         .HasColumnType("bit");

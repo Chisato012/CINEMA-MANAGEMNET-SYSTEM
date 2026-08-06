@@ -1,0 +1,31 @@
+@{
+    ViewData["Title"] = "Xac minh email";
+    var email = ViewBag.Email as string;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
+}
+
+<section class="auth-wrapper">
+    <div class="auth-container">
+        <div class="auth-card">
+            <h1 class="auth-state-title">Vui lòng kiểm tra email</h1>
+            <p class="auth-state-text">
+                Chúng tôi đã gửi liên kết xác minh đến
+                <strong>@(string.IsNullOrWhiteSpace(email) ? "email của bạn" : email)</strong>.
+                Hãy mở email và xác minh liên kết của bạn.
+            </p>
+
+            @if (!string.IsNullOrWhiteSpace(email))
+            {
+                <form class="auth-state-form" asp-controller="Account" asp-action="ResendVerificationEmail" method="post">
+                    <input type="hidden" name="email" value="@email" />
+                    <button type="submit" class="btn btn-submit">Gửi lại email xác minh</button>
+                </form>
+            }
+
+            <a class="auth-secondary-link" asp-controller="Account" asp-action="Login">Quay lại đăng nhập</a>
+        </div>
+    </div>
+</section>
