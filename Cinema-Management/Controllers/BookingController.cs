@@ -42,6 +42,7 @@ public class BookingController : Controller
         var today = DateTime.Today;
         var selectedDate = (date ?? today).Date;
         var lastDate = today.AddDays(13);
+        var now = DateTime.Now;
 
         var showtimeQuery = _context.Showtimes
             .AsNoTracking()
@@ -54,7 +55,7 @@ public class BookingController : Controller
             .Include(s => s.Room!)
                 .ThenInclude(r => r.Seats)
             .Include(s => s.Tickets)
-            .Where(s => s.Date >= today && s.Date <= lastDate);
+            .Where(s => s.Date >= today && s.Date <= lastDate && s.StartTime >= now);
 
         if (movieId.HasValue)
         {
@@ -218,9 +219,10 @@ public class BookingController : Controller
             return NotFound();
         }
 
+        var now = DateTime.Now;
         // Truy vấn thông tin các suất chiếu của phim
         var showtimes = _context.Showtimes
-            .Where(s => s.MovieID == movieId && s.Date >= DateTime.Today)
+            .Where(s => s.MovieID == movieId && s.Date >= DateTime.Today && s.StartTime >= now)
             .OrderBy(s => s.Date)
             .ThenBy(s => s.StartTime)
             .ToList();

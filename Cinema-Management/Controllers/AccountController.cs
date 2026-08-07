@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 using Cinema_Management.Data;
 using Cinema_Management.Models;
 using Microsoft.AspNetCore.Authentication;
@@ -353,10 +354,6 @@ public class AccountController : Controller
     {
 
         ModelState.Remove(nameof(model.Role));
-        if (!ModelState.IsValid)
-        {
-            return View(model);
-        }
         var UserID = HttpContext.Session.GetInt32("UserID");
         if (UserID == null)
         {
@@ -369,6 +366,51 @@ public class AccountController : Controller
         {
             return NotFound();
         }
+
+        if (model.DOB > DateTime.Now)
+        {
+            ModelState.AddModelError(nameof(model.DOB), "Ngày sinh không hợp lệ.");
+        }
+        if (model.FullName == null || model.FullName.Trim().Length > 50)
+        {
+            ModelState.AddModelError(nameof(model.FullName), "Họ và tên không được vượt quá 50 ký tự và để trống");
+        }
+
+        if (model.PhoneNumber == null)
+        {
+            ModelState.AddModelError(nameof(model.PhoneNumber), "Số điện thoại k được để trống");
+
+        }
+
+        var fullName = model.FullName?.Trim() ?? string.Empty;
+        var phoneNumber = model.PhoneNumber?.Trim() ?? string.Empty;
+
+        string namePattern = @"^[\p{L}\s]+$";
+        if (Regex.IsMatch(fullName, namePattern) == false)
+        {
+            ModelState.AddModelError(nameof(model.FullName), "Họ và tên chỉ được chứa chữ cái và khoảng trắng.");
+        }
+
+        const string phonePattern = @"^0[0-9]{9}$";
+        if (!Regex.IsMatch(phoneNumber, phonePattern))
+        {
+            ModelState.AddModelError(
+                nameof(model.PhoneNumber),
+                "Số điện thoại phải có đúng 10 chữ số và bắt đầu bằng số 0.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState.Values
+                .SelectMany(value => value.Errors)
+                .Select(error => error.ErrorMessage)
+                .Where(message => !string.IsNullOrWhiteSpace(message));
+
+            TempData["AlertError"] = string.Join(" ", errors);
+
+            return View(model);
+        }
+
 
         user.FullName = model.FullName;
         user.Email = model.Email;

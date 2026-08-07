@@ -1,8 +1,8 @@
 @model Cinema_Management.Models.StaffScheduleViewModel
 @{
-    ViewData["Title"] = "Movie Scheduling";
-    var scheduleDate = DateTime.Today.ToString("yyyy-MM-dd");
-    var renderStaticRooms = false;
+ViewData["Title"] = "Movie Scheduling";
+var scheduleDate = DateTime.Today.ToString("yyyy-MM-dd");
+var renderStaticRooms = false;
 }
 @* Quang UI Bắc BE *@
 
@@ -14,7 +14,7 @@
             ĐANG KẾT NỐI
         </span>
     </div>
-    
+
     <div style="display:flex;align-items:center;gap:16px;">
         <div class="date-picker">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -33,12 +33,12 @@
 
 @if (TempData["AlertSuccess"] is string successMessage)
 {
-    <div class="staff-alert staff-alert-success" data-alert-duration="3200">@successMessage</div>
+<div class="staff-alert staff-alert-success" data-alert-duration="3200">@successMessage</div>
 }
 
 @if (TempData["AlertError"] is string errorMessage)
 {
-    <div class="staff-alert staff-alert-error" data-alert-duration="5200">@errorMessage</div>
+<div class="staff-alert staff-alert-error" data-alert-duration="5200">@errorMessage</div>
 }
 
 <div class="scheduling-layout">
@@ -54,33 +54,33 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             <input type="text" id="movieSearchInput" placeholder="Tìm kiếm theo tên phim..." autocomplete="off" />
         </div>
-        
+
         <div class="movies-list">
             @foreach (var movie in Model.Movies)
             {
-                var genreText = movie.MovieGenres != null ? string.Join(", ", movie.MovieGenres.Select(mg => mg.Genre?.Name).Where(n => n != null)) : "";
-                <div class="movie-list-item" data-movie-id="@movie.MovieId" data-title="@movie.Title" data-duration="@movie.Duration" data-rating="@movie.AgeRating" data-genre="@genreText" data-poster="@movie.PosterURL" data-synopsis="@movie.Synopsis" data-trailer="@movie.Trailer" data-release-date="@movie.ReleaseDate.ToString("yyyy-MM-dd")">
-                    <img src="@movie.PosterURL" alt="@movie.Title" />
-                    <div class="ml-info">
-                        <h5>@movie.Title</h5>
-                        <p class="ml-genre">@genreText</p>
-                        <div class="ml-badges">
+            var genreText = movie.MovieGenres != null ? string.Join(", ", movie.MovieGenres.Select(mg => mg.Genre?.Name).Where(n => n != null)) : "";
+            <div class="movie-list-item" data-movie-id="@movie.MovieId" data-title="@movie.Title" data-duration="@movie.Duration" data-rating="@movie.AgeRating" data-genre="@genreText" data-poster="@movie.PosterURL" data-synopsis="@movie.Synopsis" data-trailer="@movie.Trailer" data-release-date="@movie.ReleaseDate.ToString("yyyy-MM-dd")">
+                <img src="@movie.PosterURL" alt="@movie.Title" />
+                <div class="ml-info">
+                    <h5>@movie.Title</h5>
+                    <p class="ml-genre">@genreText</p>
+                    <div class="ml-badges">
                             <span class="ml-badge">
                                 <i class="far fa-clock"> </i>
                                 @movie.Duration min
                             </span>
-                            <span class="ml-badge badge-primary">@movie.AgeRating</span>
-                        </div>
-                    </div>
-                    <div class="ml-actions">
-                        <button type="button" class="btn-icon edit-movie-btn" title="Edit movie registry">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                        </button>
-                        <button type="button" class="btn-icon schedule-movie-btn" title="Add movie to screening room">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M12 14v4"></path><path d="M10 16h4"></path></svg>
-                        </button>
+                        <span class="ml-badge badge-primary">@movie.AgeRating</span>
                     </div>
                 </div>
+                <div class="ml-actions">
+                    <button type="button" class="btn-icon edit-movie-btn" title="Edit movie registry">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                    </button>
+                    <button type="button" class="btn-icon schedule-movie-btn" title="Add movie to screening room">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"></rect><line x1="8" y1="2" x2="8" y2="6"></line><line x1="16" y1="2" x2="16" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><path d="M12 14v4"></path><path d="M10 16h4"></path></svg>
+                    </button>
+                </div>
+            </div>
             }
             <div class="movie-search-empty" id="movieSearchEmpty" hidden>Không tìm thấy phim phù hợp.</div>
         </div>
@@ -92,21 +92,21 @@
             <div class="mh-times">
                 @for (var hour = 8; hour <= 23; hour++)
                 {
-                    <span>@($"{hour:00}:00")</span>
+                <span>@($"{hour:00}:00")</span>
                 }
             </div>
         </div>
         <div class="matrix-body">
             @foreach (var room in Model.Rooms)
             {
-                <div class="matrix-row">
-                    <div class="mr-hall-info">
-                        <h4>@room.RoomName</h4>
-                        <span class="hall-tag @room.TagCssClass">@room.DisplayType</span>
-                        <span>@room.SeatCount GHẾ</span>
-                    </div>
-                    <div class="mr-timeline" data-room-id="@room.RoomID" data-hall-number="@room.RoomID" data-room-name="@room.RoomName"></div>
+            <div class="matrix-row">
+                <div class="mr-hall-info">
+                    <h4>@room.RoomName</h4>
+                    <span class="hall-tag @room.TagCssClass">@room.DisplayType</span>
+                    <span>@room.SeatCount GHẾ</span>
                 </div>
+                <div class="mr-timeline" data-room-id="@room.RoomID" data-hall-number="@room.RoomID" data-room-name="@room.RoomName"></div>
+            </div>
             }
             @if (renderStaticRooms)
             {
@@ -353,6 +353,13 @@
             </button>
         </div>
         <div class="modal-body schedule-modal-body">
+            <p class="schedule-form-error"
+               id="scheduleFormError"
+               role="alert"
+               tabindex="-1"
+               hidden>
+            </p>
+
             <div class="schedule-modal-summary">
                 <span>PHIM ĐÃ CHỌN</span>
                 <strong id="scheduleMovieTitle">No movie selected</strong>
@@ -374,7 +381,7 @@
                     @foreach (var room in Model.Rooms)
                     {
                         <label class="schedule-room-option">
-                            <input type="checkbox" name="scheduleRoom" value="@room.RoomID" data-room-name="@room.RoomName" />
+                            <input type="checkbox" name="scheduleRoom" value="@room.RoomID" data-room-name="@room.RoomName"/>
                             <span>
                                 <strong>@room.RoomName</strong>
                                 <small>@room.DisplayType - @room.SeatCount seats</small>
@@ -384,7 +391,7 @@
                 </div>
             </div>
 
-            <p class="schedule-form-error" id="scheduleFormError" role="alert" hidden></p>
+
         </div>
         <div class="modal-footer">
             <button type="button" class="btn-secondary btn-close-modal" style="border:none">HUỶ</button>
@@ -429,13 +436,45 @@
                 telemetryText.textContent = `TELEMETRY LOGS: ${message}`;
             }
         }
+    }
 
-        function getMoviePayload(item) {
-            return {
-                movieId: Number(item.dataset.movieId),
-                title: item.dataset.title || '',
-                duration: Number(item.dataset.duration || 0)
-            };
+    function getMoviePayload(item) {
+        return {
+            movieId: Number(item.dataset.movieId),
+            title: item.dataset.title || '',
+            duration: Number(item.dataset.duration || 0)
+        };
+    }
+
+    function normalizeText(value) {
+        return (value || '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/đ/g, 'd')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function filterMoviesByName() {
+        const keyword = normalizeText(movieSearchInput?.value);
+        let visibleCount = 0;
+
+        document.querySelectorAll('.movie-list-item').forEach(item => {
+            const title = normalizeText(item.dataset.title);
+            const genre = normalizeText(item.dataset.genre);
+            const titleMatches = title.includes(keyword);
+            const genreMatches = !titleMatches && genre.includes(keyword);
+            const isVisible = !keyword || titleMatches || genreMatches;
+            item.classList.toggle('is-search-hidden', !isVisible);
+
+            if (isVisible) {
+                visibleCount++;
+            }
+        });
+
+        if (movieSearchEmpty) {
+            movieSearchEmpty.hidden = visibleCount > 0;
         }
 
         function getMoviePayloadById(movieId, fallbackBlock = null) {
@@ -460,53 +499,146 @@
                 .replace(/\s+/g, ' ')
                 .trim();
         }
+    }
 
-        function filterMoviesByName() {
-            const keyword = normalizeText(movieSearchInput?.value);
-            let visibleCount = 0;
+    function minutesToTime(minutesFromStart) {
+        const totalMinutes = scheduleStartHour * 60 + minutesFromStart;
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
 
-            document.querySelectorAll('.movie-list-item').forEach(item => {
-                const title = normalizeText(item.dataset.title);
-                const genre = normalizeText(item.dataset.genre);
-                const titleMatches = title.includes(keyword);
-                const genreMatches = !titleMatches && genre.includes(keyword);
-                const isVisible = !keyword || titleMatches || genreMatches;
-                item.classList.toggle('is-search-hidden', !isVisible);
+    function timeToMinutes(time) {
+        const parts = time.split(':').map(Number);
+        return ((parts[0] * 60) + parts[1]) - (scheduleStartHour * 60);
+    }
 
-                if (isVisible) {
-                    visibleCount++;
+    function clockTimeToMinutes(time) {
+        const parts = time.split(':').map(Number);
+        return (parts[0] * 60) + parts[1];
+    }
+
+    function clampStart(startMinutes, duration) {
+        return Math.max(0, Math.min(startMinutes, scheduleTotalMinutes - duration));
+    }
+
+    function createScheduleBlock({ showtimeId, movieId, title, duration, startMinutes, basePrice }) {
+        const block = document.createElement('div');
+        const safeDuration = Math.max(duration || scheduleSnapMinutes, scheduleSnapMinutes);
+        const safeStart = clampStart(startMinutes, safeDuration);
+
+        block.className = 'schedule-block';
+        block.dataset.showtimeId = showtimeId || '';
+        block.dataset.movieId = movieId;
+        block.dataset.duration = safeDuration;
+        block.dataset.startTime = minutesToTime(safeStart);
+        block.dataset.endTime = minutesToTime(safeStart + safeDuration);
+        block.dataset.basePrice = basePrice || scheduleDefaultBasePrice;
+        block.style.left = `${(safeStart / scheduleTotalMinutes) * 100}%`;
+        block.style.width = `${(safeDuration / scheduleTotalMinutes) * 100}%`;
+        block.innerHTML = `
+                <button type="button" class="schedule-block-remove" title="Xoa lich">&times;</button>
+                <span class="schedule-block-title"></span>
+                <span class="schedule-block-time"></span>
+            `;
+        block.querySelector('.schedule-block-title').textContent = title;
+        block.querySelector('.schedule-block-time').textContent = `${block.dataset.startTime} - ${block.dataset.endTime}`;
+        block.querySelector('.schedule-block-remove').addEventListener('click', () => block.remove());
+        return block;
+    }
+
+    function addScheduleBlock(timeline, movie, startMinutes) {
+        const resolvedMovieId = movie.movieId ?? movie.movieID ?? movie.MovieID;
+        const block = createScheduleBlock({
+            showtimeId: movie.showtimeId ?? movie.showtimeID ?? movie.ShowtimeID,
+            movieId: resolvedMovieId,
+            title: movie.title,
+            duration: movie.duration,
+            basePrice: movie.basePrice,
+            startMinutes
+        });
+        timeline.appendChild(block);
+    }
+
+    function findTimelineOverlap(timeline, startMinutes, endMinutes, ignoredBlock = null) {
+        return Array.from(timeline.querySelectorAll('.schedule-block')).find(block => {
+            if (block === ignoredBlock) {
+                return false;
+            }
+
+            const blockStart = timeToMinutes(block.dataset.startTime);
+            const blockEnd = timeToMinutes(block.dataset.endTime);
+            return startMinutes < blockEnd && endMinutes > blockStart;
+        });
+    }
+
+    function getSchedulePayloadItems() {
+        return Array.from(document.querySelectorAll('.mr-timeline')).flatMap(timeline =>
+            Array.from(timeline.querySelectorAll('.schedule-block')).map(block => ({
+                ShowtimeID: Number(block.dataset.showtimeId || 0),
+                MovieID: Number(block.dataset.movieId),
+                RoomID: Number(timeline.dataset.roomId || timeline.dataset.hallNumber),
+                Date: scheduleDateInput.value,
+                StartTime: buildScheduleDateTime(block.dataset.startTime),
+                EndTime: buildScheduleDateTime(block.dataset.endTime),
+                BasePrice: Number(block.dataset.basePrice || scheduleDefaultBasePrice),
+                _startMinutes: timeToMinutes(block.dataset.startTime),
+                _endMinutes: timeToMinutes(block.dataset.endTime)
+            }))
+        );
+    }
+
+    function findInvalidScheduleItem(items) {
+        return items.find(item =>
+            !Number.isInteger(item.MovieID) || item.MovieID <= 0 ||
+            !Number.isInteger(item.RoomID) || item.RoomID <= 0 ||
+            !Number.isFinite(item.BasePrice) || item.BasePrice <= 0 ||
+            item._endMinutes <= item._startMinutes
+        );
+    }
+
+    function findOverlappingScheduleItem(items) {
+        const grouped = items.reduce((map, item) => {
+            if (!map.has(item.RoomID)) {
+                map.set(item.RoomID, []);
+            }
+            map.get(item.RoomID).push(item);
+            return map;
+        }, new Map());
+
+        for (const roomItems of grouped.values()) {
+            const ordered = roomItems.slice().sort((a, b) => a._startMinutes - b._startMinutes);
+            for (let currentIndex = 0; currentIndex < ordered.length; currentIndex++) {
+                for (let nextIndex = currentIndex + 1; nextIndex < ordered.length; nextIndex++) {
+                    const current = ordered[currentIndex];
+                    const next = ordered[nextIndex];
+
+                    if (next._startMinutes >= current._endMinutes) {
+                        break;
+                    }
+
+                    if (next._startMinutes < current._endMinutes && next._endMinutes > current._startMinutes) {
+                        return { existing: current, incoming: next };
+                    }
                 }
-            });
-
-            if (movieSearchEmpty) {
-                movieSearchEmpty.hidden = visibleCount > 0;
-            }
-
-            if (keyword) {
-                setTelemetry(`Tim thay ${visibleCount} phim phu hop.`);
             }
         }
 
-        function minutesToTime(minutesFromStart) {
-            const totalMinutes = scheduleStartHour * 60 + minutesFromStart;
-            const hours = Math.floor(totalMinutes / 60);
-            const minutes = totalMinutes % 60;
-            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        return null;
+    }
+
+    function getRoomLabel(timeline, fallbackId) {
+        const roomName = timeline?.dataset.roomName || String(fallbackId);
+        return /^phòng\b/i.test(roomName) ? roomName : `Phòng ${roomName}`;
+    }
+
+    function setScheduleFormError(message) {
+        if (!scheduleFormError) {
+            return;
         }
 
-        function timeToMinutes(time) {
-            const parts = time.split(':').map(Number);
-            return ((parts[0] * 60) + parts[1]) - (scheduleStartHour * 60);
-        }
-
-        function clockTimeToMinutes(time) {
-            const parts = time.split(':').map(Number);
-            return (parts[0] * 60) + parts[1];
-        }
-
-        function clampStart(startMinutes, duration) {
-            return Math.max(0, Math.min(startMinutes, scheduleTotalMinutes - duration));
-        }
+        scheduleFormError.textContent = message || '';
+        scheduleFormError.hidden = !message;
 
         function createScheduleBlock({ showtimeId, movieId, title, duration, startMinutes, basePrice }) {
             const block = document.createElement('div');
@@ -541,74 +673,54 @@
             return block;
         }
 
-        function addScheduleBlock(timeline, movie, startMinutes) {
-            const resolvedMovieId = movie.movieId ?? movie.movieID ?? movie.MovieID;
-            const block = createScheduleBlock({
-                showtimeId: movie.showtimeId ?? movie.showtimeID ?? movie.ShowtimeID,
-                movieId: resolvedMovieId,
-                title: movie.title,
-                duration: movie.duration,
-                basePrice: movie.basePrice,
-                startMinutes
-            });
-            timeline.appendChild(block);
-        }
-
-        function timelineHasOverlap(timeline, startMinutes, endMinutes, ignoredBlock = null) {
-            return Array.from(timeline.querySelectorAll('.schedule-block')).some(block => {
-                if (block === ignoredBlock) {
-                    return false;
-                }
-
-                const blockStart = timeToMinutes(block.dataset.startTime);
-                const blockEnd = timeToMinutes(block.dataset.endTime);
-                return startMinutes < blockEnd && endMinutes > blockStart;
+                scheduleFormError.focus({
+                    preventScroll: true
+                });
             });
         }
+}
 
-        function getSchedulePayloadItems() {
-            return Array.from(document.querySelectorAll('.mr-timeline')).flatMap(timeline =>
-                Array.from(timeline.querySelectorAll('.schedule-block')).map(block => ({
-                    ShowtimeID: Number(block.dataset.showtimeId || 0),
-                    MovieID: Number(block.dataset.movieId),
-                    RoomID: Number(timeline.dataset.roomId || timeline.dataset.hallNumber),
-                    Date: scheduleDateInput.value,
-                    StartTime: buildScheduleDateTime(block.dataset.startTime),
-                    EndTime: buildScheduleDateTime(block.dataset.endTime),
-                    BasePrice: Number(block.dataset.basePrice || scheduleDefaultBasePrice),
-                    _startMinutes: timeToMinutes(block.dataset.startTime),
-                    _endMinutes: timeToMinutes(block.dataset.endTime)
-                }))
-            );
+    function closeScheduleModal() {
+        scheduleModal?.classList.remove('show');
+        setScheduleFormError('');
+    }
+
+    function openScheduleModal(movie) {
+        selectedScheduleMovie = movie;
+        if (scheduleMovieTitle) {
+            scheduleMovieTitle.textContent = movie.title;
         }
 
-        function findInvalidScheduleItem(items) {
-            return items.find(item =>
-                !Number.isInteger(item.MovieID) || item.MovieID <= 0 ||
-                !Number.isInteger(item.RoomID) || item.RoomID <= 0 ||
-                !Number.isFinite(item.BasePrice) || item.BasePrice <= 0 ||
-                item._endMinutes <= item._startMinutes
-            );
+        if (scheduleMovieDuration) {
+            scheduleMovieDuration.textContent = `${movie.duration || scheduleSnapMinutes} min`;
         }
 
-        function findOverlappingScheduleItem(items) {
-            const grouped = items.reduce((map, item) => {
-                if (!map.has(item.RoomID)) {
-                    map.set(item.RoomID, []);
-                }
-                map.get(item.RoomID).push(item);
-                return map;
-            }, new Map());
+        if (scheduleStartTimeInput) {
+            scheduleStartTimeInput.value = '09:00';
+        }
 
-            for (const roomItems of grouped.values()) {
-                const ordered = roomItems.slice().sort((a, b) => a._startMinutes - b._startMinutes);
-                for (let i = 1; i < ordered.length; i++) {
-                    if (ordered[i - 1]._endMinutes > ordered[i]._startMinutes) {
-                        return ordered[i];
-                    }
-                }
-            }
+        scheduleRoomInputs.forEach(input => {
+            input.checked = false;
+        });
 
+        setScheduleFormError('');
+        scheduleModal?.classList.add('show');
+        scheduleStartTimeInput?.focus();
+    }
+
+    function getSelectedScheduleRooms() {
+        return scheduleRoomInputs
+            .filter(input => input.checked)
+            .map(input => ({
+                roomId: Number(input.value),
+                roomName: input.dataset.roomName || `Room ${input.value}`,
+                timeline: document.querySelector(`.mr-timeline[data-room-id="${input.value}"], .mr-timeline[data-hall-number="${input.value}"]`)
+            }))
+            .filter(room => Number.isInteger(room.roomId) && room.roomId > 0 && room.timeline);
+    }
+
+    function normalizeScheduleStartMinutes(timeValue, duration) {
+        if (!timeValue || !timeValue.includes(':')) {
             return null;
         }
 
@@ -757,47 +869,42 @@
             updateScheduleEndTime();
             syncScheduleRoomStateForSelectedTime();
 
-            setScheduleFormError('');
-            scheduleModal?.classList.add('show');
-            scheduleStartTimeInput?.focus();
+        if (!selectedScheduleMovie) {
+            setScheduleFormError('Choose a movie before adding a schedule.');
+            return;
         }
 
         function getSelectedScheduleRooms() {
             return getScheduleRooms().filter(room => room.input.checked && !room.input.disabled);
         }
 
-        function normalizeScheduleStartMinutes(timeValue, duration) {
-            if (!timeValue || !timeValue.includes(':')) {
-                return null;
-            }
-
-            const rawMinutes = timeToMinutes(timeValue);
-            if (!Number.isFinite(rawMinutes)) {
-                return null;
-            }
-
-            const snapped = Math.round(rawMinutes / scheduleSnapMinutes) * scheduleSnapMinutes;
-            if (snapped < 0 || snapped + duration > scheduleTotalMinutes) {
-                return null;
-            }
-
-            return snapped;
+        const rooms = getSelectedScheduleRooms();
+        if (rooms.length === 0) {
+            ssetScheduleFormError(
+                'Vui lòng chọn ít nhất một phòng chiếu.'
+            );
+            return;
         }
 
-        function addMovieToSelectedRooms(event) {
-            event.preventDefault();
+        const endMinutes = startMinutes + duration;
+        const conflicts = rooms
+            .map(room => ({
+                ...room,
+                conflictingBlock: findTimelineOverlap(room.timeline, startMinutes, endMinutes)
+            }))
+            .filter(room => room.conflictingBlock);
 
-            if (!selectedScheduleMovie) {
-                setScheduleFormError('Choose a movie before adding a schedule.');
-                return;
-            }
+        if (conflicts.length > 0) {
+            const conflict = conflicts[0];
+            setScheduleFormError(
+                `${getRoomLabel(conflict.timeline, conflict.roomId)} đã có lịch chiếu từ ${conflict.conflictingBlock.dataset.startTime} đến ${conflict.conflictingBlock.dataset.endTime}.`
+            );
+            return;
+        }
 
-            const duration = Math.max(selectedScheduleMovie.duration || scheduleSnapMinutes, scheduleSnapMinutes);
-            const startMinutes = normalizeScheduleStartMinutes(scheduleStartTimeInput?.value, duration);
-            if (startMinutes === null) {
-                setScheduleFormError('Start time must keep the full movie between 08:00 and 24:00.');
-                return;
-            }
+        rooms.forEach(room => {
+            addScheduleBlock(room.timeline, selectedScheduleMovie, startMinutes);
+        });
 
             const endMinutes = startMinutes + duration;
             const selectedRoomIds = new Set(getSelectedScheduleRooms().map(room => room.roomId));
@@ -856,115 +963,107 @@
                 return;
             }
 
-            const showtimes = await response.json();
-            showtimes.forEach(showtime => {
-                const roomId = showtime.roomId || showtime.roomID || showtime.hallNumber;
-                const timeline = document.querySelector(`.mr-timeline[data-room-id="${roomId}"], .mr-timeline[data-hall-number="${roomId}"]`);
-                if (!timeline) {
-                    return;
-                }
+            addScheduleBlock(timeline, {
+                showtimeId: showtime.showtimeId ?? showtime.showtimeID ?? showtime.ShowtimeID,
+                movieId: showtime.movieId ?? showtime.movieID ?? showtime.MovieID,
+                title: showtime.movieTitle,
+                duration: showtime.duration,
+                basePrice: showtime.basePrice
+            }, timeToMinutes(showtime.startTime));
+        });
 
-                addScheduleBlock(timeline, {
-                    showtimeId: showtime.showtimeId ?? showtime.showtimeID ?? showtime.ShowtimeID,
-                    movieId: showtime.movieId ?? showtime.movieID ?? showtime.MovieID,
-                    title: showtime.movieTitle,
-                    duration: showtime.duration,
-                    basePrice: showtime.basePrice
-                }, timeToMinutes(showtime.startTime));
-            });
+        setTelemetry(`Da tai ${showtimes.length} suat chieu.`);
+    }
 
             setTelemetry(`Da tai ${showtimes.length} suat chieu.`);
             syncScheduleRoomStateForSelectedTime();
         }
 
-        function buildScheduleDateTime(time) {
-            const [hours, minutes] = time.split(':').map(Number);
-            const value = new Date(`${scheduleDateInput.value}T00:00:00`);
-            value.setMinutes(value.getMinutes() + (hours * 60) + minutes);
+        const year = value.getFullYear();
+        const month = String(value.getMonth() + 1).padStart(2, '0');
+        const day = String(value.getDate()).padStart(2, '0');
+        const resolvedHours = String(value.getHours()).padStart(2, '0');
+        const resolvedMinutes = String(value.getMinutes()).padStart(2, '0');
 
-            const year = value.getFullYear();
-            const month = String(value.getMonth() + 1).padStart(2, '0');
-            const day = String(value.getDate()).padStart(2, '0');
-            const resolvedHours = String(value.getHours()).padStart(2, '0');
-            const resolvedMinutes = String(value.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${resolvedHours}:${resolvedMinutes}:00`;
+    }
 
-            return `${year}-${month}-${day}T${resolvedHours}:${resolvedMinutes}:00`;
+    async function readScheduleResponse(response) {
+        const text = await response.text();
+        if (!text) {
+            return {};
         }
 
-        async function readScheduleResponse(response) {
-            const text = await response.text();
-            if (!text) {
-                return {};
-            }
+        try {
+            return JSON.parse(text);
+        } catch {
+            return {
+                message: `Server tra ve phan hoi khong phai JSON (${response.status}).`,
+                detail: text.slice(0, 300)
+            };
+        }
+    }
 
-            try {
-                return JSON.parse(text);
-            } catch {
-                return {
-                    message: `Server tra ve phan hoi khong phai JSON (${response.status}).`,
-                    detail: text.slice(0, 300)
-                };
-            }
+    async function saveSchedule() {
+        const payloadItems = getSchedulePayloadItems();
+        const outOfRangeItem = payloadItems.find(item =>
+            item._startMinutes < 0 || item._endMinutes > scheduleTotalMinutes
+        );
+        if (outOfRangeItem) {
+            setTelemetry('Suất chiếu phải nằm trong khung giờ từ 08:00 đến 23:00.');
+            return;
         }
 
-        async function saveSchedule() {
-            const payloadItems = getSchedulePayloadItems();
-            const invalidItem = findInvalidScheduleItem(payloadItems);
-            if (invalidItem) {
-                setTelemetry(`Du lieu lich chieu khong hop le: MovieID=${invalidItem.MovieID}, RoomID=${invalidItem.RoomID}, BasePrice=${invalidItem.BasePrice}.`);
-                return;
-            }
-
-            const overlapItem = findOverlappingScheduleItem(payloadItems);
-            if (overlapItem) {
-                setTelemetry(`Lich chieu bi trung gio trong phong ${overlapItem.RoomID}.`);
-                return;
-            }
-
-            const items = payloadItems.map(({ _startMinutes, _endMinutes, ...item }) => item);
-
-            const response = await fetch('/Staff/SaveSchedule', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    Date: scheduleDateInput.value,
-                    Items: items
-                })
-            });
-
-            const result = await readScheduleResponse(response);
-            if (!response.ok) {
-                const details = result.errors
-                    ? Object.entries(result.errors)
-                        .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
-                        .join(' | ')
-                    : result.detail || '';
-                setTelemetry(details ? `${result.message}: ${details}` : result.message || 'Luu lich that bai.');
-                return;
-            }
-
-            setTelemetry(`${result.message} (${result.count} suat chieu, them ${result.created || 0}, cap nhat ${result.updated || 0}, xoa ${result.deleted || 0})`);
-            await loadSchedule();
+        const invalidItem = findInvalidScheduleItem(payloadItems);
+        if (invalidItem) {
+            setTelemetry(`Du lieu lich chieu khong hop le: MovieID=${invalidItem.MovieID}, RoomID=${invalidItem.RoomID}, BasePrice=${invalidItem.BasePrice}.`);
+            return;
         }
 
-        btnSaveSchedule.addEventListener('click', saveSchedule);
-        scheduleDateInput.addEventListener('change', loadSchedule);
-        loadSchedule();
+        const overlap = findOverlappingScheduleItem(payloadItems);
+        if (overlap) {
+            const timeline = document.querySelector(
+                `.mr-timeline[data-room-id="${overlap.existing.RoomID}"], .mr-timeline[data-hall-number="${overlap.existing.RoomID}"]`
+            );
+            setTelemetry(
+                `${getRoomLabel(timeline, overlap.existing.RoomID)} đã có lịch chiếu từ ${minutesToTime(overlap.existing._startMinutes)} đến ${minutesToTime(overlap.existing._endMinutes)}.`
+            );
+            return;
+        }
 
-        btnAddMovie.addEventListener('click', () => {
-            createModal.classList.add('show');
+        const items = payloadItems.map(({ _startMinutes, _endMinutes, ...item }) => item);
+
+        const response = await fetch('/Staff/SaveSchedule', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                Date: scheduleDateInput.value,
+                Items: items
+            })
         });
 
-        scheduleMovieBtns.forEach(btn => {
-            btn.addEventListener('click', event => {
-                const item = event.currentTarget.closest('.movie-list-item');
-                if (!item) {
-                    return;
-                }
+        const result = await readScheduleResponse(response);
+        if (!response.ok) {
+            const details = result.errors
+                ? Object.entries(result.errors)
+                    .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+                    .join(' | ')
+                : result.detail || '';
+            setTelemetry(details ? `${result.message}: ${details}` : result.message || 'Luu lich that bai.');
+            return;
+        }
 
-                openScheduleModal(getMoviePayload(item));
-            });
-        });
+        setTelemetry(`${result.message} (${result.count} suat chieu, them ${result.created || 0}, cap nhat ${result.updated || 0}, xoa ${result.deleted || 0})`);
+        await loadSchedule();
+    }
+
+    btnSaveSchedule.addEventListener('click', saveSchedule);
+    scheduleDateInput.addEventListener('change', loadSchedule);
+    loadSchedule();
+
+    btnAddMovie.addEventListener('click', () => {
+        createModal.classList.add('show');
+    });
 
         scheduleMovieForm?.addEventListener('submit', addMovieToSelectedRooms);
         scheduleStartTimeInput?.addEventListener('input', () => {
@@ -994,6 +1093,7 @@
             });
             setScheduleFormError('');
         });
+    });
 
         clearAllRoomsButton?.addEventListener('click', () => {
             scheduleRoomInputs.forEach(input => {
@@ -1002,80 +1102,93 @@
             });
         });
 
-        // Live Poster Preview logic
-        document.getElementById('createPosterInput').addEventListener('input', function() {
-            const preview = document.getElementById('createPosterPreview');
-            const placeholder = document.getElementById('createPosterPlaceholder');
-            if (this.value) {
-                preview.src = this.value;
-                preview.style.display = 'block';
-                placeholder.style.display = 'none';
-            } else {
-                preview.src = '';
-                preview.style.display = 'none';
-                placeholder.style.display = 'block';
-            }
+    selectAllRoomsButton?.addEventListener('click', () => {
+        scheduleRoomInputs.forEach(input => {
+            input.checked = true;
         });
+        setScheduleFormError('');
+    });
 
-        document.getElementById('editPoster').addEventListener('input', function() {
-            const preview = document.getElementById('editPosterPreview');
-            const placeholder = document.getElementById('editPosterPlaceholder');
-            if (this.value) {
-                preview.src = this.value;
-                preview.style.display = 'block';
-                placeholder.style.display = 'none';
-            } else {
-                preview.src = '';
-                preview.style.display = 'none';
-                placeholder.style.display = 'block';
-            }
+    clearAllRoomsButton?.addEventListener('click', () => {
+        scheduleRoomInputs.forEach(input => {
+            input.checked = false;
         });
-        
-        // Event delegation — bắt click trên toàn bộ movies-list
-        const moviesList = document.querySelector('.movies-list');
-        editBtns.forEach(btn =>{
-            btn.addEventListener('click', (e) => {
-                const editBtn = e.target.closest('.edit-movie-btn');
-                
-                const item = editBtn.closest('.movie-list-item');
-                if (item) {
-                    document.getElementById('editMovieID').value = item.dataset.movieId || '';
-                    document.getElementById('editTitle').value = item.dataset.title || '';
-                    document.getElementById('editDuration').value = item.dataset.duration || '';
-                    document.getElementById('editSynopsis').value = item.dataset.synopsis || '';
-                    document.getElementById('editTrailer').value = item.dataset.trailer || '';
-                    document.getElementById('editPoster').value = item.dataset.poster || '';
-                    document.getElementById('editGenre').value = item.dataset.genre || '';
-                    document.getElementById('editReleaseDate').value = item.dataset.releaseDate || '';
-                    // trigger input event to show image
-                    document.getElementById('editPoster').dispatchEvent(new Event('input'));
-                    
-                    const rating = item.dataset.rating || '';
-                    const select = document.getElementById('editRating');
-                    for (let i = 0; i < select.options.length; i++) {
-                        if (select.options[i].value === rating) {
-                            select.selectedIndex = i;
-                            break;
-                        }
+    });
+
+    // Live Poster Preview logic
+    document.getElementById('createPosterInput').addEventListener('input', function() {
+        const preview = document.getElementById('createPosterPreview');
+        const placeholder = document.getElementById('createPosterPlaceholder');
+        if (this.value) {
+            preview.src = this.value;
+            preview.style.display = 'block';
+            placeholder.style.display = 'none';
+        } else {
+            preview.src = '';
+            preview.style.display = 'none';
+            placeholder.style.display = 'block';
+        }
+    });
+
+    document.getElementById('editPoster').addEventListener('input', function() {
+        const preview = document.getElementById('editPosterPreview');
+        const placeholder = document.getElementById('editPosterPlaceholder');
+        if (this.value) {
+            preview.src = this.value;
+            preview.style.display = 'block';
+            placeholder.style.display = 'none';
+        } else {
+            preview.src = '';
+            preview.style.display = 'none';
+            placeholder.style.display = 'block';
+        }
+    });
+
+    // Event delegation — bắt click trên toàn bộ movies-list
+    const moviesList = document.querySelector('.movies-list');
+    editBtns.forEach(btn =>{
+        btn.addEventListener('click', (e) => {
+            const editBtn = e.target.closest('.edit-movie-btn');
+
+            const item = editBtn.closest('.movie-list-item');
+            if (item) {
+                document.getElementById('editMovieID').value = item.dataset.movieId || '';
+                document.getElementById('editTitle').value = item.dataset.title || '';
+                document.getElementById('editDuration').value = item.dataset.duration || '';
+                document.getElementById('editSynopsis').value = item.dataset.synopsis || '';
+                document.getElementById('editTrailer').value = item.dataset.trailer || '';
+                document.getElementById('editPoster').value = item.dataset.poster || '';
+                document.getElementById('editGenre').value = item.dataset.genre || '';
+                document.getElementById('editReleaseDate').value = item.dataset.releaseDate || '';
+                // trigger input event to show image
+                document.getElementById('editPoster').dispatchEvent(new Event('input'));
+
+                const rating = item.dataset.rating || '';
+                const select = document.getElementById('editRating');
+                for (let i = 0; i < select.options.length; i++) {
+                    if (select.options[i].value === rating) {
+                        select.selectedIndex = i;
+                        break;
                     }
                 }
-                editorModal.classList.add('show');
-            });
+            }
+            editorModal.classList.add('show');
         });
+    });
 
-        closeBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                editorModal.classList.remove('show');
-                createModal.classList.remove('show');
-                closeScheduleModal();
-            });
+    closeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            editorModal.classList.remove('show');
+            createModal.classList.remove('show');
+            closeScheduleModal();
         });
-        
-        // Format tag toggle
-        document.querySelectorAll('.format-tag').forEach(tag => {
-            tag.addEventListener('click', function() {
-                this.classList.toggle('active');
-            });
+    });
+
+    // Format tag toggle
+    document.querySelectorAll('.format-tag').forEach(tag => {
+        tag.addEventListener('click', function() {
+            this.classList.toggle('active');
         });
-    </script>
+    });
+</script>
 }
