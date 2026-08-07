@@ -27,7 +27,7 @@ namespace Cinema_Management.Migrations
                 type: "nvarchar(20)",
                 maxLength: 20,
                 nullable: false,
-                defaultValue: "Customer",
+                defaultValue: "KhachHang",
                 oldClrType: typeof(string),
                 oldType: "nvarchar(20)",
                 oldMaxLength: 20);
@@ -136,7 +136,7 @@ namespace Cinema_Management.Migrations
                 oldClrType: typeof(string),
                 oldType: "nvarchar(20)",
                 oldMaxLength: 20,
-                oldDefaultValue: "Customer");
+                oldDefaultValue: "KhachHang");
 
             migrationBuilder.AlterColumn<string>(
                 name: "PasswordHash",

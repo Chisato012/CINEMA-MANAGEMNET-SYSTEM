@@ -18,7 +18,7 @@ This skill is for:
 - product pages
 - portfolio websites
 - premium multi-section websites
-- redesigns where visual quality matters
+- redesigns where visual quality matter
 
 Standard AI output tends to collapse into repetitive defaults:
 - one single giant compressed image for too many sections
