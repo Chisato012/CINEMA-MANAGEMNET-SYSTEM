@@ -5,7 +5,7 @@
 
 @* Quang UI *@
 @{
-    ViewData["Title"] = "Movies";
+    ViewData["Title"] = "Phim";
     ViewData["HideDefaultFooter"] = true;
 
     var today = DateTime.Today;
@@ -59,7 +59,7 @@
 }
 
 <div class="movies-page">
-    <section class="movie-shell movie-hero" aria-label="Featured movies">
+    <section class="movie-shell movie-hero" aria-label="Phim nổi bật">
         @if (heroSlides.Any())
         {
             <div class="movie-hero__viewport">
@@ -76,11 +76,11 @@
                     <article class="movie-hero__slide @activeClass" style="--hero-poster: url('@Poster(slide)');">
                         <div class="movie-hero__content">
                             <p class="movie-eyebrow @HeroStatusClass(slide, today)">@HeroStatusLabel(slide, today)</p>
-                            <h1>@Safe(slide.Title, "Tonight at COSMOS")</h1>
+                            <h1>@Safe(slide.Title, "Tối nay tại COSMOS")</h1>
                             <p class="movie-hero__tagline">@Clamp(slide.Synopsis, 132)</p>
 
-                            <div class="movie-hero__meta" aria-label="Movie metadata">
-                                <span>@Safe(slide.Genre, "Cinema pick")</span>
+                            <div class="movie-hero__meta" aria-label="Thông tin phim">
+                                <span>@Safe(slide.Genre, "Gợi ý từ COSMOS")</span>
                                 <span>@DurationLabel(slide)</span>
                                 <span>@HeroDateLabel(slide, today)</span>
                             </div>
@@ -128,33 +128,33 @@
                             </div>
                         </div>
 
-                        <a class="movie-hero__poster" asp-controller="Home" asp-action="Details" asp-route-id="@slide.MovieId" aria-label="View @slide.Title details">
-                            <img src="@Poster(slide)" alt="@Safe(slide.Title, "Movie") poster" />
+                        <a class="movie-hero__poster" asp-controller="Home" asp-action="Details" asp-route-id="@slide.MovieId" aria-label="Xem chi tiết @slide.Title">
+                            <img src="@Poster(slide)" alt="@Safe(slide.Title, "Phim") poster" />
                         </a>
                     </article>
                 }
             </div>
 
-            <button type="button" class="movie-hero__arrow movie-hero__arrow--prev" data-hero-prev aria-label="Previous featured movie">
+            <button type="button" class="movie-hero__arrow movie-hero__arrow--prev" data-hero-prev aria-label="Phim nổi bật trước">
                 <i class="fa-solid fa-chevron-left"></i>
             </button>
-            <button type="button" class="movie-hero__arrow movie-hero__arrow--next" data-hero-next aria-label="Next featured movie">
+            <button type="button" class="movie-hero__arrow movie-hero__arrow--next" data-hero-next aria-label="Phim nổi bật tiếp theo">
                 <i class="fa-solid fa-chevron-right"></i>
             </button>
 
-            <div class="movie-hero__dots" aria-label="Featured movie slides">
+            <div class="movie-hero__dots" aria-label="Các phim nổi bật">
                 @for (var index = 0; index < heroSlides.Count; index++)
                 {
-                    <button type="button" class="movie-hero__dot @(index == 0 ? "is-active" : string.Empty)" data-hero-dot="@index" aria-label="Go to featured movie @(index + 1)"></button>
+                    <button type="button" class="movie-hero__dot @(index == 0 ? "is-active" : string.Empty)" data-hero-dot="@index" aria-label="Chuyển đến phim nổi bật @(index + 1)"></button>
                 }
             </div>
         }
         else
         {
             <div class="movie-empty movie-empty--hero">
-                <p class="movie-eyebrow">Movies</p>
-                <h1>No movies are available yet.</h1>
-                <p>Once the database has movie records, this page will populate automatically.</p>
+                <p class="movie-eyebrow">Phim</p>
+                <h1>Chưa có phim nào.</h1>
+                <p>Khi dữ liệu phim được cập nhật, trang này sẽ tự động hiển thị nội dung.</p>
             </div>
         }
     </section>
@@ -170,7 +170,7 @@
             <input id="movieSearch" type="search" placeholder="Tìm kiếm" autocomplete="off" />
         </label>
 
-        <div class="movie-filter__chips" aria-label="Movie categories">
+        <div class="movie-filter__chips" aria-label="Thể loại phim">
             <button type="button" class="genre-chip is-active" data-filter="all"><i class="fa-solid fa-border-all"></i>Tất cả</button>
             <button type="button" class="genre-chip" data-filter="action"><i class="fa-solid fa-bolt"></i>Hành động</button>
             <button type="button" class="genre-chip" data-filter="romance"><i class="fa-regular fa-heart"></i>Lãng mạn</button>
@@ -186,7 +186,7 @@
     <section class="movie-shell movie-section" aria-labelledby="now-showing-title">
         <div class="movie-section__header">
             <div>
-                <h2 id="now-showing-title">Phim Đang Chiếu</h2>
+                <h2 id="now-showing-title">Phim đang chiếu</h2>
                 <p>Hiện đang chiếu hôm nay.</p>
             </div>
             <button type="button" class="movie-btn movie-btn--outline" data-movie-list-open data-movie-list-target="nowShowingModal">Xem tất cả <i class="fa-solid fa-chevron-right"></i></button>
@@ -205,10 +205,10 @@
 
                     <article class="movie-card" data-movie-card data-title="@Safe(movie.Title, string.Empty).ToLowerInvariant()" data-genres="@GenreData(movie)">
                         <a class="movie-card__poster" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">
-                            <img src="@Poster(movie)" alt="@Safe(movie.Title, "Movie") poster" />
+                            <img src="@Poster(movie)" alt="@Safe(movie.Title, "Phim") poster" />
                         </a>
                         <div class="movie-card__body">
-                            <a class="movie-card__title" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">@Safe(movie.Title, "Untitled movie")</a>
+                            <a class="movie-card__title" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">@Safe(movie.Title, "Phim chưa có tên")</a>
                             <p>@MovieMeta(movie)</p>
                             <div class="movie-card__rating">
                                 @if (!string.IsNullOrWhiteSpace(movie.AgeRating))
@@ -239,17 +239,17 @@
         }
         else
         {
-            <p class="movie-empty">There are no now showing movies yet.</p>
+            <p class="movie-empty">Hiện chưa có phim đang chiếu.</p>
         }
     </section>
 
     <section class="movie-shell movie-section" aria-labelledby="coming-soon-title">
         <div class="movie-section__header movie-section__header--large">
             <div>
-                <h2 id="coming-soon-title">Coming Soon</h2>
+                <h2 id="coming-soon-title">Phim sắp chiếu</h2>
                 <p>Những phim mới sắp ra mắt.</p>
             </div>
-            <button type="button" class="movie-btn movie-btn--outline" data-movie-list-open data-movie-list-target="comingSoonModal">View all coming soon <i class="fa-solid fa-chevron-right"></i></button>
+            <button type="button" class="movie-btn movie-btn--outline" data-movie-list-open data-movie-list-target="comingSoonModal">Xem tất cả <i class="fa-solid fa-chevron-right"></i></button>
         </div>
 
         @if (comingSoon.Any())
@@ -259,12 +259,12 @@
                 {
                     <article class="movie-card movie-card--coming" data-movie-card data-title="@Safe(movie.Title, string.Empty).ToLowerInvariant()" data-genres="@GenreData(movie)">
                         <a class="movie-card__poster" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">
-                            <img src="@Poster(movie)" alt="@Safe(movie.Title, "Movie") poster" />
+                            <img src="@Poster(movie)" alt="@Safe(movie.Title, "Phim") poster" />
                         </a>
                         <div class="movie-card__body">
                             <span class="movie-date-badge"><i class="fa-regular fa-calendar"></i>@DateLabel(movie.ReleaseDate)</span>
-                            <a class="movie-card__title" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">@Safe(movie.Title, "Untitled movie")</a>
-                            <p>@Safe(movie.Genre, "Coming soon")</p>
+                            <a class="movie-card__title" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">@Safe(movie.Title, "Phim chưa có tên")</a>
+                            <p>@Safe(movie.Genre, "Sắp chiếu")</p>
                             <a class="movie-card__button movie-card__button--outline" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">
                                 Chi tiết
                             </a>
@@ -287,7 +287,7 @@
         @if (featured != null)
         {
             <div class="top-rated__layout" data-ranking-carousel>
-                <div class="rank-list" aria-label="Movie ranking by star rating">
+                <div class="rank-list" aria-label="Xếp hạng phim theo đánh giá">
                     @for (var index = 0; index < topRated.Count; index++)
                     {
                         var movie = topRated[index];
@@ -300,10 +300,10 @@
                            data-genres="@GenreData(movie)"
                            aria-current="@(index == 0 ? "true" : "false")">
                             <span class="rank-row__number">@(index + 1)</span>
-                            <img src="@Poster(movie)" alt="@Safe(movie.Title, "Movie") poster" />
+                            <img src="@Poster(movie)" alt="@Safe(movie.Title, "Phim") poster" />
                             <span class="rank-row__copy">
-                                <strong>@Safe(movie.Title, "Untitled movie")</strong>
-                                <small>@Safe(movie.Genre, "Cinema pick")</small>
+                                <strong>@Safe(movie.Title, "Phim chưa có tên")</strong>
+                                <small>@Safe(movie.Genre, "Gợi ý từ COSMOS")</small>
                             </span>
                             <span class="rank-row__score"><i class="fa-solid fa-star"></i>@ReviewScoreLabel(movie)</span>
                         </a>
@@ -317,14 +317,14 @@
 
                         <article class="featured-card @(index == 0 ? "is-active" : string.Empty)" data-rank-feature="@index" aria-hidden="@(index == 0 ? "false" : "true")">
                             <div class="featured-card__media" style="--featured-poster: url('@Poster(rankedMovie)');">
-                                <img src="@Poster(rankedMovie)" alt="@Safe(rankedMovie.Title, "Movie") poster" />
+                                <img src="@Poster(rankedMovie)" alt="@Safe(rankedMovie.Title, "Phim") poster" />
                                 <div class="featured-card__score">
                                     <i class="fa-solid fa-star" aria-hidden="true"></i>
                                     <span>@ReviewAverageLabel(rankedMovie)<small>@ReviewCountLabel(rankedMovie)</small></span>
                                 </div>
                             </div>
                             <div class="featured-card__body">
-                                <h3>@Safe(rankedMovie.Title, "COSMOS pick")</h3>
+                                <h3>@Safe(rankedMovie.Title, "Gợi ý COSMOS")</h3>
                                 <p class="featured-card__meta">@MovieMeta(rankedMovie)</p>
                                 <p>@Clamp(rankedMovie.Synopsis, 190)</p>
                                 <div class="featured-card__actions">
@@ -375,10 +375,10 @@
 
                             <article class="movie-card movie-card--modal" data-title="@Safe(movie.Title, string.Empty).ToLowerInvariant()" data-genres="@GenreData(movie)">
                                 <a class="movie-card__poster" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">
-                                    <img src="@Poster(movie)" alt="@Safe(movie.Title, "Movie") poster" loading="lazy" />
+                                    <img src="@Poster(movie)" alt="@Safe(movie.Title, "Phim") poster" loading="lazy" />
                                 </a>
                                 <div class="movie-card__body">
-                                    <a class="movie-card__title" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">@Safe(movie.Title, "Untitled movie")</a>
+                                    <a class="movie-card__title" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">@Safe(movie.Title, "Phim chưa có tên")</a>
                                     <p>@MovieMeta(movie)</p>
                                     <div class="movie-card__rating">
                                         @if (!string.IsNullOrWhiteSpace(movie.AgeRating))
@@ -444,12 +444,12 @@
                         {
                             <article class="movie-card movie-card--coming movie-card--modal" data-title="@Safe(movie.Title, string.Empty).ToLowerInvariant()" data-genres="@GenreData(movie)">
                                 <a class="movie-card__poster" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">
-                                    <img src="@Poster(movie)" alt="@Safe(movie.Title, "Movie") poster" loading="lazy" />
+                                    <img src="@Poster(movie)" alt="@Safe(movie.Title, "Phim") poster" loading="lazy" />
                                 </a>
                                 <div class="movie-card__body">
                                     <span class="movie-date-badge"><i class="fa-regular fa-calendar"></i>@DateLabel(movie.ReleaseDate)</span>
-                                    <a class="movie-card__title" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">@Safe(movie.Title, "Untitled movie")</a>
-                                    <p>@Safe(movie.Genre, "Coming soon")</p>
+                                    <a class="movie-card__title" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">@Safe(movie.Title, "Phim chưa có tên")</a>
+                                    <p>@Safe(movie.Genre, "Sắp chiếu")</p>
                                     <a class="movie-card__button movie-card__button--outline" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">Chi tiết</a>
                                 </div>
                             </article>
@@ -790,13 +790,13 @@
 
     private static string Clamp(string value, int maxLength)
     {
-        var text = Safe(value, "A COSMOS pick selected for tonight's big-screen mood.");
+        var text = Safe(value, "Gợi ý từ COSMOS cho một buổi xem phim trên màn ảnh lớn.");
         return text.Length <= maxLength ? text : text.Substring(0, maxLength).TrimEnd() + "...";
     }
 
     private static string DurationLabel(MovieViewModel movie)
     {
-        return movie.Duration > 0 ? $"{movie.Duration} min" : "Runtime TBA";
+        return movie.Duration > 0 ? $"{movie.Duration} phút" : "Chưa cập nhật thời lượng";
     }
 
     private static bool IsUpcoming(MovieViewModel movie, DateTime today)
@@ -874,10 +874,10 @@
 
         if (movie.Duration > 0)
         {
-            parts.Add($"{movie.Duration} min");
+            parts.Add($"{movie.Duration} phút");
         }
 
-        return parts.Any() ? string.Join(" / ", parts) : "Cinema pick";
+        return parts.Any() ? string.Join(" / ", parts) : "Gợi ý từ COSMOS";
     }
 
     private static string GenreData(MovieViewModel movie)
@@ -969,8 +969,8 @@
     private static string DateLabel(DateTime date)
     {
         return date == default
-            ? "Coming soon"
-            : date.ToString("MMM dd, yyyy", CultureInfo.InvariantCulture);
+            ? "Sắp chiếu"
+            : date.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
     }
 
     private static string MatchReason(MovieViewModel movie)
@@ -979,24 +979,24 @@
 
         if (genres.Contains("comedy") || genres.Contains("family") || genres.Contains("animation"))
         {
-            return "Light, generous energy for an easy night out.";
+            return "Nhẹ nhàng, dễ xem cho một buổi tối thư giãn.";
         }
 
         if (genres.Contains("action") || genres.Contains("thriller") || genres.Contains("horror"))
         {
-            return "High tension pacing with a big-screen pulse.";
+            return "Nhịp phim căng và hợp với trải nghiệm màn ảnh lớn.";
         }
 
         if (genres.Contains("romance") || genres.Contains("drama"))
         {
-            return "Character-led emotion with a slower afterglow.";
+            return "Cảm xúc nhân vật rõ, dư âm chậm và sâu hơn.";
         }
 
         if (genres.Contains("sci-fi") || genres.Contains("mystery"))
         {
-            return "A smart pick when you want the story to linger.";
+            return "Một lựa chọn hợp khi bạn muốn câu chuyện còn đọng lại.";
         }
 
-        return "Balanced tone, strong poster appeal, and a solid COSMOS score.";
+        return "Tông phim cân bằng, poster nổi bật và điểm COSMOS ổn định.";
     }
 }

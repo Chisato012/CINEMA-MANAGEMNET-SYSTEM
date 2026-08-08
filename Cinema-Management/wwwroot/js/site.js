@@ -1,4 +1,45 @@
 document.addEventListener('DOMContentLoaded', function () {
+    function applyNavbarProfileAvatar(src) {
+        const navImages = document.querySelectorAll('[data-profile-avatar-image]');
+        const navInitials = document.querySelectorAll('[data-profile-avatar-initial]');
+
+        if (!navImages.length && !navInitials.length) {
+            return;
+        }
+
+        if (!src) {
+            navImages.forEach(function (image) {
+                image.removeAttribute('src');
+                image.hidden = true;
+            });
+            navInitials.forEach(function (initial) {
+                initial.hidden = false;
+            });
+            return;
+        }
+
+        navImages.forEach(function (image) {
+            image.src = src;
+            image.hidden = false;
+        });
+        navInitials.forEach(function (initial) {
+            initial.hidden = true;
+        });
+    }
+
+    const profileAvatarButton = document.querySelector('[data-profile-avatar-key]');
+    const profileAvatarKey = profileAvatarButton?.dataset.profileAvatarKey;
+
+    if (profileAvatarKey) {
+        applyNavbarProfileAvatar(localStorage.getItem(profileAvatarKey));
+
+        window.addEventListener('storage', function (event) {
+            if (event.key === profileAvatarKey) {
+                applyNavbarProfileAvatar(event.newValue);
+            }
+        });
+    }
+
     document.querySelectorAll('.staff-alert').forEach(function (alert) {
         var duration = Number.parseInt(alert.dataset.alertDuration || '', 10);
 

@@ -17,6 +17,8 @@ public sealed class BookingViewModel
     public string MovieTitle { get; set; }
     public string Director { get; set; }
     public string Cast { get; set; }
+    public string Language { get; set; } = string.Empty;
+    public string Country { get; set; } = string.Empty;
     public string Synopsis { get; set; }
     public string AgeRating { get; set; }
     public int DurationMinutes { get; set; } = 166;

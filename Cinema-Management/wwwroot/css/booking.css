@@ -1,4 +1,4 @@
-﻿:root {
+:root {
     --bg: #121212;
     --surface-low: #191817;
     --surface: #211f1e;
@@ -12,9 +12,9 @@
     --line: #51443c;
     --danger: #d87a73;
     --success: #75b798;
-    --headline: "Arial Narrow", "Roboto Condensed", Arial, sans-serif;
-    --body: Inter, Manrope, "Segoe UI", sans-serif;
-    --mono: "Cascadia Mono", "JetBrains Mono", Consolas, monospace;
+    --headline: "Arial Narrow", "Roboto Condensed", var(--font-body);
+    --body: Inter, Manrope, "Segoe UI", san-serif var(--font-body);
+    --mono: "Cascadia Mono", var(--font-body);
 }
 
 * {
@@ -27,7 +27,7 @@ html {
 
 body {
     margin: 0;
-    min-height: 100vh;
+    min-height: 100dvh;
     color: var(--cream);
     background:
         radial-gradient(circle at 20% -10%, rgba(139, 94, 60, .16), transparent 30rem),
@@ -295,7 +295,7 @@ p {
 
 h1 {
     font: 800 clamp(36px, 5vw, 58px)/.98 var(--headline);
-    letter-spacing: -.035em;
+    letter-spacing: -.025em;
     margin-bottom: 15px;
 }
 
@@ -349,7 +349,7 @@ h3 {
 
     font-size: 1.25rem;
     font-weight: 600;
-    font-family: "Archivo Narrow", sans-serif;
+    font-family: var(--font-display);
     letter-spacing: .01em;
 
     cursor: pointer;
@@ -370,6 +370,7 @@ h3 {
 .secondary-button:hover {
     filter: brightness(1.12);
     transform: translateY(-1px);
+    border-color: var(--primary-light);
 }
 
 .primary-button:disabled {
@@ -600,6 +601,11 @@ h3 {
     width: 18px;
     height: 18px;
     accent-color: var(--primary-light);
+}
+
+.time-choice:hover {
+    border-color: var(--primary-light);
+    transform: translateY(-1px);
 }
 
 .time-choice strong {
@@ -1330,12 +1336,12 @@ h3 {
 }
 
 .booking-schedule-page {
-    min-height: 100vh;
+    min-height: 100dvh;
     background:
         radial-gradient(circle at 16% 0, rgba(139, 94, 60, 0.22), transparent 34%),
         linear-gradient(180deg, #151312 0%, var(--booking-bg) 42%, #171411 100%);
     color: var(--booking-text);
-    font-family: "Manrope", "Segoe UI", sans-serif;
+    font-family: var(--font-body);
 }
 
 .booking-schedule-page *,
@@ -1390,7 +1396,7 @@ h3 {
 .booking-kicker {
     margin: 0 0 8px;
     color: var(--booking-tertiary);
-    font-family: "JetBrains Mono", monospace;
+    font-family: var(--font-body);
     font-size: 0.72rem;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -1399,7 +1405,7 @@ h3 {
 .booking-schedule-hero h1,
 .booking-summary h2,
 .schedule-movie-card h2 {
-    font-family: "Archivo Narrow", "Arial Narrow", sans-serif;
+    font-family: var(--font-display);
 }
 
 .booking-schedule-hero h1 {
@@ -1527,7 +1533,7 @@ h3 {
 
 .booking-date-card__weekday,
 .booking-date-card__today {
-    font-family: "JetBrains Mono", monospace;
+    font-family: var(--font-body);
     font-size: 0.72rem;
     text-transform: uppercase;
 }
@@ -1710,7 +1716,7 @@ h3 {
     border: 1px solid rgba(212, 163, 115, 0.44);
     border-radius: 6px;
     color: var(--booking-tertiary);
-    font-family: "JetBrains Mono", monospace;
+    font-family: var(--font-body);
     font-size: 0.72rem;
     font-weight: 800;
     line-height: 1;
@@ -1775,7 +1781,7 @@ h3 {
 .showtime-selected-label {
     display: none;
     color: #fff0dd;
-    font-family: "JetBrains Mono", monospace;
+    font-family: var(--font-body);
     font-size: 0.66rem;
     text-transform: uppercase;
 }
@@ -1858,7 +1864,7 @@ h3 {
 .schedule-error-state h2 {
     margin: 0 0 8px;
     color: var(--booking-text);
-    font-family: "Archivo Narrow", "Arial Narrow", sans-serif;
+    font-family: var(--font-display);
 }
 
 .booking-summary-empty p,
@@ -1894,7 +1900,7 @@ h3 {
     border: 1px solid rgba(212, 163, 115, 0.35);
     border-radius: 6px;
     color: var(--booking-tertiary);
-    font-family: "JetBrains Mono", monospace;
+    font-family: var(--font-body);
     font-size: 0.7rem;
 }
 
@@ -2100,4 +2106,17 @@ h3 {
         width: 62px;
         height: 88px;
     }
+}
+
+#showDate::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 1;
+    filter: brightness(0)
+    saturate(100%)
+    invert(73%)
+    sepia(28%)
+    saturate(807%)
+    hue-rotate(344deg)
+    brightness(97%)
+    contrast(88%);
 }

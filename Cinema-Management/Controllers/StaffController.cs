@@ -44,8 +44,15 @@ public class StaffController : Controller
     {
         ViewBag.ActiveTab = "scheduling";
         var movies = await _context.Movies
+            .AsSplitQuery()
             .Include(m => m.MovieGenres)
                 .ThenInclude(mg => mg.Genre)
+            .Include(m => m.MovieDirectors)
+                .ThenInclude(md => md.Person)
+            .Include(m => m.MovieCasts)
+                .ThenInclude(mc => mc.Person)
+            .Include(m => m.Language)
+            .Include(m => m.Country)
             .OrderByDescending(m => m.ReleaseDate)
             .ToListAsync();
 
@@ -657,6 +664,8 @@ public class StaffController : Controller
             AgeRating = string.IsNullOrWhiteSpace(form.AgeRating)
                 ? "T13"
                 : form.AgeRating.Trim(),
+            LanguageId = await ResolveLanguageIdAsync(form.Language),
+            CountryId = await ResolveCountryIdAsync(form.Country),
             MovieGenres = new List<MovieGenre>(),
             MovieCasts = new List<MovieCasts>(),
             MovieDirectors = new List<MovieDirectors>(),
@@ -666,6 +675,8 @@ public class StaffController : Controller
         _context.Movies.Add(movie);
         await _context.SaveChangesAsync();
         await SaveMovieGenresAsync(movie.MovieId, form.Genre);
+        await SaveMovieDirectorsAsync(movie.MovieId, form.Director);
+        await SaveMovieCastsAsync(movie.MovieId, form.Cast);
         await _context.SaveChangesAsync();
 
         TempData["AlertSuccess"] = "Da them phim vao database.";
@@ -701,8 +712,12 @@ public class StaffController : Controller
         existing.PosterURL = GetPosterUrl(form);
         existing.Trailer = GetTrailerUrl(form);
         existing.ReleaseDate = form.ReleaseDate ?? existing.ReleaseDate;
+        existing.LanguageId = await ResolveLanguageIdAsync(form.Language);
+        existing.CountryId = await ResolveCountryIdAsync(form.Country);
 
         await SaveMovieGenresAsync(existing.MovieId, form.Genre);
+        await SaveMovieDirectorsAsync(existing.MovieId, form.Director);
+        await SaveMovieCastsAsync(existing.MovieId, form.Cast);
         await _context.SaveChangesAsync();
 
         TempData["AlertSuccess"] = "Da cap nhat phim.";
@@ -830,6 +845,14 @@ public class StaffController : Controller
         public string AgeRating { get; set; } = string.Empty;
 
         public string Genre { get; set; } = string.Empty;
+
+        public string Director { get; set; } = string.Empty;
+
+        public string Cast { get; set; } = string.Empty;
+
+        public string Language { get; set; } = string.Empty;
+
+        public string Country { get; set; } = string.Empty;
     }
 
     private static bool IsMovieFormValid(StaffMovieForm form)
@@ -916,6 +939,130 @@ public class StaffController : Controller
                 GenreID = genre.GenreID
             });
         }
+    }
+
+    private async Task SaveMovieDirectorsAsync(int movieId, string directorText)
+    {
+        var existingLinks = await _context.MovieDirectors
+            .Where(md => md.MovieID == movieId)
+            .ToListAsync();
+        _context.MovieDirectors.RemoveRange(existingLinks);
+
+        foreach (var name in ParsePersonNames(directorText))
+        {
+            var person = await FindOrCreatePersonAsync(name);
+            _context.MovieDirectors.Add(new MovieDirectors
+            {
+                MovieID = movieId,
+                PersonId = person.PersonID
+            });
+        }
+    }
+
+    private async Task SaveMovieCastsAsync(int movieId, string castText)
+    {
+        var existingLinks = await _context.MovieCasts
+            .Where(mc => mc.MovieID == movieId)
+            .ToListAsync();
+        _context.MovieCasts.RemoveRange(existingLinks);
+
+        foreach (var name in ParsePersonNames(castText))
+        {
+            var person = await FindOrCreatePersonAsync(name);
+            _context.MovieCasts.Add(new MovieCasts
+            {
+                MovieID = movieId,
+                PersonId = person.PersonID
+            });
+        }
+    }
+
+    private static List<string> ParsePersonNames(string names)
+    {
+        if (string.IsNullOrWhiteSpace(names))
+        {
+            return new List<string>();
+        }
+
+        return names
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private async Task<Person> FindOrCreatePersonAsync(string fullName)
+    {
+        var normalizedName = fullName.Trim();
+        var person = await _context.Persons
+            .FirstOrDefaultAsync(p => p.FullName.ToLower() == normalizedName.ToLower());
+
+        if (person != null)
+        {
+            return person;
+        }
+
+        person = new Person { FullName = normalizedName };
+        _context.Persons.Add(person);
+        await _context.SaveChangesAsync();
+        return person;
+    }
+
+    private async Task<int?> ResolveLanguageIdAsync(string languageName)
+    {
+        var normalizedName = NormalizeLookupName(languageName);
+        if (string.IsNullOrWhiteSpace(normalizedName))
+        {
+            return null;
+        }
+
+        var language = await _context.Languages
+            .FirstOrDefaultAsync(item => item.LanguageName.ToLower() == normalizedName.ToLower());
+
+        if (language != null)
+        {
+            return language.LanguageId;
+        }
+
+        language = new Language { LanguageName = normalizedName };
+        _context.Languages.Add(language);
+        await _context.SaveChangesAsync();
+        return language.LanguageId;
+    }
+
+    private async Task<int?> ResolveCountryIdAsync(string countryName)
+    {
+        var normalizedName = NormalizeLookupName(countryName);
+        if (string.IsNullOrWhiteSpace(normalizedName))
+        {
+            return null;
+        }
+
+        var country = await _context.Countries
+            .FirstOrDefaultAsync(item => item.CountryName.ToLower() == normalizedName.ToLower());
+
+        if (country != null)
+        {
+            return country.CountryId;
+        }
+
+        country = new Country { CountryName = normalizedName };
+        _context.Countries.Add(country);
+        await _context.SaveChangesAsync();
+        return country.CountryId;
+    }
+
+    private static string NormalizeLookupName(string value, int maxLength = 100)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var normalized = value.Trim();
+        return normalized.Length <= maxLength
+            ? normalized
+            : normalized[..maxLength];
     }
 
     private async Task<List<StaffRoomSummaryViewModel>> LoadRoomSummariesAsync()

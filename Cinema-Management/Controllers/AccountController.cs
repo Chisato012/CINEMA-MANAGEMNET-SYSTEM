@@ -486,19 +486,19 @@ public class AccountController : Controller
     }
 
      
-    public IActionResult Profile()
+    public async Task<IActionResult> Profile()
     {
         var userID = HttpContext.Session.GetInt32("UserID");
+        if (!userID.HasValue)
+        {
+            return RedirectToAction(nameof(Login));
+        }
 
-        var user = _context.Users
-        .Include(u => u.Bookings)
-            .ThenInclude(b => b.Tickets)
-                .ThenInclude(t => t.Showtime)
-                    .ThenInclude(s => s!.Movie)
-        .Include(u => u.Bookings)
-            .ThenInclude(b => b.Tickets)
-                .ThenInclude(t => t.Seat)
-        .FirstOrDefault(u => u.UserID == userID.Value);
+        var user = await LoadProfileUserAsync(userID.Value);
+        if (user == null)
+        {
+            return RedirectToAction(nameof(Login));
+        }
 
         return View(user);
 
@@ -506,7 +506,7 @@ public class AccountController : Controller
      
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Profile(User model)
+    public async Task<IActionResult> Profile(User model)
     {
 
         ModelState.Remove(nameof(model.Role));
@@ -516,7 +516,7 @@ public class AccountController : Controller
             return RedirectToAction("Login");
         }
          
-        var user = _context.Users.Find(UserID.Value);
+        var user = await _context.Users.FindAsync(UserID.Value);
 
         if (user == null)
         {
@@ -564,20 +564,46 @@ public class AccountController : Controller
 
             TempData["AlertError"] = string.Join(" ", errors);
 
-            return View(model);
+            var profileUser = await LoadProfileUserAsync(UserID.Value) ?? model;
+            profileUser.FullName = fullName;
+            profileUser.PhoneNumber = phoneNumber;
+            profileUser.DOB = model.DOB;
+            return View(profileUser);
         }
 
 
-        user.FullName = model.FullName;
-        user.Email = model.Email;
+        user.FullName = fullName;
+        user.Email = model.Email ?? user.Email;
         user.DOB = model.DOB;
-        user.PhoneNumber = model.PhoneNumber;
+        user.PhoneNumber = phoneNumber;
 
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
+        HttpContext.Session.SetString("UserFullName", user.FullName ?? string.Empty);
 
         TempData["SuccessMessage"] = "Cập nhật thông tin thành công";
         return RedirectToAction(nameof(Profile));
 
 
+    }
+
+    private async Task<User?> LoadProfileUserAsync(int userId)
+    {
+        return await _context.Users
+            .AsSplitQuery()
+            .Include(u => u.Bookings.Where(booking => booking.Status == "Confirmed"))
+                .ThenInclude(b => b.Tickets)
+                    .ThenInclude(t => t.Showtime)
+                        .ThenInclude(s => s!.Movie)
+            .Include(u => u.Bookings.Where(booking => booking.Status == "Confirmed"))
+                .ThenInclude(b => b.Tickets)
+                    .ThenInclude(t => t.Showtime)
+                        .ThenInclude(s => s!.Room)
+            .Include(u => u.Bookings.Where(booking => booking.Status == "Confirmed"))
+                .ThenInclude(b => b.Tickets)
+                    .ThenInclude(t => t.Seat)
+            .Include(u => u.Bookings.Where(booking => booking.Status == "Confirmed"))
+                .ThenInclude(b => b.Payments)
+                    .ThenInclude(payment => payment.PaymentMethod)
+            .FirstOrDefaultAsync(u => u.UserID == userId);
     }
 }

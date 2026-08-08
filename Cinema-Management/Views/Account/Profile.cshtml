@@ -1,295 +1,470 @@
+@model User
+@using System.Globalization
 @{
     ViewData["Title"] = "Trang cá nhân";
-    var fullName = Context.Session.GetString("UserFullName") ?? "Khách hàng COSMOS";
-    var email = Context.Session.GetString("UserEmail");
-    var role = Context.Session.GetString("Ussle") ?? "Khách hàng";
+
+    var vi = CultureInfo.GetCultureInfo("vi-VN");
+    var fullName = Model?.FullName ?? Context.Session.GetString("UserFullName") ?? "Khach hang COSMOS";
+    var email = Model?.Email ?? Context.Session.GetString("UserEmail") ?? "";
+    var phone = Model?.PhoneNumber ?? "Chua cap nhat";
+    var dob = Model?.DOB;
     var avatarInitial = !string.IsNullOrWhiteSpace(fullName)
         ? fullName.Trim()[0].ToString().ToUpperInvariant()
         : "C";
 
+    var completedBookings = (Model?.Bookings ?? new List<Booking>())
+        .OrderByDescending(booking => booking.BookingDate)
+        .ToList();
+    var latestBooking = completedBookings.FirstOrDefault();
+    var latestTickets = latestBooking?.Tickets
+        .OrderBy(ticket => ticket.Seat?.SeatCode)
+        .ToList() ?? new List<Ticket>();
+    var latestShowtime = latestTickets.FirstOrDefault()?.Showtime;
 }
 
-@model User
-<!DOCTYPE html>
-<html lang="en">
+@section Styles {
+    <link rel="stylesheet" href="~/css/profile.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewData["Title"] - COSMOS CINEMA</title>
-    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
-    <style>
-            :root {
-                --home-bg: #121210;
-                --home-bg-soft: #191816;
-                --home-surface: #20201d;
-                --home-surface-strong: #292723;
-                --home-line: rgba(232, 205, 166, 0.16);
-                --home-text: #fff7ea;
-                --home-muted: #b7aa9b;
-                --home-faint: #81776c;
-                --home-accent: #c99a6a;
-                --font-color: #d5a373;
-                --home-accent-strong: #9C6D49;
-                --home-accent-dark: #7a5235;
-                --home-green: #8b9a74;
-            }
-
-            .profile-page {
-                margin: 100px 150px
-            }
-
-            .profile-navbar {
-                display: flex;
-                flex-direction: row;
-                border-bottom: #c99a6a 0.5px solid;
-                margin-bottom: 2px;
-            }
-
-            .profile-navbar-item {
-                padding: 10px;
-                color: var(--font-color);
-                font-family: 'Segoe UI', sans-serif;
-                font-weight: 600;
-                width: 50%;
-                align-items: center;
-                justify-content: center;
-                display: flex;
-            }
-
-            .profile-navbar-item.active {
-                background-color: var(--home-accent);
-                color: white;
-            }
-
-            .profile-navbar-item:hover {
-                opacity: 0.9;
-                cursor: pointer;
-            }
-
-
-            .profile-infomation {
-                display: flex;
-                flex-direction: column;
-                padding: 20px;
-                background-color: rgba(255, 220, 197, 0.06);
-                font-family: 'Segoe UI', sans-serif;
-                border-bottom-left-radius: 8px;
-                border-bottom-right-radius: 8px;
-            }
-
-            
-            .profile-item:nth-child(1) {
-                margin-right: 15px;
-            }
-
-            .profile-item:nth-child(3) {
-                margin-right: 15px;
-            }
-
-            .profile-row {
-                width: 100%;
-                margin-bottom: 20px;
-                display: flex;
-                flex-direction: row;
-            }
-
-            .w50 {
-                width: 50%;
-            }
-
-            input {
-                width: 100%;
-                padding: 10px;
-                align-items: stretch;
-                background-color: rgba(255, 220, 197, 0.06);
-                border: 1px solid rgba(255, 220, 197, 0.13);
-                border-radius: 8px;
-                min-height: 3.35rem;
-                overflow: hidden;
-                transition: background-color 0.24s var(--auth-ease), border-color 0.24s var(--auth-ease), box-shadow 0.24s var(--auth-ease);
-            }
-
-            button {
-                padding: 17px 20px;
-                background-color: var(--home-accent);
-                border-radius: 8px;
-                font-size: 18px;
-                font-weight: bold;
-            }
-
-            .booking-history {
-                padding: 20px;
-                color: var(--home-text);
-                background-color: rgba(255, 220, 197, 0.06);
-            }
-
-            .history-table {
-                width: 100%;
-                border-collapse: collapse;
-            }
-
-            .history-table th,
-            .history-table td {
-                padding: 14px;
-                border-bottom: 1px solid var(--home-line);
-                text-align: left;
-            }
-
-            .history-table th {
-                color: var(--home-accent);
-            }
-    </style>
-</head>
-
-<body>
-    <section class="profile-page">
-        <div class="profile-navbar">
-            <div class="profile-navbar-item active" data-target="profile-information">
-                Thông tin tài khoản
-            </div>
-
-            <div class="profile-navbar-item" data-target="booking-history">
-                Hành trình điện ảnh
-            </div>
-        </div>
-        @if (TempData["SuccessMessage"] is string successMessage)
-        {
-            <script>
-                alert(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(successMessage)));
-            </script>
-        }
-        <form class="profile-infomation profile-content" id="profile-information" asp-action="Profile"
-              asp-controller="Account" method="post">
-            @Html.AntiForgeryToken()
-            <div class="profile-row">
-                <div class="profile-item w50">
-                    <h6>Họ và tên</h6>
-                    <input type="text" asp-for="FullName" id="name-input">
-                    <small id="name-error" class="auth-field-error"></small>
-                </div>
-                <div class="profile-item w50">
-                    <h6>Email</h6>
-                    <input type="email" asp-for="Email" id="email-input" readonly>
-                    <small id="email-error" class="auth-field-error"></small>
-                </div>
-            </div>
-            <div class="profile-row">
-                <div class="profile-item w50">
-                    <h6>Số điện thoại</h6>
-                    <input type="text" asp-for="PhoneNumber" id="phone-input">
-                    <small id="phone-error" class="auth-field-error"></small>
-                </div>
-                <div class="profile-item w50">
-                    <h6>Ngày sinh</h6>
-                    <input type="date" asp-for="DOB" readonly>
-                </div>
-            </div>
-            <button type="submit">
-                Cập nhật
+<main class="cosmos-profile">
+    <section class="cosmos-profile__shell" aria-labelledby="profile-title">
+        <aside class="profile-card">
+            <button type="button"
+                    class="profile-avatar-button"
+                    id="profileAvatarButton"
+                    data-open-modal="avatarMenuModal"
+                    aria-label="Doi anh dai dien">
+                <img id="profileAvatarImage" src="" alt="Anh dai dien cua @fullName" />
+                <span class="profile-avatar-initial" id="profileAvatarInitial">@avatarInitial</span>
+                <span class="profile-avatar-edit" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M4.75 16.2 15.9 5.05a2.12 2.12 0 0 1 3 0l.05.05a2.12 2.12 0 0 1 0 3L7.8 19.25H4.75V16.2Z" />
+                        <path d="m14.25 6.7 3.05 3.05" />
+                    </svg>
+                </span>
             </button>
-        </form>
 
-        <div id="booking-history" class="profile-content booking-history" style="display: none;">
+            <h1 id="profile-title">@fullName</h1>
+            <div class="profile-card__meta">
+                <span>@email</span>
+                <span>@phone</span>
+            </div>
 
-            <h3>Lịch sử giao dịch</h3>
+            <dl class="profile-card__facts">
+                <div>
+                    <dt>Vai trò</dt>
+                    <dd>@(Model?.Role ?? "Customer")</dd>
+                </div>
+                <div>
+                    <dt>Ngày sinh</dt>
+                    <dd>@(dob.HasValue ? dob.Value.ToString("dd/MM/yyyy") : "Chưa cập nhật")</dd>
+                </div>
+                <div>
+                    <dt>Vé đã đặt</dt>
+                    <dd>@completedBookings.Sum(booking => booking.Tickets.Count)</dd>
+                </div>
+            </dl>
 
-            @if (Model.Bookings != null && Model.Bookings.Any())
-            {
-                <table class="history-table">
-                    <thead>
-                        <tr>
-                            <th>Mã đặt vé</th>
-                            <th>Phim</th>
-                            <th>Ngày chiếu</th>
-                            <th>Giờ chiếu</th>
-                            <th>Ngày đặt</th>
-                            <th>Tổng tiền</th>
-                            <th>Ghế</th>
-                        </tr>
-                    </thead>
+            <button type="button" class="profile-primary-button" data-open-modal="editProfileModal">
+                Chỉnh sửa thông tin
+            </button>
+        </aside>
 
-                    <tbody>
-                        @foreach (var booking in Model.Bookings
-                            .OrderByDescending(b => b.BookingDate))
-                        {
-                            var showtime = booking.Tickets
-                                .Select(t => t.Showtime)
-                                .FirstOrDefault(s => s != null);
-                            var seatCodes = booking.Tickets.Where(t => t.Seat != null)
-                                .Select(t => t.Seat!.SeatCode)
-                                .Where(code => !string.IsNullOrWhiteSpace(code))
-                                .Distinct()
-                                .OrderBy(code => code)
-                                .ToList();
+        <div class="profile-board">
+            <section class="recent-ticket" aria-labelledby="recent-ticket-title">
+                <div class="recent-ticket__copy">
+                    <div>
+                        <span class="profile-kicker">
+                            <i class="fa-solid fa-ticket"></i>
+                                Vé đặt gần đây
+                        </span>
+                        <h2 id="recent-ticket-title">
+                            @(latestShowtime?.Movie?.Title ?? "CHƯA CÓ VÉ MỚI")
+                        </h2>
+                    </div>
 
-                            <tr>
-                                <td>#@booking.BookingID</td>
+                    @if (latestBooking != null && latestShowtime != null)
+                    {
+                        <div class="recent-ticket__facts">
+                            <div>
+                                <span>Ngày và giờ</span>
+                                <strong>@latestShowtime.Date.ToString("dd/MM/yyyy") - @latestShowtime.StartTime.ToString("HH:mm")</strong>
+                            </div>
+                            <div>
+                                <span>Phòng / Ghế</span>
+                                <strong>@(latestShowtime.Room?.RoomName ?? $"Phong {latestShowtime.RoomID}") / @string.Join(", ", latestTickets.Select(ticket => ticket.Seat?.SeatCode ?? "--"))</strong>
+                            </div>
+                            <div>
+                                <span>Thanh toán</span>
+                                <strong>@latestBooking.TotalAmount.ToString("C0", vi)</strong>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="profile-empty">Vé sẽ tự động xuất hiện tại đây sau khi bạn hoàn tất đặt vé.</p>
+                    }
+                </div>
+            </section>
 
-                                <td>
-                                    @(showtime?.Movie?.Title ?? "Không xác định")
-                                </td>
+            <section class="booking-ledger" aria-labelledby="booking-history-title">
+                <div class="booking-ledger__header">
+                    <div>
+                        <span class="profile-kicker">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                            Lịch sử đặt vé
+                        </span>
+                        <h2 id="booking-history-title">HÀNH TRÌNH ĐIỆN ẢNH</h2>
+                    </div>
+                    <span class="profile-status">@completedBookings.Count booking</span>
+                </div>
 
-                                <td>
-                                    @(showtime != null
-                                        ? showtime.Date.ToString("dd/MM/yyyy")
-                                        : "Không xác định")
-                                </td>
+                @if (completedBookings.Any())
+                {
+                    <div class="booking-table-wrap">
+                        <table class="booking-table">
+                            <thead>
+                                <tr>
+                                    <th>Phim</th>
+                                    <th>Phòng</th>
+                                    <th>Ngày / giờ</th>
+                                    <th>Ghế</th>
+                                    <th>Tổng tiền</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var booking in completedBookings)
+                                {
+                                    var tickets = booking.Tickets
+                                        .OrderBy(ticket => ticket.Seat?.SeatCode)
+                                        .ToList();
+                                    var showtime = tickets.FirstOrDefault()?.Showtime;
+                                    var seatCodes = tickets
+                                        .Select(ticket => ticket.Seat?.SeatCode)
+                                        .Where(code => !string.IsNullOrWhiteSpace(code))
+                                        .Distinct()
+                                        .ToList();
+                                    var ticketCodes = tickets
+                                        .Select(ticket => ticket.TicketCode)
+                                        .Where(code => !string.IsNullOrWhiteSpace(code))
+                                        .ToList();
+                                    var payment = booking.Payments
+                                        .OrderByDescending(item => item.PaymentDate)
+                                        .FirstOrDefault();
 
-                                <td>
-                                    @(showtime != null
-                                        ? showtime.StartTime.ToString("HH:mm")
-                                        : "Không xác định")
-                                </td>
-
-                                <td>
-                                    @booking.BookingDate.ToString("dd/MM/yyyy HH:mm")
-                                </td>
-
-                                <td>
-                                    @booking.TotalAmount.ToString("N0") đ
-                                </td>
-
-                                <td>
-                                    @(seatCodes.Any() ? string.Join(",", seatCodes) : "Không xác định")
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            }
-            else
-            {
-                <p>Bạn chưa có giao dịch nào.</p>
-            }
+                                    <tr>
+                                        <td>@(showtime?.Movie?.Title ?? "Không xác định")</td>
+                                        <td>@(showtime?.Room?.RoomName ?? (showtime != null ? $"Phong {showtime.RoomID}" : "Không xác định"))</td>
+                                        <td>
+                                            @(showtime != null
+                                                ? $"{showtime.Date:dd/MM/yyyy} - {showtime.StartTime:HH:mm}"
+                                                : "Không xác định")
+                                        </td>
+                                        <td>@(seatCodes.Any() ? string.Join(", ", seatCodes) : "Không xác định")</td>
+                                        <td>@booking.TotalAmount.ToString("C0", vi)</td>
+                                        <td><span class="profile-status">@booking.Status</span></td>
+                                        <td>
+                                            <button type="button"
+                                                    class="ticket-action"
+                                                    data-ticket-detail
+                                                    data-booking-id="#@booking.BookingID.ToString("D6")"
+                                                    data-movie="@(showtime?.Movie?.Title ?? "Không xác định")"
+                                                    data-room="@(showtime?.Room?.RoomName ?? (showtime != null ? $"Phong {showtime.RoomID}" : "Không xác định"))"
+                                                    data-time="@(showtime != null ? $"{showtime.Date:dd/MM/yyyy} - {showtime.StartTime:HH:mm}" : "Không xác định")"
+                                                    data-seats="@(seatCodes.Any() ? string.Join(", ", seatCodes) : "Không xác định")"
+                                                    data-codes="@(ticketCodes.Any() ? string.Join(", ", ticketCodes) : "Không xác định")"
+                                                    data-total="@booking.TotalAmount.ToString("C0", vi)"
+                                                    data-payment="@(payment?.PaymentMethod?.MethodName ?? "Không xác định")"
+                                                    data-status="@booking.Status">
+                                                View Ticket
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="profile-empty">
+                        Bạn chưa có vé đã hoàn tất. Sau khi thanh toán thành công, thông tin vé sẽ hiển thị tại đây.
+                    </div>
+                }
+            </section>
         </div>
     </section>
-</body>
+</main>
 
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const tabs = document.querySelectorAll(".profile-navbar-item");
-        const profileForm = document.getElementById("profile-information");
-        const history = document.getElementById("booking-history");
+<div class="profile-modal" id="editProfileModal" hidden>
+    <form class="profile-modal__dialog" asp-action="Profile" asp-controller="Account" method="post">
+        @Html.AntiForgeryToken()
+        <div class="profile-modal__header">
+            <div>
+                <p class="profile-kicker">Thông tin cá nhân</p>
+                <h2>Cập nhật hồ sơ</h2>
+            </div>
+            <button type="button" class="profile-modal__close" data-close-modal aria-label="Đóng">
+                <i class="fa-solid fa-close"></i>
+            </button>
+        </div>
+        <div class="profile-modal__body">
+            @if (TempData["AlertError"] is string errorMessage)
+            {
+                <div class="profile-empty" role="alert">@errorMessage</div>
+            }
 
-        tabs.forEach(tab => {
-            tab.addEventListener("click", function () {
-                tabs.forEach(item => item.classList.remove("active"));
-                this.classList.add("active");
+            <div class="profile-form-grid">
+                <div class="profile-field is-full">
+                    <label asp-for="FullName">Họ và tên</label>
+                    <input asp-for="FullName" id="profileFullName" />
+                </div>
+                <div class="profile-field is-full">
+                    <label asp-for="Email">Email</label>
+                    <input asp-for="Email" readonly />
+                </div>
+                <div class="profile-field">
+                    <label asp-for="PhoneNumber">Số điện thoại</label>
+                    <input asp-for="PhoneNumber" />
+                </div>
+                <div class="profile-field">
+                    <label asp-for="DOB">Ngày sinh</label>
+                    <input asp-for="DOB" type="date" value="@(Model?.DOB?.ToString("yyyy-MM-dd"))" />
+                </div>
+            </div>
+        </div>
+        <div class="profile-modal__footer">
+            <button type="submit" class="profile-primary-button">Lưu thay đổi</button>
+        </div>
+    </form>
+</div>
 
-                const showHistory =
-                    this.dataset.target === "booking-history";
+<div class="profile-modal" id="avatarMenuModal" hidden>
+    <div class="profile-modal__dialog">
+        <div class="profile-modal__header">
+            <div>
+                <p class="profile-kicker">ẢNH ĐẠI DIỆN</p>
+                <h2>Đổi ảnh hồ sơ</h2>
+            </div>
+            <button type="button" class="profile-modal__close" data-close-modal aria-label="Dong">
+                <i class="fa-solid fa-close"></i>
+            </button>
+        </div>
+        <div class="profile-modal__body">
+            <div class="profile-upload-actions">
+                <button type="button" class="profile-primary-button" data-open-modal="avatarFileModal">Tải ảnh từ thiết bị</button>
+                <button type="button" class="profile-secondary-button" data-open-modal="avatarLinkModal">Sử dụng ảnh từ liên kết</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-                profileForm.style.display = showHistory ? "none" : "flex";
-                history.style.display = showHistory ? "block" : "none";
+<div class="profile-modal" id="avatarFileModal" hidden>
+    <form class="profile-modal__dialog" id="avatarFileForm">
+        <div class="profile-modal__header">
+            <div>
+                <p class="profile-kicker">Cập nhật ảnh</p>
+                <h2>Tải ảnh từ thiết bị</h2>
+            </div>
+            <button type="button" class="profile-modal__close" data-close-modal aria-label="Dong">
+                <i class="fa-solid fa-close"></i>
+            </button>
+        </div>
+        <div class="profile-modal__body">
+            <div class="profile-field">
+                <label for="avatarFileInput">CHỌN TỆP ẢNH</label>
+                <input type="file" id="avatarFileInput" accept="image/*" />
+            </div>
+        </div>
+        <div class="profile-modal__footer">
+            <button type="submit" class="profile-primary-button">Cập nhật ảnh</button>
+        </div>
+    </form>
+</div>
+
+<div class="profile-modal" id="avatarLinkModal" hidden>
+    <form class="profile-modal__dialog" id="avatarLinkForm">
+        <div class="profile-modal__header">
+            <div>
+                <p class="profile-kicker">Cập nhật ảnh online</p>
+                <h2>Nhập liên kết ảnh</h2>
+            </div>
+            <button type="button" class="profile-modal__close" data-close-modal aria-label="Dong">
+                <i class="fa-solid fa-close"></i>
+            </button>
+        </div>
+        <div class="profile-modal__body">
+            <div class="profile-field">
+                <label for="avatarLinkInput">URL ẢNH</label>
+                <input type="url" id="avatarLinkInput" placeholder="https://..." />
+            </div>
+        </div>
+        <div class="profile-modal__footer">
+            <button type="submit" class="profile-primary-button">Cập nhật ảnh</button>
+        </div>
+    </form>
+</div>
+
+<div class="profile-modal" id="ticketDetailModal" hidden>
+    <div class="profile-modal__dialog is-wide">
+        <div class="profile-modal__header">
+            <div>
+                <p class="profile-kicker">Thông tin vé</p>
+                <h2 id="ticketDetailTitle">Chi tiết</h2>
+            </div>
+            <button type="button" class="profile-modal__close" data-close-modal aria-label="Dong">
+                <i class="fa-solid fa-close"></i>
+            </button>
+        </div>
+        <div class="profile-modal__body">
+            <div class="ticket-detail-grid">
+                <div class="ticket-detail-row"><span>Mã booking</span><strong id="ticketBookingId"></strong></div>
+                <div class="ticket-detail-row"><span>Phim</span><strong id="ticketMovie"></strong></div>
+                <div class="ticket-detail-row"><span>Phòng</span><strong id="ticketRoom"></strong></div>
+                <div class="ticket-detail-row"><span>Ngày / giờ</span><strong id="ticketTime"></strong></div>
+                <div class="ticket-detail-row"><span>Ghế</span><strong id="ticketSeats"></strong></div>
+                <div class="ticket-detail-row"><span>Mã vé</span><strong id="ticketCodes"></strong></div>
+                <div class="ticket-detail-row"><span>Thanh toán</span><strong id="ticketPayment"></strong></div>
+                <div class="ticket-detail-row"><span>Tổng tiền</span><strong id="ticketTotal"></strong></div>
+                <div class="ticket-detail-row"><span>Trạng thái</span><strong id="ticketStatus"></strong></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const avatarStorageKey = 'cosmos.profile.avatar.@(Model?.UserID ?? 0)';
+            const avatarButton = document.getElementById('profileAvatarButton');
+            const avatarImage = document.getElementById('profileAvatarImage');
+            const avatarInitial = document.getElementById('profileAvatarInitial');
+            const fileInput = document.getElementById('avatarFileInput');
+            const linkInput = document.getElementById('avatarLinkInput');
+
+            function openModal(id) {
+                document.getElementById(id)?.removeAttribute('hidden');
+            }
+
+            function closeModals() {
+                document.querySelectorAll('.profile-modal').forEach(modal => {
+                    modal.setAttribute('hidden', '');
+                });
+            }
+
+            function setAvatar(src) {
+                const navImages = document.querySelectorAll('[data-profile-avatar-image]');
+                const navInitials = document.querySelectorAll('[data-profile-avatar-initial]');
+
+                if (!src) {
+                    avatarImage.removeAttribute('src');
+                    avatarImage.style.display = 'none';
+                    avatarInitial.style.display = 'block';
+                    navImages.forEach(image => {
+                        image.removeAttribute('src');
+                        image.hidden = true;
+                    });
+                    navInitials.forEach(initial => {
+                        initial.hidden = false;
+                    });
+                    return;
+                }
+
+                avatarImage.src = src;
+                avatarImage.style.display = 'block';
+                avatarInitial.style.display = 'none';
+                navImages.forEach(image => {
+                    image.src = src;
+                    image.hidden = false;
+                });
+                navInitials.forEach(initial => {
+                    initial.hidden = true;
+                });
+            }
+
+            setAvatar(localStorage.getItem(avatarStorageKey));
+
+            document.querySelectorAll('[data-open-modal]').forEach(button => {
+                button.addEventListener('click', () => {
+                    closeModals();
+                    openModal(button.dataset.openModal);
+                });
+            });
+
+            document.querySelectorAll('[data-close-modal]').forEach(button => {
+                button.addEventListener('click', closeModals);
+            });
+
+            document.querySelectorAll('.profile-modal').forEach(modal => {
+                modal.addEventListener('click', event => {
+                    if (event.target === modal) {
+                        closeModals();
+                    }
+                });
+            });
+
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape') {
+                    closeModals();
+                }
+            });
+
+            avatarButton?.addEventListener('keydown', event => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    openModal('avatarMenuModal');
+                }
+            });
+
+            document.getElementById('avatarFileForm')?.addEventListener('submit', event => {
+                event.preventDefault();
+                const file = fileInput?.files?.[0];
+                if (!file) {
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const src = String(reader.result || '');
+                    localStorage.setItem(avatarStorageKey, src);
+                    setAvatar(src);
+                    closeModals();
+                    event.currentTarget.reset();
+                };
+                reader.readAsDataURL(file);
+            });
+
+            document.getElementById('avatarLinkForm')?.addEventListener('submit', event => {
+                event.preventDefault();
+                const src = linkInput.value.trim();
+                if (!src) {
+                    return;
+                }
+
+                localStorage.setItem(avatarStorageKey, src);
+                setAvatar(src);
+                closeModals();
+                event.currentTarget.reset();
+            });
+
+            document.querySelectorAll('[data-ticket-detail]').forEach(button => {
+                button.addEventListener('click', () => {
+                    document.getElementById('ticketDetailTitle').textContent = button.dataset.movie || 'Chi tiet booking';
+                    document.getElementById('ticketBookingId').textContent = button.dataset.bookingId || '';
+                    document.getElementById('ticketMovie').textContent = button.dataset.movie || '';
+                    document.getElementById('ticketRoom').textContent = button.dataset.room || '';
+                    document.getElementById('ticketTime').textContent = button.dataset.time || '';
+                    document.getElementById('ticketSeats').textContent = button.dataset.seats || '';
+                    document.getElementById('ticketCodes').textContent = button.dataset.codes || '';
+                    document.getElementById('ticketPayment').textContent = button.dataset.payment || '';
+                    document.getElementById('ticketTotal').textContent = button.dataset.total || '';
+                    document.getElementById('ticketStatus').textContent = button.dataset.status || '';
+                    openModal('ticketDetailModal');
+                });
             });
         });
-    });
-
-</script>
-
-<script src="~/js/auth.js" asp-append-version="true"></script>
-
-</html>
-
-
+    </script>
+}

@@ -31,9 +31,8 @@
     <header class="cosmos-site-header">
         <nav class="navbar navbar-expand-sm navbar-dark custom-navbar">
             <div class="container-fluid px-4 py-2">
-
                 <a class="navbar-brand fw-bold m-0 cosmos-logo" asp-area="" asp-controller="Home" asp-action="Index">
-                    <img src="/img/poster/logo.png" alt="">
+                    <img src="~/img/poster/logo.png" alt="">
                 </a>
 
                 <div class="d-none d-lg-flex gap-4 ms-5 me-auto ">
@@ -58,8 +57,15 @@
                             </span>
 
                             <a asp-controller="Account" asp-action="Profile" class="cosmos-profile-button"
-                               aria-label="Trang cá nhân" title="Trang cá nhân">
-                                <span class="cosmos-profile-avatar" aria-hidden="true">@avatarInitial</span>
+                               aria-label="Trang cá nhân"
+                               title="Trang cá nhân"
+                               data-profile-avatar-key="cosmos.profile.avatar.@(Context.Session.GetInt32("UserID") ?? 0)">
+                                <img class="cosmos-profile-avatar-image"
+                                     data-profile-avatar-image
+                                     src=""
+                                     alt=""
+                                     hidden />
+                                <span class="cosmos-profile-avatar" data-profile-avatar-initial aria-hidden="true">@avatarInitial</span>
                             </a>
 
                             <a asp-controller="Account" asp-action="Logout" class="cosmos-icon-button cosmos-logout-button"
@@ -98,24 +104,24 @@
     
     <footer class="cosmos-movie-footer">
         <div class="cosmos-movie-footer__brand">
-            <a class="cosmos-movie-footer__logo" asp-controller="Home" asp-action="Index">COSMOS<br>CINEMA</a>
+            <div class="cosmos-movie-footer__logo" asp-controller="Home" asp-action="Index">COSMOS<br>CINEMA</div>
             <p>Cinema nights, curated beautifully.</p>
         </div>
 
         <nav class="cosmos-movie-footer__links" aria-label="Footer navigation">
             <div>
                 <h3>About COSMOS</h3>
-                <a href="#">About Us</a>
-                <a href="#">Our Cinemas</a>
-                <a href="#">Careers</a>
-                <a href="#">News & Events</a>
+                <a href="https://www.tiktok.com/@@lqwsfrixcvnpotvh/video/7669635498494807317" target="_blank">About Us</a>
+                <a href="https://www.tiktok.com/@@lqwsfrixcvnpotvh/video/7669635498494807317" target="_blank">Our Cinemas</a>
+                <a href="https://www.tiktok.com/@@lqwsfrixcvnpotvh/video/7669635498494807317" target="_blank">Careers</a>
+                <a href="https://www.tiktok.com/@@lqwsfrixcvnpotvh/video/7669635498494807317" target="_blank">News & Events</a>
             </div>
             <div>
                 <h3>Support</h3>
-                <a href="#">FAQs</a>
-                <a href="#">Help Center</a>
+                <a href="https://www.facebook.com/nguyen.thanh.an.396488" target="_blank">FAQs</a>
+                <a href="https://www.facebook.com/bac123123" target="_blank">Help Center</a>
                 <a href="#">Booking Guide</a>
-                <a href="#">Contact Us</a>
+                <a href="https://cmcu.edu.vn/" target="_blank">Contact Us</a>
             </div>
         </nav>
 

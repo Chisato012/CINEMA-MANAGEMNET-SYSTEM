@@ -1,5 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@500;700&family=Manrope:wght@400;500;600;700;800&display=swap");
-
 :root {
     --home-bg: #121210;
     --home-bg-soft: #191816;
@@ -19,8 +17,10 @@
     min-height: 100dvh;
     color: var(--home-text);
     background:
-        linear-gradient(180deg, #141412 0%, #191816 42%, #11110f 100%);
-    font-family: "Manrope", sans-serif;
+            radial-gradient(circle at 0 12%, rgba(139, 94, 60, 0.22), transparent 28%),
+            radial-gradient(circle at 100% 36%, rgba(212, 163, 115, 0.12), transparent 26%),
+            linear-gradient(180deg, var(--movie-bg) 0%, #0f0e0d 44%, #171411 100%);
+    font-family: var(--font-body);
     overflow: hidden;
 }
 
@@ -44,7 +44,7 @@
     align-items: center;
     gap: 10px;
     color: var(--home-accent-strong);
-    font-family: "JetBrains Mono", monospace;
+    font-family: var(--font-body);
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.1em;
@@ -62,14 +62,13 @@
 
 .slider-container {
     position: relative;
-    width: 1916px;
-    height: 860px;
+    width: 100%;
+    height: 640px;
     margin: 0 auto;
     overflow: hidden;
-    border: 1px solid var(--movie-line);
-    border-radius: var(--movie-radius);
-    background: var(--movie-bg);
-    box-shadow: 0 28px 80px var(--movie-shadow);
+    border-bottom: 1px solid var(--home-line);
+    background: var(--home-bg);
+    box-shadow: 0 22px 70px rgba(8, 7, 6, 0.38);
 }
 
 .slider-wrapper {
@@ -101,19 +100,25 @@
 
 .slider-slide__backdrop {
     z-index: 0;
-    width: 100%;
-    height: 100%;
+    inset: -42px;
+    width: calc(100% + 84px);
+    height: calc(100% + 84px);
     object-fit: cover;
-    opacity: 0.58;
-    filter: blur(18px) saturate(0.85) brightness(0.72);
-    transform: scale(1.1);
+    object-position: center;
+    opacity: 0.72;
+    filter: blur(30px) saturate(1.08) contrast(1.05) brightness(0.68);
+    transform: scale(1.12);
+    transform-origin: center;
 }
 
 .slider-slide__shade {
     z-index: 1;
     background:
-        linear-gradient(90deg, rgba(18, 18, 16, 0.92) 0%, rgba(18, 18, 16, 0.68) 42%, rgba(18, 18, 16, 0.24) 100%),
-        linear-gradient(180deg, rgba(18, 18, 16, 0.04) 0%, rgba(18, 18, 16, 0.68) 100%);
+        radial-gradient(circle at 72% 44%, rgba(255, 247, 234, 0.1), transparent 17%),
+        radial-gradient(circle at 76% 50%, rgba(12, 11, 10, 0.12), rgba(12, 11, 10, 0.78) 58%, rgba(12, 11, 10, 0.96) 100%),
+        linear-gradient(90deg, rgba(18, 18, 16, 0.96) 0%, rgba(18, 18, 16, 0.78) 39%, rgba(18, 18, 16, 0.34) 72%),
+        linear-gradient(180deg, rgba(18, 18, 16, 0.18) 0%, rgba(18, 18, 16, 0.74) 100%);
+    backdrop-filter: blur(2px);
 }
 
 .slider-slide__content {
@@ -122,15 +127,15 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(260px, 380px);
     align-items: center;
-    gap: 56px;
+    gap: clamp(36px, 6vw, 72px);
     width: min(calc(100% - 48px), 1200px);
     height: 100%;
     margin: 0 auto;
-    padding: 76px 0 64px;
+    padding: 54px 0 58px;
 }
 
 .slider-slide__copy {
-    max-width: 720px;
+    max-width: 680px;
     opacity: 1;
     transform: translateY(0);
     transition:
@@ -144,29 +149,40 @@
 }
 
 .slider-slide__copy h1 {
-    max-width: 780px;
-    margin: 18px 0 18px;
+    max-width: 12ch;
+    margin: 14px 0 16px;
     color: var(--home-text);
-    font-family: "Archivo Narrow", sans-serif;
-    font-size: 64px;
+    font-family: var(--font-display);
+    font-size: clamp(52px, 6vw, 88px);
     font-weight: 700;
     letter-spacing: 0;
-    line-height: 0.98;
+    line-height: 0.96;
+    overflow-wrap: anywhere;
 }
 
 .slider-slide__copy p {
     max-width: 62ch;
     margin: 0;
     color: #d4c8b7;
-    font-size: 16px;
-    line-height: 1.8;
+    font-size: 17px;
+    line-height: 1.65;
+}
+
+.slider-slide__title-link {
+    display: inline-block;
+    text-decoration: none;
+}
+
+.slider-slide__title-link:hover h1,
+.slider-slide__title-link:focus-visible h1 {
+    color: #f6dfb8;
 }
 
 .slider-slide__meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 28px;
+    gap: 10px;
+    margin-top: 24px;
 }
 
 .slider-slide__meta span {
@@ -178,16 +194,25 @@
     background: rgba(255, 247, 234, 0.08);
     border: 1px solid rgba(232, 205, 166, 0.16);
     border-radius: 999px;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 12px;
+    font-family: var(--font-body);
+    font-size: 14px;
     font-weight: 700;
+}
+.slider-slide__meta span:hover {
+    color: #f6dfb8;
+    background: rgba(255, 247, 234, 0.12);
+    transform: translateY(-2px);
 }
 
 .home-actions {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
-    margin-top: 30px;
+    margin-top: 26px;
+}
+
+.home-actions form {
+    margin: 0;
 }
 
 .home-cta,
@@ -199,8 +224,8 @@
     min-height: 44px;
     border: 1px solid transparent;
     border-radius: 8px;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 13px;
+    font-family: var(--font-body);
+    font-size: 15px;
     font-weight: 700;
     letter-spacing: 0.04em;
     line-height: 1;
@@ -212,7 +237,7 @@
 }
 
 .home-cta {
-    padding: 0 18px;
+    padding: 0 20px;
 }
 
 .home-cta--primary,
@@ -252,7 +277,7 @@
     position: relative;
     display: block;
     justify-self: end;
-    width: min(100%, 340px);
+    width: min(100%, 300px);
     aspect-ratio: 2 / 3;
     padding: 10px;
     border: 1px solid rgba(255, 247, 234, 0.2);
@@ -260,12 +285,37 @@
     background: rgba(255, 247, 234, 0.08);
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.08),
-        0 34px 70px rgba(8, 7, 6, 0.42);
+        0 34px 70px rgba(8, 7, 6, 0.48),
+        0 0 0 1px rgba(255, 247, 234, 0.04);
     opacity: 1;
     transform: translateX(0) rotate(1.5deg);
     transition:
         opacity 640ms cubic-bezier(0.16, 1, 0.3, 1),
         transform 640ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slider-empty {
+    display: grid;
+    align-content: center;
+    width: min(calc(100% - 48px), 1200px);
+    height: 100%;
+    margin: 0 auto;
+}
+
+.slider-empty h1 {
+    color: var(--home-text);
+    font-family: var(--font-display);
+    font-size: clamp(52px, 6vw, 88px);
+    font-weight: 700;
+    line-height: 0.96;
+    margin: 12px 0;
+}
+
+.slider-empty p:not(.home-eyebrow) {
+    color: var(--home-muted);
+    font-size: 17px;
+    line-height: 1.6;
+    max-width: 58ch;
 }
 
 .slider-slide.is-active .slider-slide__poster {
@@ -353,6 +403,18 @@
     background: var(--home-accent-strong);
 }
 
+.slider-btn:focus-visible,
+.slider-dot:focus-visible,
+.home-cta:focus-visible,
+.buy-button__content:focus-visible,
+.movie-title:focus-visible,
+.movie-poster:focus-visible,
+.slider-slide__poster:focus-visible,
+.slider-slide__title-link:focus-visible {
+    outline: 2px solid rgba(232, 205, 166, 0.86);
+    outline-offset: 3px;
+}
+
 .home-section {
     width: min(calc(100% - 48px), 1200px);
     margin: 0 auto;
@@ -402,7 +464,7 @@
 .cinema-intro__copy h2 {
     margin: 0;
     color: var(--home-text);
-    font-family: "Archivo Narrow", sans-serif;
+    font-family: var(--font-display);
     font-size: 44px;
     font-weight: 700;
     letter-spacing: 0;
@@ -489,7 +551,7 @@
     color: #17130f;
     background: var(--home-accent-strong);
     border-radius: 999px;
-    font-family: "JetBrains Mono", monospace;
+    font-family: var(--font-body);
     font-size: 11px;
     font-weight: 700;
     opacity: 0;
@@ -533,7 +595,7 @@
     min-height: 52px;
     overflow: hidden;
     color: var(--home-text);
-    font-family: "Archivo Narrow", sans-serif;
+    font-family: var(--font-display);
     font-size: 22px;
     font-weight: 700;
     letter-spacing: 0;
@@ -572,7 +634,7 @@
     color: #ead8bd;
     border: 1px solid rgba(225, 193, 148, 0.38);
     border-radius: 6px;
-    font-family: "JetBrains Mono", monospace;
+    font-family: var(--font-body);
     font-size: 11px;
     font-weight: 700;
     line-height: 1;
@@ -609,7 +671,7 @@
 
 .movie-empty h3 {
     margin: 0;
-    font-family: "Archivo Narrow", sans-serif;
+    font-family: var(--font-display);
     font-size: 30px;
 }
 
@@ -671,7 +733,7 @@
 .promo-card__label {
     display: inline-flex;
     color: var(--home-accent-strong);
-    font-family: "JetBrains Mono", monospace;
+    font-family: var(--font-body);
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -682,7 +744,7 @@
 .promo-card h3 {
     margin: 18px 0 0;
     color: var(--home-text);
-    font-family: "Archivo Narrow", sans-serif;
+    font-family: var(--font-display);
     font-size: 28px;
     font-weight: 700;
     letter-spacing: 0;
@@ -737,7 +799,7 @@
     width: fit-content;
     margin-top: 20px;
     color: var(--home-accent-strong);
-    font-family: "JetBrains Mono", monospace;
+    font-family: var(--font-body);
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.04em;
@@ -751,23 +813,22 @@
 
 @media (max-width: 991.98px) {
     .slider-container {
-        height: 680px;
+        height: 540px;
     }
 
     .slider-slide__content {
         grid-template-columns: 1fr;
         align-content: center;
-        gap: 28px;
-        padding: 64px 0 84px;
+        gap: 24px;
+        padding: 42px 0 76px;
     }
 
     .slider-slide__copy h1 {
-        font-size: 52px;
+        font-size: clamp(44px, 7vw, 58px);
     }
 
     .slider-slide__poster {
-        justify-self: start;
-        width: 230px;
+        display: none;
     }
 
     .section-heading,
@@ -787,7 +848,7 @@
 
 @media (max-width: 767.98px) {
     .slider-container {
-        height: 720px;
+        height: 480px;
     }
 
     .slider-slide__content,
@@ -796,8 +857,9 @@
     }
 
     .slider-slide__copy h1 {
-        font-size: 42px;
+        font-size: clamp(38px, 10vw, 52px);
         line-height: 1;
+        max-width: 13ch;
     }
 
     .slider-slide__copy p,
@@ -805,6 +867,23 @@
     .cinema-intro__copy p,
     .promo-card p,
     .intro-feature p {
+        font-size: 14px;
+        line-height: 1.55;
+    }
+
+    .slider-slide__meta span {
+        min-height: 30px;
+        font-size: 14px;
+        padding: 6px 10px;
+    }
+
+    .home-actions {
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .home-cta {
+        min-height: 42px;
         font-size: 14px;
     }
 
@@ -839,7 +918,7 @@
     }
 
     .home-section {
-        padding: 64px 0;
+        padding: 58px 0;
     }
 
     .section-heading {
@@ -899,11 +978,11 @@
 
 @media (max-width: 420px) {
     .home-actions {
-        flex-direction: column;
+        flex-direction: row;
     }
 
     .home-cta {
-        width: 100%;
+        width: auto;
     }
 
     .movie-gallery__row {
