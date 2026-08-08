@@ -11,14 +11,14 @@
     --offer-border: rgba(139, 94, 60, 0.36);
     --offer-border-strong: rgba(212, 163, 115, 0.62);
     --offer-success: #87b991;
-    min-height: 100vh;
+    min-height: 100dvh;
     padding: 34px 0 72px;
     background:
         radial-gradient(circle at 16% 0%, rgba(139, 94, 60, 0.16), transparent 30rem),
         radial-gradient(circle at 94% 22%, rgba(212, 163, 115, 0.07), transparent 28rem),
         var(--offer-bg);
     color: var(--offer-text);
-    font-family: Manrope, "Segoe UI", sans-serif;
+    font-family: var(--font-body);
 }
 
 .offers-page *,
@@ -37,7 +37,7 @@
 .offer-card__meta span,
 .selected-offer-detail dt,
 .offer-modal__facts dt {
-    font-family: "JetBrains Mono", Consolas, monospace;
+    font-family: var(--font-body);
     letter-spacing: 0;
     text-transform: uppercase;
 }
@@ -66,7 +66,7 @@
 .offer-modal__body h2 {
     margin: 0;
     color: var(--offer-text);
-    font-family: "Archivo Narrow", "Arial Narrow", Arial, sans-serif;
+    font-family: var(--font-display);
     font-weight: 800;
     letter-spacing: 0;
 }
@@ -286,7 +286,7 @@
     border-radius: 7px;
     background: rgba(139, 94, 60, 0.9);
     color: #fff8f1;
-    font-family: "JetBrains Mono", Consolas, monospace;
+    font-family: var(--font-body);
     font-size: 0.68rem;
     font-weight: 800;
 }
@@ -335,7 +335,7 @@
     display: block;
     margin-top: 18px;
     color: var(--offer-tertiary);
-    font-family: "Archivo Narrow", "Arial Narrow", Arial, sans-serif;
+    font-family: var(--font-display);
     font-size: 3.1rem;
     font-weight: 800;
     line-height: 0.9;
@@ -344,7 +344,7 @@
 .offer-card h2 {
     margin: 14px 0 0;
     color: var(--offer-text);
-    font-family: "Archivo Narrow", "Arial Narrow", Arial, sans-serif;
+    font-family: var(--font-display);
     font-size: 1.55rem;
     font-weight: 800;
     line-height: 1.05;
@@ -471,7 +471,7 @@
     border: 1px solid var(--offer-border);
     border-radius: 12px;
     color: var(--offer-tertiary);
-    font-family: "Archivo Narrow", "Arial Narrow", Arial, sans-serif;
+    font-family: var(--font-display);
     font-size: 2rem;
 }
 
@@ -479,7 +479,7 @@
 .selected-offer-detail h3 {
     margin: 10px 0 0;
     color: var(--offer-text);
-    font-family: "Archivo Narrow", "Arial Narrow", Arial, sans-serif;
+    font-family: var(--font-display);
     font-size: 1.45rem;
 }
 
@@ -495,7 +495,7 @@
     display: inline-flex;
     margin-top: 16px;
     color: var(--offer-tertiary);
-    font-family: "Archivo Narrow", "Arial Narrow", Arial, sans-serif;
+    font-family: var(--font-display);
     font-size: 2.4rem;
     font-weight: 800;
     line-height: 1;
@@ -554,7 +554,7 @@
 .offer-empty h2 {
     margin: 0;
     color: var(--offer-text);
-    font-family: "Archivo Narrow", "Arial Narrow", Arial, sans-serif;
+    font-family: var(--font-display);
     font-size: 1.8rem;
 }
 
@@ -596,7 +596,7 @@
 .expiring-card h3 {
     margin: 0;
     color: var(--offer-text);
-    font-family: "Archivo Narrow", "Arial Narrow", Arial, sans-serif;
+    font-family: var(--font-display);
     font-size: 1.25rem;
 }
 
@@ -609,7 +609,7 @@
 
 .expiring-card code {
     color: var(--offer-tertiary);
-    font-family: "JetBrains Mono", Consolas, monospace;
+    font-family: var(--font-body);
 }
 
 .expiring-card > span {
@@ -724,7 +724,7 @@
     position: relative;
     z-index: 1;
     width: min(720px, 100%);
-    max-height: min(760px, calc(100vh - 48px));
+    max-height: min(760px, calc(100dvh - 48px));
     overflow: auto;
     border: 1px solid var(--offer-border-strong);
     border-radius: 12px;
@@ -764,7 +764,7 @@
 .offer-modal__body h3 {
     margin: 18px 0 8px;
     color: var(--offer-text);
-    font-family: "Archivo Narrow", "Arial Narrow", Arial, sans-serif;
+    font-family: var(--font-display);
     font-size: 1.35rem;
 }
 

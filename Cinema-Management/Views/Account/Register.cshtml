@@ -18,12 +18,6 @@
                 <p>Thông tin này giúp COSMOS phục vụ đặt vé và liên hệ chính xác hơn.</p>
             </div>
 
-            <div class="auth-tabs" role="tablist" aria-label="Chuyển chế độ tài khoản">
-                <a class="auth-tab" asp-controller="Account" asp-action="Login">Đăng nhập</a>
-                <a class="auth-tab active" asp-controller="Account" asp-action="Register" aria-current="page">Đăng
-                    ký</a>
-                </div>
-
                 <div asp-validation-summary="ModelOnly" class="auth-validation-summary"></div>
 
                 <form class="auth-form" asp-controller="Account" asp-action="Register" method="post" novalidate>

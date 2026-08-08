@@ -39,7 +39,7 @@
 <body>
     <header class="site-header">
         <div class="shell header-row">
-            <div class="brand"><span class="brand-mark" aria-hidden="true"></span> Cosmos Cinema</div>
+            <div class="brand"><span class="brand-mark" aria-hidden="true"></span>  COSMOS CINEMA</div>
             <div class="booking-header-actions">
                 <form asp-controller="Booking" asp-action="CancelBooking" method="post" class="cancel-form">
                     @Html.AntiForgeryToken()
@@ -71,7 +71,7 @@
             <header class="step-heading">
                 <div>
                     <p class="eyebrow">Step 2 of 4 · Select seats</p>
-                    <h2>@Model.MovieTitle</h2>
+                    <h2 style="font-size: 40px">@Model.MovieTitle</h2>
                     <div class="movie-meta">
                         <span class="meta-pill">▣ @Model.SelectedDate</span>
                         <span class="meta-pill">◷ @Model.SelectedTime</span>
@@ -149,8 +149,7 @@
                                     }
                                 </div>
                             }
-
-
+                            
                         </div>
                         <div class="legend">
                             <span>

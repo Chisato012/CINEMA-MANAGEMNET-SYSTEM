@@ -35,7 +35,7 @@
             </div>
 
             <div class="details-info">
-                <p class="details-kicker">COSMOS PRESENTS</p>
+                <p class="details-kicker">COSMOS giới thiệu</p>
 
                 <div class="details-tags" aria-label="Thông tin nhanh">
                     @if (!string.IsNullOrEmpty(Model.Genre))
@@ -63,17 +63,20 @@
                         </svg>
                         <span>Đặt vé</span>
                     </a>
-                    <button type="button"
-                            class="details-btn--trailer"
-                            id="btn-watch-trailer"
-                            onclick="openTrailer('@Model.Trailer')">
-                        <span class="play-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24">
-                                <path d="M8.75 5.74c0-.93 1.02-1.5 1.82-1.02l9.03 5.43a1.2 1.2 0 0 1 0 2.06l-9.03 5.43a1.2 1.2 0 0 1-1.82-1.02V5.74Z" />
-                            </svg>
-                        </span>
-                        <span>Xem trailer</span>
-                    </button>
+                    @if (!string.IsNullOrWhiteSpace(Model.Trailer))
+                    {
+                        <button type="button"
+                                class="details-btn--trailer"
+                                id="btn-watch-trailer"
+                                onclick="openTrailer('@Model.Trailer')">
+                            <span class="play-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M8.75 5.74c0-.93 1.02-1.5 1.82-1.02l9.03 5.43a1.2 1.2 0 0 1 0 2.06l-9.03 5.43a1.2 1.2 0 0 1-1.82-1.02V5.74Z" />
+                                </svg>
+                            </span>
+                            <span>Xem trailer</span>
+                        </button>
+                    }
                 </div>
             </div>
         </div>
@@ -133,12 +136,12 @@
     <section class="reviews-section" aria-labelledby="movie-reviews-title">
         <div class="details-section-heading">
             <p>Ý kiến khán giả</p>
-            <h2 id="movie-reviews-title">Reviews</h2>
+            <h2 id="movie-reviews-title">Đánh giá</h2>
         </div>
 
         <div class="reviews-layout">
             <aside class="reviews-summary" aria-label="Tổng quan đánh giá">
-                <span class="reviews-summary__label">Average rating</span>
+                <span class="reviews-summary__label">Điểm trung bình</span>
                 <div class="reviews-summary__score">
                     <strong>@FormatRating(reviewSummary.AverageRating)</strong>
                     <span>/ 5</span>
@@ -160,7 +163,7 @@
 
                         <div class="review-form__header">
                             <div>
-                                <span class="review-form__eyebrow">Your review</span>
+                                <span class="review-form__eyebrow">Đánh giá của bạn</span>
                                 <h3>Chia sẻ cảm nhận về @Model.Title</h3>
                             </div>
                             <span class="review-form__value" data-review-rating-label>0.00 / 5</span>
@@ -205,7 +208,7 @@
                 {
                     <div class="review-login">
                         <div>
-                            <span class="review-form__eyebrow">Your review</span>
+                            <span class="review-form__eyebrow">Đánh giá của bạn</span>
                             <h3>Đăng nhập để gửi đánh giá</h3>
                         </div>
                         <a asp-controller="Account" asp-action="Login">Đăng nhập</a>
@@ -325,7 +328,10 @@
                     <div class="showtimes-times__grid">
                         @foreach (var showtime in dateShowtimes!)
                         {
-                            <a href="#" class="showtimes-time-card">
+                            <a class="showtimes-time-card"
+                               asp-controller="Booking"
+                               asp-action="SelectShowtime"
+                               asp-route-movieId="@Model.MovieId">
                                 <span class="showtimes-time-card__time">@showtime.StartTime.ToString("HH:mm")</span>
                             </a>
                         }

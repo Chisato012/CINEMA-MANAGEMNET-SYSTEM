@@ -17,12 +17,7 @@
                 <h2>Chào mừng trở lại</h2>
                 <p>Nhập email và mật khẩu để tiếp tục.</p>
             </div>
-
-            <div class="auth-tabs" role="tablist" aria-label="Chuyển chế độ tài khoản">
-                <a class="auth-tab active" asp-controller="Account" asp-action="Login" aria-current="page">Đăng nhập</a>
-                <a class="auth-tab" asp-controller="Account" asp-action="Register">Đăng ký</a>
-            </div>
-
+            
             <div asp-validation-summary="ModelOnly" class="auth-validation-summary"></div>
 
             @if (!string.IsNullOrWhiteSpace(ViewBag.UnconfirmedEmail as string))

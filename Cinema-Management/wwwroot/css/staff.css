@@ -371,8 +371,10 @@ body {
 }
 
 .btn-secondary:hover {
-    background-color: var(--color-neutral-800);
-    color: var(--color-neutral-50);
+    background-color: rgba(229, 226, 225, 0.1);
+    color:  #f4bb92;
+    border:1px solid #a67b5b;
+    transition: all 0.2s ease-in-out;
 }
 
 .btn-danger {
@@ -636,7 +638,7 @@ body {
     margin: 0 0 4px;
     font-family: var(--font-headline);
     font-size: 0.9rem;
-    color: var(--color-neutral-50);
+    color: var(--cream);
 }
 
 .mr-hall-info span {
@@ -2232,6 +2234,18 @@ body {
             brightness(97%)
             contrast(88%);
 }
+#scheduleDate::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 1;
+    filter: brightness(0)
+            saturate(100%)
+            invert(73%)
+            sepia(28%)
+            saturate(807%)
+            hue-rotate(344deg)
+            brightness(97%)
+            contrast(88%);
+}
 
 .status-dot {
     position: relative;
@@ -2258,13 +2272,13 @@ body {
         opacity: 0.6;
     }
 
-    70% {
-        transform: scale(2.5);
+    50% {
+        transform: scale(2);
         opacity: 0;
     }
 
     100% {
-        transform: scale(2.5);
+        transform: scale(3);
         opacity: 0;
     }
 }

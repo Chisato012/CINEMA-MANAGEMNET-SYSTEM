@@ -15,6 +15,7 @@
         Url.Content("~/img/poster/maxo.jpg")
     };
     const int featuredSlideCount = 6;
+    var heroMovies = movies.Take(featuredSlideCount).ToList();
 
     string ResolvePosterUrl(string? posterUrl, string fallbackUrl)
     {
@@ -39,56 +40,129 @@
             ? Url.Content(value)
             : value;
     }
+
+    string ClampText(string? value, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "Thông tin phim đang được cập nhật tại COSMOS Cinema.";
+        }
+
+        var normalized = value.Trim();
+        return normalized.Length <= maxLength
+            ? normalized
+            : normalized[..maxLength].TrimEnd() + "...";
+    }
+
+    string ReleaseLabel(DateTime releaseDate)
+    {
+        return releaseDate.Date > today
+            ? $"Khởi chiếu {releaseDate:dd/MM/yyyy}"
+            : $"Đang chiếu từ {releaseDate:dd/MM/yyyy}";
+    }
 }
 
 @section Styles {
     <link rel="stylesheet" href="~/css/home.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 }
 
 <main class="home-page" id="homePage">
     <section class="slider-container" aria-label="Phim nổi bật tại COSMOS">
-        <div class="slider-wrapper" id="sliderWrapper">
-            <article class="slider-slide">
-                <img src="~/img/poster/spiderman.jpg" alt="">
-            </article>
-            <article class="slider-slide">
-                <img src="~/img/poster/poster1.png" alt="">
-            </article>
-            <article class="slider-slide">
-                <img src="~/img/poster/poster_theodyssey.jpg" alt="">
-            </article>
-            <article class="slider-slide">
-                <img src="~/img/poster/poster3(1).png" alt="">
-            </article>
-            <article class="slider-slide">
-                <img src="~/img/poster/poster_minion.png" alt="">
-            </article>
-            <article class="slider-slide">
-                <img src="~/img/poster/poster2.jpg" alt="">
-            </article>
-        </div>
+        @if (heroMovies.Any())
+        {
+            <div class="slider-wrapper" id="sliderWrapper">
+                @for (var slideIndex = 0; slideIndex < heroMovies.Count; slideIndex++)
+                {
+                    var movie = heroMovies[slideIndex];
+                    var poster = ResolvePosterUrl(movie.PosterURL, fallbackPosters[slideIndex % fallbackPosters.Length]);
+                    var title = !string.IsNullOrWhiteSpace(movie.Title) ? movie.Title : "Phim đang chiếu";
+                    var genre = !string.IsNullOrWhiteSpace(movie.Genre) ? movie.Genre : "Đang cập nhật";
+                    var statusLabel = movie.ReleaseDate.Date > today ? "Phim sắp chiếu" : "Phim đang chiếu";
+                    var imageLoading = slideIndex == 0 ? "eager" : "lazy";
+                    var activeClass = slideIndex == 0 ? "is-active" : string.Empty;
 
-        <button class="slider-btn prev" type="button" data-slider-step="-1" aria-label="Ảnh trước">
-            <svg aria-hidden="true" viewBox="0 0 24 24">
-                <path d="m15 6-6 6 6 6" />
-            </svg>
-        </button>
-        <button class="slider-btn next" type="button" data-slider-step="1" aria-label="Ảnh tiếp theo">
-            <svg aria-hidden="true" viewBox="0 0 24 24">
-                <path d="m9 6 6 6-6 6" />
-            </svg>
-        </button>
+                    <article class="slider-slide @activeClass">
+                        <img class="slider-slide__backdrop"
+                             src="@poster"
+                             alt=""
+                             loading="@imageLoading"
+                             aria-hidden="true" />
+                        <div class="slider-slide__shade" aria-hidden="true"></div>
 
-        <div class="slider-dots" aria-label="Chọn ảnh nổi bật">
-            @for (var slideIndex = 0; slideIndex < featuredSlideCount; slideIndex++)
-            {
-                <button class="slider-dot @(slideIndex == 0 ? "is-active" : "")"
-                        type="button"
-                        data-slider-dot="@slideIndex"
-                        aria-label="Chuyển đến ảnh @(slideIndex + 1)">
-                </button>
-            }
-        </div>
+                        <div class="slider-slide__content">
+                            <div class="slider-slide__copy">
+                                <p class="home-eyebrow">@statusLabel</p>
+                                <a class="slider-slide__title-link" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">
+                                    <h1>@title</h1>
+                                </a>
+                                <p>@ClampText(movie.Synopsis, 170)</p>
+
+                                <div class="slider-slide__meta" aria-label="Thông tin phim">
+                                    <span>@genre</span>
+                                    <span>@ReleaseLabel(movie.ReleaseDate)</span>
+                                    <span>@movie.Duration phút</span>
+                                </div>
+
+                                <div class="home-actions">
+                                    <form asp-controller="Booking" asp-action="SelectShowtime" method="get">
+                                        <input type="hidden" name="movieId" value="@movie.MovieId" />
+                                        <button type="submit" class="home-cta home-cta--primary">
+                                            <i class="fa-solid fa-ticket"></i>
+                                            Đặt vé
+                                        </button>
+                                    </form>
+
+                                    @if (!string.IsNullOrWhiteSpace(movie.Trailer))
+                                    {
+                                        <a class="home-cta home-cta--ghost"
+                                           href="@movie.Trailer"
+                                           target="_blank"
+                                           rel="noopener noreferrer">
+                                            Xem trailer
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+
+                            <a class="slider-slide__poster" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId" aria-label="Xem chi tiết @title">
+                                <img src="@poster" alt="Poster phim @title" loading="@imageLoading" />
+                            </a>
+                        </div>
+                    </article>
+                }
+            </div>
+
+            <button class="slider-btn prev" type="button" data-slider-step="-1" aria-label="Phim trước">
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="m15 6-6 6 6 6" />
+                </svg>
+            </button>
+            <button class="slider-btn next" type="button" data-slider-step="1" aria-label="Phim tiếp theo">
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                    <path d="m9 6 6 6-6 6" />
+                </svg>
+            </button>
+
+            <div class="slider-dots" aria-label="Chọn phim nổi bật">
+                @for (var slideIndex = 0; slideIndex < heroMovies.Count; slideIndex++)
+                {
+                    <button class="slider-dot @(slideIndex == 0 ? "is-active" : "")"
+                            type="button"
+                            data-slider-dot="@slideIndex"
+                            aria-label="Chuyển đến phim @(slideIndex + 1)">
+                    </button>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="slider-empty">
+                <p class="home-eyebrow">Phim đang chiếu</p>
+                <h1>COSMOS Cinema</h1>
+                <p>Lịch phim sẽ hiển thị tại đây sau khi dữ liệu phim được cập nhật.</p>
+            </div>
+        }
     </section>
 @* Danh sách phim *@
     <section class="home-section movie-gallery-section reveal-on-scroll" id="now-showing" data-reveal>
@@ -302,7 +376,7 @@
                 stopAutoSlide();
                 autoSlideInterval = window.setInterval(function () {
                     showSlide(currentIndex + 1);
-                }, 4500);
+                }, 6000);
             }
 
             buttons.forEach(function (button) {
@@ -322,6 +396,8 @@
 
             slider.addEventListener('mouseenter', stopAutoSlide);
             slider.addEventListener('mouseleave', startAutoSlide);
+            slider.addEventListener('focusin', stopAutoSlide);
+            slider.addEventListener('focusout', startAutoSlide);
             document.addEventListener('visibilitychange', function () {
                 document.hidden ? stopAutoSlide() : startAutoSlide();
             });

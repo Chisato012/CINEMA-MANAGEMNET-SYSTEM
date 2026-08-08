@@ -203,6 +203,8 @@ public class BookingController : Controller
                 DurationMinutes = m.Duration,
                 PosterURL = m.PosterURL,
                 Genre = string.Join(", ", m.MovieGenres.Select(mg => mg.Genre.Name)),
+                Language = m.Language != null ? m.Language.LanguageName : string.Empty,
+                Country = m.Country != null ? m.Country.CountryName : string.Empty,
                 Director = string.Join(",", m.MovieDirectors.Select(md => md.Person.FullName)), //truy vấn thông tin đạo diễn từ model MovieDirectors và nối các tên đạo diễn bằng dấu phẩy
                 Cast = string.Join(",", m.MovieCasts.Select(mc => mc.Person.FullName)) //truy vấn thông tin diễn viên từ model MovieCasts và nối các tên diễn viên bằng dấu
 

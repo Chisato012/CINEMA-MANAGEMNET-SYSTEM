@@ -33,7 +33,7 @@
 <body>
     <header class="site-header">
         <div class="shell header-row">
-            <div class="brand"><span class="brand-mark" aria-hidden="true"></span> Cosmos Cinema</div>
+            <div class="brand"><span class="brand-mark" aria-hidden="true"></span> COSMOS CINEMA</div>
             <div class="booking-header-actions">
                 <form asp-controller="Booking" asp-action="CancelBooking" method="post" class="cancel-form">
                     @Html.AntiForgeryToken()
@@ -69,16 +69,26 @@
                         <img class="movie-art__poster" src="@posterUrl" alt="Poster phim @Model.MovieTitle" />
                     </div>
                     <div class="movie-copy">
-                        <h1 id="movieTitle">@Model.MovieTitle</h1>
+                        <h1 id="movieTitle" style="font-size: 40px;">@Model.MovieTitle</h1>
                         <dl class="facts">
                             <dt>Đạo diễn</dt>
                             <dd>@Model.Director</dd>
                             <dt>Diễn viên</dt>
                             <dd>@Model.Cast</dd>
                             <dt>Thời lượng</dt>
-                            <dd>@Model.DurationMinutes min@(string.IsNullOrWhiteSpace(Model.Genre) ? "" : $" ·                            {Model.Genre}")</dd>
+                            <dd>@Model.DurationMinutes min@(string.IsNullOrWhiteSpace(Model.Genre) ? "" : $" · {Model.Genre}")</dd>
                             <dt>Độ tuổi</dt>
                             <dd>@Model.AgeRating</dd>
+                            @if (!string.IsNullOrWhiteSpace(Model.Language))
+                            {
+                                <dt>Ngôn ngữ</dt>
+                                <dd>@Model.Language</dd>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Country))
+                            {
+                                <dt>Quốc gia</dt>
+                                <dd>@Model.Country</dd>
+                            }
                         </dl>
                         <p class="synopsis">@Model.Synopsis</p>
                     </div>
@@ -139,7 +149,7 @@
 
                         <button type="submit" class="primary-button full">
                             <i class="fa-solid fa-ticket"></i>
-                            <span style="font-family: 'Archivo Narrow', sans-serif">Chọn Ghế →</span>
+                            <span>Chọn Ghế →</span>
                         </button>
                     </form>
                 </aside>
