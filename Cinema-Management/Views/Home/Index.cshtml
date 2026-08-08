@@ -5,6 +5,11 @@
 
     var today = DateTime.Today;
     var movies = Model ?? new List<Cinema_Management.Models.MovieViewModel>();
+    var rankedMovies = movies
+        .OrderByDescending(movie => movie.AverageRating)
+        .ThenByDescending(movie => movie.ReviewCount)
+        .ThenBy(movie => movie.Title)
+        .ToList();
     var fallbackPosters = new[]
     {
         Url.Content("~/img/poster/supergirl.png"),
@@ -76,9 +81,11 @@
                 {
                     var movie = heroMovies[slideIndex];
                     var poster = ResolvePosterUrl(movie.PosterURL, fallbackPosters[slideIndex % fallbackPosters.Length]);
+                    var isUpcoming = movie.ReleaseDate.Date > today;
                     var title = !string.IsNullOrWhiteSpace(movie.Title) ? movie.Title : "Phim đang chiếu";
                     var genre = !string.IsNullOrWhiteSpace(movie.Genre) ? movie.Genre : "Đang cập nhật";
                     var statusLabel = movie.ReleaseDate.Date > today ? "Phim sắp chiếu" : "Phim đang chiếu";
+                    statusLabel = isUpcoming ? "Coming Soon" : "Phim đang chiếu";
                     var imageLoading = slideIndex == 0 ? "eager" : "lazy";
                     var activeClass = slideIndex == 0 ? "is-active" : string.Empty;
 
@@ -96,7 +103,7 @@
                                 <a class="slider-slide__title-link" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId">
                                     <h1>@title</h1>
                                 </a>
-                                <p>@ClampText(movie.Synopsis, 170)</p>
+                                <p class="slider-slide__description">@ClampText(movie.Synopsis, 210)</p>
 
                                 <div class="slider-slide__meta" aria-label="Thông tin phim">
                                     <span>@genre</span>
@@ -112,16 +119,6 @@
                                             Đặt vé
                                         </button>
                                     </form>
-
-                                    @if (!string.IsNullOrWhiteSpace(movie.Trailer))
-                                    {
-                                        <a class="home-cta home-cta--ghost"
-                                           href="@movie.Trailer"
-                                           target="_blank"
-                                           rel="noopener noreferrer">
-                                            Xem trailer
-                                        </a>
-                                    }
                                 </div>
                             </div>
 
@@ -170,23 +167,35 @@
             <span class="home-eyebrow">Danh sách phim</span>
         </div>
         
-        @if (movies.Any())
+        @if (rankedMovies.Any())
         {
             <div class="movie-gallery" aria-label="Phim đang chiếu">
                 @* Từng dòng phim *@
                 <div class="movie-gallery__row">
                     @* Sử dung vòng lặp qua từng phim *@
-                    @for (var movieIndex = 0; movieIndex < movies.Count; movieIndex++)
+                    @for (var movieIndex = 0; movieIndex < rankedMovies.Count; movieIndex++)
                     {
-                        var movie = movies[movieIndex];
+                        var movie = rankedMovies[movieIndex];
                         var poster = ResolvePosterUrl(movie.PosterURL, fallbackPosters[movieIndex % fallbackPosters.Length]);
                         var title = !string.IsNullOrWhiteSpace(movie.Title) ? movie.Title : "Phim đang chiếu";
                         var genre = !string.IsNullOrWhiteSpace(movie.Genre) ? movie.Genre : "Đang cập nhật";
                         var imageLoading = movieIndex < 4 ? "eager" : "lazy";
                         var isUpcoming = movie.ReleaseDate.Date > today;
+                        var rank = movieIndex + 1;
+                        var hasRating = movie.ReviewCount > 0;
 
                         <article class="movie-gallery__col reveal-on-scroll" style="--movie-index: @movieIndex" data-reveal>
                             <a class="movie-poster" asp-controller="Home" asp-action="Details" asp-route-id="@movie.MovieId" aria-label="Xem chi tiết @title">
+                                <span class="movie-poster__badges" aria-label="Xep hang va trang thai phim">
+                                    @if (isUpcoming)
+                                    {
+                                        <span class="movie-coming-soon-badge">Coming Soon</span>
+                                    }
+                                    @if (rank <= 3)
+                                    {
+                                        <span class="movie-rank-badge">@rank</span>
+                                    }
+                                </span>
                                 <img src="@poster" alt="@title poster" loading="@imageLoading" />
                                 <span class="movie-poster__overlay">Chi tiết</span>
                             </a>
@@ -198,6 +207,17 @@
                                     <div class="movie-genre-duration">
                                         <span class="movie-genre">@genre</span>
                                         <span class="movie-duration">@movie.Duration phút</span>
+                                    </div>
+
+                                    <div class="movie-rating-row" aria-label="Diem danh gia phim">
+                                        <span>
+                                            <i class="fa-solid fa-star" aria-hidden="true"></i>
+                                            @(hasRating ? $"{movie.AverageRating:0.0}/5" : "Chua co danh gia")
+                                        </span>
+                                        @if (hasRating)
+                                        {
+                                            <small>@movie.ReviewCount danh gia</small>
+                                        }
                                     </div>
 
                                     <div class="buy-button__container">

@@ -31,6 +31,8 @@ public class HomeController : Controller
                 Title = m.Title,
                 Duration = m.Duration,
                 PosterURL = m.PosterURL,
+                Synopsis = m.Synopsis,
+                Trailer = m.Trailer,
                 ReleaseDate = m.ReleaseDate,
                  
                 Genre = string.Join(", ", m.MovieGenres.Select(mg => mg.Genre.Name))
